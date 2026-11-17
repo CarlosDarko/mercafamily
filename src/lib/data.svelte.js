@@ -3,6 +3,7 @@ import { createLocalBackend } from './local.js'
 import { loadCatalog, search, parsePrefs, loadHistory } from './catalog.js'
 import { dietConflicts } from './home.js'
 import { loadDetails, detailsSync } from './nutrition.js'
+import { withQueue, saveSnapshot, loadSnapshot, isNetworkError, pendingCount } from './offline.js'
 import { uid, isoDate, tokens, norm } from './format.js'
 
 const CFG_KEY = 'mf:supabase'
@@ -29,6 +30,9 @@ export const app = $state({
   prefs: { theme: 'auto', scale: 1, kid: false },
   detailsTick: 0,
   history: null,
+  online: typeof navigator === 'undefined' ? true : navigator.onLine,
+  pending: 0,
+  lastSync: null,
   lastTrip: null,
   email: '',
   toast: null,
@@ -65,6 +69,7 @@ export function toast(msg, action = null, ms = 3500) {
 
 function fail(e) {
   console.error(e)
+  logError(e)
   toast('No se ha podido guardar. Reintento al volver a abrir.')
   scheduleReload()
 }
@@ -85,7 +90,16 @@ export async function boot() {
     app.kind = 'supabase'
     try {
       const { createSupabaseBackend } = await import('./supa.js')
-      be = createSupabaseBackend(cfg)
+      be = withQueue(createSupabaseBackend(cfg), {
+        onChange: (n) => {
+          app.pending = n
+          snapshotNow()
+        },
+        onDrop: () => toast('Un cambio no se ha podido guardar. Recarga la app para ver lo último.')
+      })
+      app.pending = pendingCount()
+      window.addEventListener('online', () => ((app.online = true), scheduleReload()))
+      window.addEventListener('offline', () => (app.online = false))
       be.onAuth((ev) => {
         if (ev === 'SIGNED_IN' && (app.screen === 'login' || app.screen === 'loading')) enterHousehold()
         if (ev === 'SIGNED_OUT') app.screen = 'login'
@@ -116,20 +130,54 @@ export async function boot() {
 }
 
 async function enterHousehold() {
-  const user = await be.user()
-  app.email = user?.email || ''
-  const h = await be.myHousehold()
+  let h
+  try {
+    const user = await be.user()
+    app.email = user?.email || ''
+    h = await be.myHousehold()
+    if (h) localStorage.setItem('mf:hid', h.id)
+  } catch (e) {
+    // Sin conexión: se abre con la última copia guardada
+    const snap = loadSnapshot()
+    const hid = localStorage.getItem('mf:hid')
+    if (!isNetworkError(e) || !snap || !hid) throw e
+    be.useHousehold?.(hid)
+    applySnapshot(snap)
+    app.online = false
+    app.screen = 'ready'
+    return
+  }
   if (!h) {
     app.screen = 'household'
     return
   }
   if (h.display_name) setMe(h.display_name)
+  const snap = loadSnapshot()
+  if (snap?.household?.id === h.id) applySnapshot(snap)
   await reloadAll()
   be.subscribe((what) => {
     if (what.startsWith('status:')) app.live = what === 'status:SUBSCRIBED'
     else scheduleReload()
   })
   app.screen = 'ready'
+}
+
+function snapshotNow() {
+  if (app.kind !== 'supabase' || !app.household) return
+  saveSnapshot($state.snapshot({ household: app.household, lists: app.lists, items: app.items, trips: app.trips, tripItems: app.tripItems, recipes: app.recipes, meals: app.meals, members: app.members }))
+}
+
+function applySnapshot(s) {
+  app.household = s.household
+  app.lists = s.lists || []
+  app.items = s.items || []
+  app.trips = s.trips || []
+  app.tripItems = s.tripItems || []
+  app.recipes = s.recipes || []
+  app.meals = s.meals || []
+  app.members = s.members || []
+  const saved = localStorage.getItem(LIST_KEY)
+  if (!app.listId) app.listId = app.lists.some((l) => l.id === saved) ? saved : s.household?.id
 }
 
 const AUTH_ERRORS = [
@@ -239,6 +287,8 @@ function scheduleReload() {
 
 export async function reloadAll() {
   try {
+    // Primero se envían los cambios pendientes; si aún quedan, no se pisa lo que hay en el móvil
+    const left = be.flush ? await be.flush() : 0
     const [household, lists, items, trips, tripItems, recipes, meals] = await Promise.all([
       be.household(),
       be.select('lists'),
@@ -263,15 +313,21 @@ export async function reloadAll() {
     app.lists = lists.sort((a, b) => a.position - b.position || (a.created_at < b.created_at ? -1 : 1))
     const saved = localStorage.getItem(LIST_KEY)
     if (!app.listId || !app.lists.some((l) => l.id === app.listId)) app.listId = app.lists.some((l) => l.id === saved) ? saved : household.id
-    notifyOthers(items)
-    app.items = items
+    if (!left) {
+      notifyOthers(items)
+      app.items = items
+    }
     app.trips = trips.sort((a, b) => (a.date < b.date ? 1 : -1))
     app.tripItems = tripItems
     if (be.members) app.members = await be.members()
     ensureDetails()
+    app.online = true
+    app.lastSync = Date.now()
+    snapshotNow()
   } catch (e) {
     console.error(e)
-    toast('Sin conexión. Mostrando lo último guardado.')
+    if (isNetworkError(e)) app.online = false
+    else logError(e)
   }
 }
 
@@ -843,3 +899,20 @@ export async function disablePush() {
 }
 
 export const testPush = () => be.testPush(pushUrl())
+
+// ---------- Registro de errores (para el panel de estado) ----------
+
+export function logError(e) {
+  try {
+    const list = JSON.parse(localStorage.getItem('mf:errors') || '[]')
+    list.push({ at: new Date().toISOString(), msg: String(e?.message || e).slice(0, 200) })
+    localStorage.setItem('mf:errors', JSON.stringify(list.slice(-10)))
+  } catch {}
+}
+export const recentErrors = () => {
+  try {
+    return JSON.parse(localStorage.getItem('mf:errors') || '[]')
+  } catch {
+    return []
+  }
+}

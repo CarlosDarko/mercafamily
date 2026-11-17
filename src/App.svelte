@@ -55,8 +55,12 @@
   <header class="shell">
     <div class="shell-inner">
       <span class="brand">MercaFamily</span>
-      <span class="sync" class:on={app.kind === 'supabase' && app.live}>
-        {#if app.kind === 'local'}
+      <span class="sync" class:on={app.kind === 'supabase' && app.live && app.online && !app.pending} class:off={!app.online} role="status">
+        {#if !app.online}
+          Sin conexión{app.pending ? ` · ${app.pending} ${app.pending === 1 ? 'cambio pendiente' : 'cambios pendientes'}` : ''}
+        {:else if app.pending}
+          Guardando {app.pending}…
+        {:else if app.kind === 'local'}
           Solo en este móvil
         {:else if app.live}
           En directo
@@ -139,6 +143,9 @@
     height: 9px;
     border-radius: 50%;
     background: var(--lemon);
+  }
+  .sync.off::before {
+    background: #ff8a70;
   }
   .sync.on::before {
     background: #8fe0b0;

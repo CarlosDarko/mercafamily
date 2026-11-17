@@ -40,6 +40,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Bienvenida | Guía de cuatro pasos la primera vez (`mf:onboarded` en localStorage). No se muestra a navegadores automatizados. |
 | Voz | Web Speech API (`SpeechRecognition`, en iPhone y Android). `src/lib/voice.js` convierte la frase en productos con cantidades. |
 | Ticket con foto | tesseract.js con idioma español, cargado bajo demanda (worker y datos desde CDN la primera vez). `src/lib/ticket.js` lee total y líneas de Mercadona y las une con el carro. Los precios leídos se guardan en `trip_items.price`. |
+| Sin cobertura | `src/lib/offline.js`: los cambios a Supabase pasan por una cola en localStorage (`mf:queue`) y se envían en orden. Lo que falla por red se queda, lo demás se descarta con aviso. Copia local de los datos (`mf:snap`) para abrir sin red. El service worker guarda todos los archivos de `asset-list.json` (lo genera `vite.config.js`) y el catálogo. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura

@@ -1,9 +1,20 @@
 // Service worker: la app abre sin conexión. La página se pide primero a la red; lo demás, de la caché.
-const VERSION = 'mf-v2'
-const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg']
+const VERSION = 'mf-v3'
+const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './icon-192.png', './data/catalog.json']
 
+// Se guarda todo lo necesario para abrir sin cobertura: la página, su código (leído de index.html) y el catálogo
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()))
+  e.waitUntil(
+    (async () => {
+      const cache = await caches.open(VERSION)
+      await cache.addAll(SHELL)
+      try {
+        const { files } = await (await fetch('./asset-list.json', { cache: 'no-store' })).json()
+        await cache.addAll(files.map((f) => './' + f))
+      } catch {}
+      await self.skipWaiting()
+    })()
+  )
 })
 
 self.addEventListener('activate', (e) => {

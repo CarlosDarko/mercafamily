@@ -55,7 +55,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Toca comprar:** 'compráis huevos cada 8 días y hace 9', con un botón para añadirlo todo.
 - **Cambios de precio** en lo que compráis, a partir del historial semanal.
 - **Ficha de cada producto:** ingredientes, alérgenos, Nutri-Score y valores por 100 g, alternativas más baratas por kilo o litro, más sanas y lo que soléis comprar junto.
-- **Funciona sin cobertura** en el súper y se instala en el móvil como una app.
+- **Funciona sin cobertura de verdad**: lo que apuntáis o marcáis sin señal se guarda en el móvil y se envía en orden al volver la conexión (arriba pone 'Sin conexión · 2 cambios pendientes'). La app abre aunque no haya red, con lo último que tenía. Se instala en el móvil como una app.
 - **Accesible:** navegación con teclado y lector de pantalla, contraste AA, botones de 48 px y textos claros.
 
 ## Cómo funciona por dentro

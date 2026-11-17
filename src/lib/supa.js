@@ -55,6 +55,9 @@ export function createSupabaseBackend({ url, key }) {
     async signOut() {
       await sb.auth.signOut()
     },
+    useHousehold(id) {
+      hid = id
+    },
     async myHousehold() {
       const rows = ok(await sb.from('members').select('household_id, display_name').limit(1))
       if (!rows.length) return null
