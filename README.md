@@ -14,6 +14,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/menu.png' width='190' alt='Menú de la semana con las cenas elegidas y los ingredientes que faltan'>
   <img src='docs/capturas/preparame.png' width='190' alt='Prepárame la lista con lo del menú y lo que se acaba en casa, todo marcado'>
   <img src='docs/capturas/peticiones.png' width='190' alt='Petición de un peque pendiente de aceptar en la lista'>
+  <img src='docs/capturas/ticket.png' width='190' alt='Ticket que se imprime al terminar la compra con el sello Por debajo del presupuesto'>
+  <img src='docs/capturas/bienvenida.png' width='190' alt='Primer paso de la guía de bienvenida'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -33,6 +35,12 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Móvil de un peque**: lo que apunta llega como petición y un adulto la acepta o no. Para salir del modo hay que resolver una multiplicación.
 - **Dietas y alergias por persona**: aviso al apuntar algo que lleve lo que alguien no puede tomar, según ingredientes y alérgenos de Mercadona.
 - **Cambios más sanos** en la lista (mismo tipo de producto, Nutri-Score mejor y precio parecido) y **nota de salud de la cesta** en Gastos.
+- **Objetivos por categoría** ('dulces, 40 € al mes') con barra frente al objetivo y comparación con el mes pasado, y **gasto por persona**.
+- **Subidas de precio con alternativa**: en Gastos, cada subida trae al lado la opción más barata por kilo, y en la lista sale 'Ha subido un 8 %'.
+- **Ahorro conseguido** al aceptar alternativas más baratas.
+- **Historial de cada producto** en su ficha: cuántas veces lo compráis y cómo ha ido su precio.
+- **Ticket al terminar la compra**, que se imprime con el total y un sello si la semana va por debajo del presupuesto.
+- **Guía de bienvenida** de cuatro pasos (y en Ajustes, Ayuda, para verla otra vez).
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.

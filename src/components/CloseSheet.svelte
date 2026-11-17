@@ -18,9 +18,7 @@
       error = 'Escribe el importe con números, por ejemplo 62,40.'
       return
     }
-    const saved = v ?? total
     await closeTrip({ store, date, total: v })
-    toast(`Compra guardada en Gastos: ${eur(saved)}`)
     onclose()
   }
 </script>

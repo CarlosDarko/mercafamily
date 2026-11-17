@@ -343,6 +343,11 @@
 
   {/if}
 
+  <section class="section" aria-labelledby="h-help">
+    <h2 id="h-help">Ayuda</h2>
+    <button class="btn" onclick={() => window.dispatchEvent(new CustomEvent('mf:guide'))}>Ver la guía de bienvenida</button>
+  </section>
+
   <section class="section" aria-labelledby="h-about">
     <h2 id="h-about">Sobre MercaFamily</h2>
     <p class="muted">App familiar sin anuncios ni seguimiento. Precios del catálogo público de Mercadona (consulta semanal, uso doméstico) y nutrición de <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a>. Código en <a href={REPO} target="_blank" rel="noopener">GitHub</a>.</p>

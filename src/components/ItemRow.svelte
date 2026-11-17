@@ -1,6 +1,6 @@
 <script>
   import { ChevronRight, Check } from '@lucide/svelte'
-  import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount, conflictsOf } from '../lib/data.svelte.js'
+  import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount, conflictsOf, priceTrend } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
@@ -15,6 +15,7 @@
   const takenOther = $derived(item.checked && item.taken_by && item.taken_by !== app.me ? item.taken_by : null)
   const oftenMissing = $derived(!item.checked && missingCount(item) >= 2)
   const diet = $derived(conflictsOf(item))
+  const trend = $derived(item.merc_id && !item.checked ? priceTrend(item.merc_id) : null)
 </script>
 
 <li class="item" class:done={item.checked}>
@@ -39,6 +40,7 @@
         <span class="who"><span class="dot" style={`background:${colorOf(byOther)}`}></span>Lo ha apuntado {byOther}</span>
       {/if}
       {#if item.missing}<span class="tag">No había</span>{:else if oftenMissing}<span class="tag soft">Suele faltar</span>{/if}
+      {#if trend && Math.abs(trend.diff) >= 0.03}<span class="tag" class:soft={trend.diff < 0}>{trend.diff > 0 ? 'Ha subido' : 'Ha bajado'} un {Math.round(Math.abs(trend.diff) * 100)} %</span>{/if}
       {#if diet.length}<span class="tag">Ojo: {diet.map((d) => `${d.person}, ${d.label.toLowerCase()}`).join(' · ')}</span>{/if}
     </span>
     <ChevronRight size={20} aria-hidden="true" class="chev" />

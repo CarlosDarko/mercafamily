@@ -36,6 +36,8 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Peques | `items.requested` para peticiones. El modo peque es de cada móvil (`prefs.kid` en localStorage) y se sale resolviendo una multiplicación. |
 | Dietas | `households.settings.people` con lo que evita cada persona. Se comprueba con ingredientes y alérgenos de `details.json` (`dietConflicts`). |
 | Salud | Cambios más sanos: misma familia o familia parecida, Nutri-Score A o B o dos letras mejor, precio por kilo como mucho un 30 % mayor. Si no hay ninguno real, no se propone nada. |
+| Dinero | Objetivos (`settings.goals` por categoría), ahorro (`settings.savings`, se apunta al cambiar por un producto más barato), tendencia de precio desde `history.json`. Sin tablas nuevas. |
+| Bienvenida | Guía de cuatro pasos la primera vez (`mf:onboarded` en localStorage). No se muestra a navegadores automatizados. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura

@@ -1,11 +1,12 @@
 <script>
   import { X, Minus, Plus, Trash2, Replace, Star, PackageX } from '@lucide/svelte'
-  import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast, isFavorite, toggleFavorite, toggleMissing } from '../lib/data.svelte.js'
+  import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast, isFavorite, toggleFavorite, toggleMissing, recordSaving } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
   import { eur, parseNum } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
   import Alternatives from './Alternatives.svelte'
+  import ProductHistory from './ProductHistory.svelte'
 
   let { id, onclose } = $props()
   const item = $derived(app.items.find((i) => i.id === id))
@@ -52,6 +53,12 @@
     // Si era texto libre ('dinosaurus'), la próxima vez esa palabra lleva a este producto
     if (!item.merc_id) rememberAlias(item.name, np.id)
     else if (changing && q.trim()) rememberAlias(q, np.id)
+    // Si el cambio es más barato, cuenta como ahorro
+    const before = unitPrice(item)
+    if (before != null && np.p < before) {
+      recordSaving((before - np.p) * (item.qty || 1), `${np.n} en lugar de ${item.name}`)
+      toast(`Ahorráis ${eur((before - np.p) * (item.qty || 1))} con el cambio`)
+    }
     updateItem(id, { merc_id: np.id, name: np.n, category: np.c, price: np.p })
     changing = false
     q = ''
@@ -172,6 +179,10 @@
           {/if}
         {/if}
       </section>
+    {/if}
+
+    {#if p}
+      <ProductHistory {p} />
     {/if}
 
     {#if p}

@@ -5,6 +5,9 @@
   import Spending from './components/Spending.svelte'
   import Settings from './components/Settings.svelte'
   import MenuView from './components/MenuView.svelte'
+  import Onboarding from './components/Onboarding.svelte'
+  import TicketPrint from './components/TicketPrint.svelte'
+  import { needsOnboarding } from './lib/data.svelte.js'
   import Welcome from './components/Welcome.svelte'
   import Toast from './components/Toast.svelte'
 
@@ -17,6 +20,10 @@
   const TABS = $derived(ALL_TABS.filter((t) => !t.adults || !app.prefs.kid))
   const fromHash = () => ALL_TABS.find((t) => `#${t.id}` === location.hash)?.id ?? 'lista'
   let tab = $state(fromHash())
+  let guide = $state(false)
+  $effect(() => {
+    if (app.screen === 'ready' && needsOnboarding() && !navigator.webdriver) guide = true
+  })
 
   function go(id) {
     tab = id
@@ -33,6 +40,7 @@
   boot()
   window.addEventListener('hashchange', () => (tab = fromHash()))
   window.addEventListener('mf:go', (e) => go(e.detail))
+  window.addEventListener('mf:guide', () => (guide = true))
 </script>
 
 <a class="skip-link" href="#main">Saltar al contenido</a>
@@ -79,6 +87,13 @@
       </a>
     {/each}
   </nav>
+{/if}
+
+{#if guide}
+  <Onboarding onclose={() => (guide = false)} />
+{/if}
+{#if app.lastTrip}
+  <TicketPrint />
 {/if}
 
 <Toast />

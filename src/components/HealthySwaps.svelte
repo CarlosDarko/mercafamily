@@ -1,7 +1,7 @@
 <script>
   // Cambios más sanos: productos de la lista con Nutri-Score D o E que tienen en su familia uno A o B a precio parecido
   import { HeartPulse } from '@lucide/svelte'
-  import { app, updateItem, toast } from '../lib/data.svelte.js'
+  import { app, updateItem, toast, recordSaving } from '../lib/data.svelte.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
@@ -53,6 +53,7 @@
   const visible = $derived(swaps.filter((s) => !dismissed.has(s.item.id) && items.some((i) => i.id === s.item.id && i.merc_id === s.from.id)))
 
   function apply(s) {
+    if (s.to.p < s.from.p) recordSaving((s.from.p - s.to.p) * (s.item.qty || 1), `${s.to.n} en lugar de ${s.from.n}`)
     updateItem(s.item.id, { merc_id: s.to.id, name: s.to.n, category: s.to.c, price: s.to.p })
     toast(`Cambiado por ${s.to.n}`)
   }

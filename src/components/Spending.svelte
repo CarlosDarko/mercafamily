@@ -23,8 +23,6 @@
   })
 
   const since30 = isoDate(new Date(Date.now() - 30 * 86400000))
-  const cats = $derived(byCategory(app.tripItems, app.catalog, since30).slice(0, 8))
-  const maxCat = $derived(Math.max(...cats.map((c) => c.total), 1))
   const stores = $derived.by(() => {
     const map = new Map()
     for (const t of app.trips.filter((t) => t.date >= since30)) map.set(t.store, (map.get(t.store) || 0) + Number(t.total || 0))
@@ -53,10 +51,16 @@
   function remove(t) {
     if (confirm(`¿Borrar la compra del ${fmtLong(t.date)} (${eur(t.total)})? No se puede deshacer.`)) deleteTrip(t.id)
   }
+  // La alternativa más barata por kilo o litro dentro de la misma familia
+  function cheaperThan(p) {
+    if (!p.r || !p.rf || !app.catalog) return null
+    return app.catalog.products.filter((x) => x.s === p.s && x.rf === p.rf && x.r && x.r < p.r * 0.9 && x.id !== p.id).sort((a, b) => a.r - b.r)[0] || null
+  }
   const linesOf = (t) => app.tripItems.filter((x) => x.trip_id === t.id)
 
   const diff = $derived(lastMonth > 0 ? (thisMonth - lastMonth) / lastMonth : null)
   import BasketHealth from './BasketHealth.svelte'
+  import MonthBreakdown from './MonthBreakdown.svelte'
 </script>
 
 <div class="page">
@@ -106,23 +110,7 @@
       </details>
     </section>
 
-    {#if cats.length}
-      <section class="section" aria-labelledby="h-cats">
-        <h2 id="h-cats">En qué se va, últimos 30 días</h2>
-        <ul class="hbars panel pad" role="list">
-          {#each cats as c (c.name)}
-            <li>
-              <span class="hb-label">{c.name}</span>
-              <span class="hb-track"><span class="hb-fill" style={`width:${(c.total / maxCat) * 100}%`}></span></span>
-              <span class="num hb-val">{eur(c.total)}</span>
-            </li>
-          {/each}
-        </ul>
-        {#if stores.length > 1}
-          <p class="muted">Por tienda: {stores.map(([s, v]) => `${s} ${eur(v)}`).join(', ')}.</p>
-        {/if}
-      </section>
-    {/if}
+    <MonthBreakdown />
   {/if}
 
   <BasketHealth />
@@ -134,7 +122,11 @@
         {#each changes as c (c.p.id)}
           <li>
             {#if imgUrl(c.p)}<img src={imgUrl(c.p, 96)} alt="" width="40" height="40" loading="lazy" />{/if}
-            <span class="ch-text"><strong>{c.p.n}</strong><small class="num">{eur(c.prev)} → {eur(c.now)}{c.when ? ` · ${fmtDay(c.when)}` : ''}</small></span>
+            <span class="ch-text">
+              <strong>{c.p.n}</strong>
+              <small class="num">{eur(c.prev)} → {eur(c.now)}{c.when ? ` · ${fmtDay(c.when)}` : ''}</small>
+              {#if c.diff > 0 && cheaperThan(c.p)}<small class="alt">Más barato: {cheaperThan(c.p).n} ({eur(cheaperThan(c.p).r)}/{cheaperThan(c.p).rf})</small>{/if}
+            </span>
             <span class="ch-diff num" class:up={c.diff > 0}>
               {#if c.diff > 0}<TrendingUp size={18} aria-hidden="true" />{:else}<TrendingDown size={18} aria-hidden="true" />{/if}
               <span class="visually-hidden">{c.diff > 0 ? 'Sube' : 'Baja'}</span>{pct(c.diff)}
@@ -343,6 +335,10 @@
   }
   .ch-text small {
     color: var(--ink-2);
+  }
+  .alt {
+    color: var(--accent-text) !important;
+    font-weight: 600;
   }
   .ch-diff {
     display: inline-flex;

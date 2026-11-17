@@ -1,6 +1,6 @@
 // Estado de la app y acciones. La interfaz no sabe si los datos están en el móvil o en Supabase.
 import { createLocalBackend } from './local.js'
-import { loadCatalog, search, parsePrefs } from './catalog.js'
+import { loadCatalog, search, parsePrefs, loadHistory } from './catalog.js'
 import { dietConflicts } from './home.js'
 import { loadDetails, detailsSync } from './nutrition.js'
 import { uid, isoDate, tokens, norm } from './format.js'
@@ -28,6 +28,8 @@ export const app = $state({
   myColor: null,
   prefs: { theme: 'auto', scale: 1, kid: false },
   detailsTick: 0,
+  history: null,
+  lastTrip: null,
   email: '',
   toast: null,
   error: ''
@@ -72,7 +74,10 @@ export async function boot() {
   app.myColor = localStorage.getItem('mf:color') || null
   loadPrefs()
   loadCatalog()
-    .then((c) => (app.catalog = c))
+    .then((c) => {
+      app.catalog = c
+      loadHistory().then((h) => (app.history = h))
+    })
     .catch(() => toast('No se ha podido cargar el catálogo de Mercadona'))
 
   const cfg = supabaseConfig()
@@ -557,6 +562,7 @@ export async function closeTrip({ store, date, total }) {
     bought_on: trip.date
   }))
   app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
+  app.lastTrip = { trip, lines }
   app.tripItems = [...app.tripItems, ...lines]
   app.items = app.items.filter((i) => !boughtIds.has(i.id))
   // Lo que no había se queda en la lista para la próxima vez y se cuenta como 'suele faltar'
@@ -759,3 +765,40 @@ export async function ensureDetails() {
   await loadDetails()
   app.detailsTick++
 }
+
+// ---------- Dinero: precios, objetivos y ahorro ----------
+
+// Cambio de precio de un producto según el historial semanal de Mercadona
+export function priceTrend(mercId) {
+  const h = app.history?.prices?.[mercId]
+  if (!h || h.length < 2) return null
+  const [, prev] = h[h.length - 2]
+  const [when, now] = h[h.length - 1]
+  if (!prev || prev === now) return null
+  return { prev, now, when, diff: (now - prev) / prev }
+}
+
+// Histórico de un producto: precios de Mercadona y vuestras compras
+export function productHistory(mercId) {
+  const prices = app.history?.prices?.[mercId] || []
+  const bought = app.tripItems.filter((t) => t.merc_id === mercId).sort((a, b) => (a.bought_on < b.bought_on ? -1 : 1))
+  return { prices, bought }
+}
+
+export async function recordSaving(amount, label) {
+  if (!(amount > 0.01)) return
+  const list = [...(settings().savings || []), { at: isoDate(), amount: Math.round(amount * 100) / 100, label }].slice(-200)
+  await updateSettings({ savings: list })
+}
+
+export async function setGoal(catId, amount) {
+  const goals = { ...(settings().goals || {}) }
+  if (amount > 0) goals[catId] = amount
+  else delete goals[catId]
+  await updateSettings({ goals })
+}
+
+export function markOnboarded() {
+  localStorage.setItem('mf:onboarded', '1')
+}
+export const needsOnboarding = () => !localStorage.getItem('mf:onboarded')
