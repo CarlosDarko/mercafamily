@@ -1,5 +1,5 @@
 <script>
-  import { TrendingUp, TrendingDown, Trash2, ReceiptText } from '@lucide/svelte'
+  import { TrendingUp, TrendingDown, Trash2, ReceiptText, FileText } from '@lucide/svelte'
   import { app, deleteTrip, updateTrip } from '../lib/data.svelte.js'
   import { spendByWeek, monthTotal, byCategory, priceChanges } from '../lib/insights.js'
   import { loadHistory, imgUrl } from '../lib/catalog.js'
@@ -38,6 +38,7 @@
   })
 
   let editing = $state(null)
+  let report = $state(location.hash.includes('informe'))
   let opened = $state(new Set())
   let editValue = $state('')
   function startEdit(t) {
@@ -70,11 +71,16 @@
   import MonthBreakdown from './MonthBreakdown.svelte'
   import CompareStores from './CompareStores.svelte'
   import TripElsewhere from './TripElsewhere.svelte'
+  import BasketVsIpc from './BasketVsIpc.svelte'
+  import MonthReport from './MonthReport.svelte'
 </script>
 
 <div class="page">
   <div class="page-head">
-    <h1>Gastos</h1>
+    <div class="row">
+      <h1 class="spacer">Gastos</h1>
+      {#if app.trips.length}<button class="btn" onclick={() => (report = true)}><FileText size={18} aria-hidden="true" /> Informe del mes</button>{/if}
+    </div>
     {#if app.trips.length}
       <p class="lead">
         En {fmtMonth(now)} lleváis <strong class="num">{eur(thisMonth)}</strong> en {tripsMonth}
@@ -121,6 +127,8 @@
 
     <MonthBreakdown />
   {/if}
+
+  <BasketVsIpc />
 
   <BasketHealth />
 
@@ -191,6 +199,10 @@
     </section>
   {/if}
 </div>
+
+{#if report}
+  <MonthReport onclose={() => (report = false)} />
+{/if}
 
 <style>
   .lead {

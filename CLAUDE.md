@@ -46,6 +46,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Otras tiendas | Función de Supabase `compare` (`supabase/functions/compare`): busca en las APIs públicas de Dia y Consum con caché de 7 días (`compare_cache`). Solo se compara por kilo o litro. Carrefour, Eroski y Caprabo bloquean consultas automáticas (no se fuerzan) y Alcampo no tiene buscador público. |
 | Quién va | `households.settings.going` (nombre y hora, dura 2 horas o hasta terminar la compra). Aviso push con `type: 'going'` en la función `push`. |
 | Formatos | `cheaperFormat` en `src/lib/home.js`: mismo nombre quitando palabras de tamaño, misma familia y unidad, al menos un 5 % más barato. |
+| Informe e IPC | `MonthReport.svelte` (imprimir a PDF con estilos de impresión, compartir texto). `basketInflation` en `src/lib/insights.js`: primer precio pagado frente al actual, pesado por gasto, frente al IPC de alimentos del INE (`scripts/fetch-ipc.mjs`, series IPC290755 e IPC290754, base 2025) en los mismos meses. Aviso push el día 1 a las 9:00 que abre `#gastos-informe`. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura

@@ -50,6 +50,11 @@ jobs:
           MAX: '1500'
         run: node scripts/fetch-details.mjs
 
+      - name: IPC de alimentos (INE)
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: node scripts/fetch-ipc.mjs
+
       - name: Guardar los datos nuevos en el repositorio
         if: github.event_name != 'push'
         run: |

@@ -7,7 +7,9 @@ Los avisos llegan al móvil aunque la app esté cerrada. Cada persona los activa
 | Alguien apunta algo (o un peque lo pide) | Al momento. Si apunta varias cosas seguidas, un solo aviso que se va actualizando. |
 | Alguien termina la compra | Al guardarla, con el total y lo que lleváis esta semana. |
 | Os pasáis del presupuesto | Una vez por semana, al pasarlo. |
+| Alguien va al súper | Al pulsar 'Voy yo al súper', para apuntar lo último. |
 | Resumen del domingo | Domingo a las 19:00: gasto de la semana y lo que queda en la lista. |
+| Informe del mes | Día 1 a las 9:00: gasto del mes anterior. Al tocarlo se abre el informe. |
 | Al salir del trabajo | A la hora y los días elegidos, si la lista elegida tiene algo. |
 
 En iPhone solo funcionan con la app instalada en la pantalla de inicio (Safari, Compartir, Añadir a pantalla de inicio).

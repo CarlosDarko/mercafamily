@@ -89,3 +89,53 @@ export function priceChanges(history, ids, catalog) {
   }
   return out.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
 }
+
+/**
+ * Vuestra inflación: lo que pagasteis la primera vez por cada producto frente a su precio actual,
+ * pesado por lo que gastáis en él. Se compara con el IPC de alimentos del INE en los mismos meses.
+ * ipc: { index: [['AAAA-MM', valor], ...] }
+ */
+export function basketInflation(tripItems, catalog, ipc, today = new Date()) {
+  const idx = new Map(ipc?.index || [])
+  const months = [...idx.keys()].sort()
+  const lastM = months[months.length - 1]
+  const yearAgo = new Date(today.getTime() - 365 * 86400000).toISOString().slice(0, 10)
+  const by = new Map()
+  for (const t of tripItems) {
+    if (!t.merc_id || !(t.price > 0)) continue
+    let e = by.get(t.merc_id)
+    if (!e) by.set(t.merc_id, (e = { first: t, spend: 0 }))
+    if (t.bought_on < e.first.bought_on) e.first = t
+    if (t.bought_on >= yearAgo) e.spend += t.price * (t.qty || 1)
+  }
+  let w = 0
+  let basket = 0
+  let ipcSum = 0
+  let ipcW = 0
+  let since = null
+  const movers = []
+  for (const [id, e] of by) {
+    const p = catalog?.byId.get(id)
+    if (!p || !e.spend) continue
+    const ratio = p.p / e.first.price
+    w += e.spend
+    basket += e.spend * ratio
+    const m0 = e.first.bought_on.slice(0, 7)
+    const start = idx.get(m0) ?? idx.get(months.find((m) => m >= m0))
+    if (start && lastM && lastM >= m0) {
+      ipcSum += e.spend * (idx.get(lastM) / start)
+      ipcW += e.spend
+    }
+    if (!since || e.first.bought_on < since) since = e.first.bought_on
+    if (Math.abs(ratio - 1) >= 0.03) movers.push({ p, from: e.first.price, to: p.p, change: ratio - 1, since: e.first.bought_on })
+  }
+  if (!w) return null
+  return {
+    change: basket / w - 1,
+    ipc: ipcW ? ipcSum / ipcW - 1 : null,
+    ipcUntil: lastM || null,
+    since,
+    products: [...by.keys()].length,
+    movers: movers.sort((a, b) => b.change - a.change).slice(0, 5)
+  }
+}

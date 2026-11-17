@@ -987,3 +987,12 @@ export async function tripElsewhere(lines) {
   }
   return out.compared ? out : null
 }
+
+// ---------- IPC de alimentos (INE) ----------
+let ipcPromise = null
+export function loadIpc() {
+  ipcPromise ??= fetch(`${import.meta.env.BASE_URL}data/ipc.json`)
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+  return ipcPromise
+}

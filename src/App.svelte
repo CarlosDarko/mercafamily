@@ -18,7 +18,7 @@
     { id: 'ajustes', label: 'Ajustes', title: 'Ajustes', icon: SettingsIcon }
   ]
   const TABS = $derived(ALL_TABS.filter((t) => !t.adults || !app.prefs.kid))
-  const fromHash = () => ALL_TABS.find((t) => `#${t.id}` === location.hash)?.id ?? 'lista'
+  const fromHash = () => ALL_TABS.find((t) => location.hash === `#${t.id}` || location.hash.startsWith(`#${t.id}-`))?.id ?? 'lista'
   let tab = $state(fromHash())
   let guide = $state(false)
   $effect(() => {

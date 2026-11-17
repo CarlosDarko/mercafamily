@@ -82,6 +82,7 @@
       <label class="sw"><input type="checkbox" bind:checked={prefs.trips} onchange={changed} /> Cuando alguien termina la compra</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.budget} onchange={changed} /> Si os pasáis del presupuesto semanal</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.summary} onchange={changed} /> Resumen del domingo a las {prefs.summaryTime}</label>
+      <label class="sw"><input type="checkbox" bind:checked={prefs.report} onchange={changed} /> Informe del mes, el día 1</label>
 
       <fieldset class="work">
         <legend><label class="sw"><input type="checkbox" bind:checked={prefs.work.on} onchange={changed} /> Aviso al salir del trabajo</label></legend>

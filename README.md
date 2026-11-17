@@ -23,6 +23,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/estado.png' width='190' alt='Panel de estado de la app en Ajustes'>
   <img src='docs/capturas/propuesta-menu.png' width='190' alt='Propuesta de menú con comidas y cenas de la semana y el coste de lo que falta'>
   <img src='docs/capturas/equilibrio.png' width='190' alt='Fruta y verdura de temporada y equilibrio de la compra con consejos'>
+  <img src='docs/capturas/informe.png' width='190' alt='Informe mensual con gasto, categorías y lo que más compráis'>
+  <img src='docs/capturas/ipc.png' width='190' alt='Vuestra cesta frente al IPC de alimentos del INE'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -57,6 +59,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Voy yo al súper**: un botón que avisa a los demás (en la app y al móvil) para que apunten lo último antes de que llegues.
 - **Comparar con Dia y Consum**: en Gastos, lo que más compráis por kilo o litro frente a Dia y Consum, en cada ficha 'En otras tiendas', y al terminar cada compra (y en su detalle en Gastos) lo que os habría costado en Dia y en Consum, contando solo los productos comparables. Carrefour, Eroski y Caprabo bloquean las consultas automáticas y Alcampo no tiene buscador público, así que no se comparan.
 - **Panel de estado** en Ajustes: conexión, cambios pendientes, catálogo, actualización automática, avisos, versión y últimos errores.
+- **Informe del mes** en Gastos: gasto y comparación con el mes anterior, categorías, quién compró, lo que más compráis, subidas de precio, ahorro, inflación y consejos. Se guarda en PDF o se comparte, y el día 1 llega un aviso para verlo.
+- **Vuestra cesta frente al IPC**: cuánto ha subido lo que compráis vosotros desde vuestras primeras compras frente al IPC de alimentos del INE en los mismos meses.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.
@@ -77,6 +81,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 | Supabase | Base de datos con tiempo real y acceso con email y contraseña. Guía: [docs/supabase.md](docs/supabase.md). |
 | Función de avisos | Función de Supabase que envía los avisos push, llamada por la base de datos (pg_net y pg_cron). [docs/avisos.md](docs/avisos.md). |
 | Open Food Facts | Nutri-Score y nutrición por código de barras, consultado desde la app. |
+| INE | IPC de alimentos y bebidas no alcohólicas (serie IPC290755), descargado cada lunes a `public/data/ipc.json`. |
 
 ### Variables de GitHub (Settings, Secrets and variables, Actions, Variables)
 

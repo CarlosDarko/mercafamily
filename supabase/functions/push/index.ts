@@ -129,6 +129,16 @@ async function tick() {
         if (names.length && (await send(s, { title: `${l?.name || 'La lista'}: ${names.length} ${names.length === 1 ? 'cosa' : 'cosas'}`, body: names.slice(0, 8).join(', '), tag: `work-${s.id}`, url: `${APP}#lista` }))) sent++
       }
     }
+    // Informe del mes, el día 1 a las 9:00
+    if (p.report !== false && now.date.endsWith('-01') && now.minutes >= 540 && now.minutes < 555 && (await once('report', `${s.id}-${now.date}`))) {
+      const prev = new Date(now.date + 'T12:00:00Z')
+      prev.setUTCMonth(prev.getUTCMonth() - 1)
+      const m = prev.toISOString().slice(0, 7)
+      const { data: tr } = await db.from('trips').select('total').eq('household_id', s.household_id).gte('date', `${m}-01`).lt('date', `${now.date}`)
+      const total = (tr || []).reduce((acc, t: any) => acc + Number(t.total || 0), 0)
+      const name = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(prev)
+      if (tr?.length && (await send(s, { title: `Informe de ${name}`, body: `${eur(total)} en ${tr.length} compras. Toca para verlo.`, tag: `report-${s.id}`, url: `${APP}#gastos-informe` }))) sent++
+    }
     // Resumen del domingo
     const sumAt = toMin(p.summaryTime || '19:00')
     if (p.summary !== false && now.wd === 7 && now.minutes >= sumAt && now.minutes < sumAt + 15 && (await once('summary', `${s.id}-${now.date}`))) {

@@ -6,6 +6,7 @@ export const DEFAULT_PUSH_PREFS = {
   going: true, // alguien va al súper
   budget: true, // os pasáis del presupuesto
   summary: true, // resumen del domingo
+  report: true, // informe del mes, el día 1
   summaryTime: '19:00',
   work: { on: false, time: '18:30', days: [1, 2, 3, 4, 5], list_id: null }
 }

@@ -36,3 +36,20 @@ test('detecta subidas de precio', () => {
   const r = priceChanges({ prices: { 1: [['2026-10-01', 3], ['2026-11-01', 3.3]] } }, ['1'], catalog)
   assert.equal(Math.round(r[0].diff * 100), 10)
 })
+
+import { basketInflation } from '../src/lib/insights.js'
+test('inflación de vuestra cesta frente al IPC', () => {
+  const catalog = { byId: new Map([['a', { id: 'a', p: 1.1 }], ['b', { id: 'b', p: 2 }]]) }
+  const ti = [
+    { merc_id: 'a', price: 1, qty: 1, bought_on: '2026-01-10' },
+    { merc_id: 'a', price: 1.05, qty: 1, bought_on: '2026-06-10' },
+    { merc_id: 'b', price: 2, qty: 1, bought_on: '2026-01-12' }
+  ]
+  const ipc = { index: [['2026-01', 100], ['2026-06', 101], ['2026-10', 102]] }
+  const r = basketInflation(ti, catalog, ipc, new Date(2026, 10, 17))
+  // a sube un 10 % (peso 2,05) y b nada (peso 2): (2,05 × 1,1 + 2) / 4,05 - 1 = 5,06 %
+  assert.equal(Math.round(r.change * 1000) / 10, 5.1)
+  assert.equal(Math.round(r.ipc * 100), 2)
+  assert.equal(r.since, '2026-01-10')
+  assert.equal(r.movers[0].p.id, 'a')
+})
