@@ -279,11 +279,15 @@ export function parsePrefs(list = []) {
  */
 export function searchIndex(idx, query, { prefs = [], learned = new Map(), aliases = {}, limit = 20 } = {}) {
   if (!idx || !query?.trim()) return []
+  // Lo aprendido de la familia va siempre primero, aunque la palabra no exista en el catálogo ('dinosaurus')
+  const aliasId = aliases[norm(query)]
+  const aliasP = aliasId ? idx.products.find((p) => p.id === aliasId) : null
+  const withAlias = (list) => (aliasP ? [{ p: aliasP, score: 999, reasons: ['Lo elegisteis antes'] }, ...list.filter((r) => r.p.id !== aliasId)].slice(0, limit) : list)
   const terms = queryTerms(idx, query)
-  if (!terms.length) return []
+  if (!terms.length) return withAlias([])
   const expanded = terms.map((t) => ({ ...t, cands: expandTerm(idx, t.w, t.last) }))
   const useful = expanded.filter((t) => t.cands.size)
-  if (!useful.length) return []
+  if (!useful.length) return withAlias([])
 
   // Peso de cada palabra según lo informativa que es (las raras pesan más)
   // Si la palabra exacta existe, ninguna variación (prefijo, sinónimo, errata) puede pesar más que ella
@@ -323,7 +327,6 @@ export function searchIndex(idx, query, { prefs = [], learned = new Map(), alias
   }
 
   const qStems = useful.map((t) => stem(t.w))
-  const alias = aliases[norm(query)]
   // Primero, productos que encajan con todo (o casi todo si la frase es larga). Si no hay ninguno,
   // vale con la primera palabra importante y el resto solo sirve para ordenar.
   const strict = [...acc].filter(([, a]) => (useful.length <= 2 ? a.matched === useful.length : a.coverW >= totalW * 0.6))
@@ -337,7 +340,6 @@ export function searchIndex(idx, query, { prefs = [], learned = new Map(), alias
     if (p.st.some((s) => BABY.has(s)) && !qStems.some((s) => BABY.has(s))) score -= 3
     score -= p.tk.length * 0.12
     score += Math.min(learned.get(p.id) || 0, 6) * 2.5
-    if (alias && alias === p.id) score += 40
     const reasons = []
     for (const pref of prefs) {
       if (!pref.words.some((w) => qStems.includes(w) || qStems.some((x) => w.startsWith(x)))) continue
@@ -351,9 +353,8 @@ export function searchIndex(idx, query, { prefs = [], learned = new Map(), alias
         if (hits.length === extra.length) reasons.push(pref.raw)
       }
     }
-    if (alias && alias === p.id) reasons.unshift('Lo elegisteis antes')
     out.push({ p, score, reasons })
   }
   out.sort((a, b) => b.score - a.score)
-  return out.slice(0, limit)
+  return withAlias(out.slice(0, limit))
 }

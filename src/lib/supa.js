@@ -89,7 +89,7 @@ export function createSupabaseBackend({ url, key }) {
     subscribe(cb) {
       if (channel) sb.removeChannel(channel)
       channel = sb.channel(`hogar-${hid}`)
-      for (const t of ['items', 'trips', 'trip_items', 'households']) {
+      for (const t of ['lists', 'items', 'trips', 'trip_items', 'households']) {
         channel.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t))
       }
       channel.subscribe((status) => cb('status:' + status))

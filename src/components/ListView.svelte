@@ -1,19 +1,21 @@
 <script>
   import { CalendarClock, Plus } from '@lucide/svelte'
-  import { app, lineTotal, addProduct, addText } from '../lib/data.svelte.js'
+  import { app, lineTotal, addProduct, addText, itemsOfList } from '../lib/data.svelte.js'
   import { dueSuggestions, weekTotal } from '../lib/insights.js'
   import { eur } from '../lib/format.js'
   import AddBar from './AddBar.svelte'
   import ItemRow from './ItemRow.svelte'
   import ItemSheet from './ItemSheet.svelte'
   import CloseSheet from './CloseSheet.svelte'
+  import ListSwitcher from './ListSwitcher.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
   let showUsual = $state(false)
 
-  const pending = $derived(app.items.filter((i) => !i.checked))
-  const inCart = $derived(app.items.filter((i) => i.checked))
+  const current = $derived(app.listId ? itemsOfList(app.listId) : app.items)
+  const pending = $derived(current.filter((i) => !i.checked))
+  const inCart = $derived(current.filter((i) => i.checked))
 
   const groups = $derived.by(() => {
     const cats = app.catalog?.categories ?? []
@@ -34,9 +36,9 @@
   })
 
   const sum = (list) => list.reduce((s, i) => s + (lineTotal(i) || 0), 0)
-  const estimate = $derived(sum(app.items))
+  const estimate = $derived(sum(current))
   const cartTotal = $derived(sum(inCart))
-  const noPrice = $derived(app.items.filter((i) => lineTotal(i) == null).length)
+  const noPrice = $derived(current.filter((i) => lineTotal(i) == null).length)
   const spentWeek = $derived(weekTotal(app.trips))
   const budget = $derived(app.household?.weekly_budget ? Number(app.household.weekly_budget) : null)
   const left = $derived(budget == null ? null : budget - spentWeek - estimate)
@@ -56,8 +58,9 @@
 <div class="page">
   <div class="page-head">
     <h1>Lista de la compra</h1>
+    <ListSwitcher />
     <p class="muted">
-      {#if app.items.length}
+      {#if current.length}
         {pending.length} por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}.
       {:else}
         Escribe lo que hace falta y elige el producto de Mercadona.
@@ -132,7 +135,7 @@
   {/if}
 </div>
 
-{#if app.items.length || budget}
+{#if current.length || budget}
   <aside class="ticket" aria-label="Total previsto">
     <div class="ticket-inner">
       <div class="ticket-sum">

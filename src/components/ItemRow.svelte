@@ -1,5 +1,5 @@
 <script>
-  import { Ellipsis, Check } from '@lucide/svelte'
+  import { ChevronRight, Check } from '@lucide/svelte'
   import { app, product, unitPrice, lineTotal, toggleItem } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
@@ -15,9 +15,11 @@
 </script>
 
 <li class="item" class:done={item.checked}>
-  <label class="tap">
-    <input type="checkbox" checked={item.checked} onchange={() => toggleItem(item)} />
+  <label class="check">
+    <input type="checkbox" checked={item.checked} onchange={() => toggleItem(item)} aria-label={`${item.name}: ${item.checked ? 'en el carro' : 'marcar como cogido'}`} />
     <span class="box" aria-hidden="true"><Check size={18} strokeWidth={3.5} /></span>
+  </label>
+  <button class="tap" onclick={onedit} aria-describedby={`hint-${item.id}`}>
     {#if p && imgUrl(p)}
       <img src={imgUrl(p, 96)} alt="" width="44" height="44" loading="lazy" />
     {/if}
@@ -30,9 +32,8 @@
       {#if item.note}<span class="note">{item.note}</span>{/if}
       {#if byOther}<span class="meta">Lo ha apuntado {byOther}</span>{/if}
     </span>
-  </label>
-  <button class="icon-btn" onclick={onedit} aria-label={`Editar ${item.name}`}>
-    <Ellipsis size={22} aria-hidden="true" />
+    <ChevronRight size={20} aria-hidden="true" class="chev" />
+    <span id={`hint-${item.id}`} class="visually-hidden">Abre la ficha: cantidad, nota, alternativas e ingredientes</span>
   </button>
 </li>
 
@@ -40,12 +41,20 @@
   .item {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding-right: 4px;
+    gap: 0;
     border-bottom: 1px solid var(--line);
   }
   .item:last-child {
     border-bottom: 0;
+  }
+  .check {
+    flex: none;
+    align-self: stretch;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    min-height: 64px;
+    cursor: pointer;
   }
   .tap {
     flex: 1;
@@ -53,9 +62,24 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 0 10px 14px;
+    padding: 10px 6px 10px 0;
     min-height: 64px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
+    border-radius: 0;
+  }
+  @media (hover: hover) {
+    .tap:hover {
+      background: var(--surface-2);
+    }
+  }
+  .tap :global(.chev) {
+    flex: none;
+    color: var(--ink-2);
   }
   input {
     position: absolute;

@@ -1,7 +1,7 @@
 <script>
   import { Search, Plus, Heart, ScanBarcode } from '@lucide/svelte'
   import Scanner from './Scanner.svelte'
-  import { app, searchCatalog, addProduct, addText } from '../lib/data.svelte.js'
+  import { app, searchCatalog, addProduct, addText, rememberAlias } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
@@ -24,6 +24,8 @@
   })
 
   async function pick(r) {
+    // Si no era el primero de la lista, se aprende: la próxima vez esta búsqueda pone primero este producto
+    if (results[0]?.p.id !== r.p.id) rememberAlias(parsed.q, r.p.id)
     await addProduct(r.p, parsed.qty)
     text = ''
     input?.focus()
@@ -107,7 +109,7 @@
           <span class="r-name">{r.p.n}</span>
           <span class="r-meta">{unitLabel(r.p)}</span>
           {#if r.reasons.length}
-            <span class="r-pref"><Heart size={14} aria-hidden="true" /> Vuestra preferencia</span>
+            <span class="r-pref"><Heart size={14} aria-hidden="true" /> {r.reasons[0] === 'Lo elegisteis antes' ? r.reasons[0] : 'Vuestra preferencia'}</span>
           {/if}
         </span>
         <span class="r-price num">{eur(r.p.p)}</span>

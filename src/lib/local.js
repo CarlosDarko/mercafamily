@@ -2,7 +2,7 @@
 import { uid } from './format.js'
 
 const KEY = 'mf:local:v1'
-const TABLES = ['households', 'items', 'trips', 'trip_items']
+const TABLES = ['households', 'lists', 'items', 'trips', 'trip_items']
 
 function read() {
   try {
@@ -15,11 +15,11 @@ function read() {
 export function createLocalBackend() {
   let d = read()
   if (!d) {
-    d = { households: [], items: [], trips: [], trip_items: [] }
+    d = { households: [], lists: [], items: [], trips: [], trip_items: [] }
   }
   for (const t of TABLES) d[t] ??= []
   if (!d.households.length) {
-    d.households.push({ id: uid(), name: 'Casa', invite_code: null, weekly_budget: null, preferences: [], created_at: new Date().toISOString() })
+    d.households.push({ id: uid(), name: 'Casa', invite_code: null, weekly_budget: null, preferences: [], aliases: {}, created_at: new Date().toISOString() })
   }
   const save = () => localStorage.setItem(KEY, JSON.stringify(d))
   save()
@@ -54,6 +54,7 @@ export function createLocalBackend() {
       const set = new Set([].concat(ids))
       d[t] = d[t].filter((x) => !set.has(x.id))
       if (t === 'trips') d.trip_items = d.trip_items.filter((x) => !set.has(x.trip_id))
+      if (t === 'lists') d.items = d.items.filter((x) => !set.has(x.list_id))
       save()
     },
     subscribe(cb) {

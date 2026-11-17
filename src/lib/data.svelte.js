@@ -1,9 +1,11 @@
 // Estado de la app y acciones. La interfaz no sabe si los datos están en el móvil o en Supabase.
 import { createLocalBackend } from './local.js'
 import { loadCatalog, search, parsePrefs } from './catalog.js'
-import { uid, isoDate, tokens } from './format.js'
+import { uid, isoDate, tokens, norm } from './format.js'
 
 const CFG_KEY = 'mf:supabase'
+const LIST_KEY = 'mf:list'
+const DEFAULT_LIST_NAME = 'Compra semanal'
 const ME_KEY = 'mf:me'
 
 export const app = $state({
@@ -12,6 +14,8 @@ export const app = $state({
   live: false,
   household: null,
   members: [],
+  lists: [],
+  listId: null,
   items: [],
   trips: [],
   tripItems: [],
@@ -177,14 +181,25 @@ function scheduleReload() {
 
 export async function reloadAll() {
   try {
-    const [household, items, trips, tripItems] = await Promise.all([
+    const [household, lists, items, trips, tripItems] = await Promise.all([
       be.household(),
+      be.select('lists'),
       be.select('items'),
       be.select('trips'),
       be.select('trip_items')
     ])
     household.preferences ??= []
+    household.aliases ??= {}
     app.household = household
+    // La lista principal tiene el mismo id que el hogar: si los dos móviles la crean a la vez, es la misma
+    if (!lists.some((l) => l.id === household.id)) {
+      const main = { id: household.id, name: DEFAULT_LIST_NAME, position: 0, created_at: new Date().toISOString() }
+      lists.push(main)
+      be.upsert('lists', main).catch(() => {})
+    }
+    app.lists = lists.sort((a, b) => a.position - b.position || (a.created_at < b.created_at ? -1 : 1))
+    const saved = localStorage.getItem(LIST_KEY)
+    if (!app.listId || !app.lists.some((l) => l.id === app.listId)) app.listId = app.lists.some((l) => l.id === saved) ? saved : household.id
     app.items = items
     app.trips = trips.sort((a, b) => (a.date < b.date ? 1 : -1))
     app.tripItems = tripItems
@@ -211,18 +226,82 @@ export function learnedCounts() {
 }
 
 export function searchCatalog(q, limit = 20) {
-  return search(app.catalog, q, { prefs: parsePrefs(app.household?.preferences), learned: learnedCounts(), limit })
+  return search(app.catalog, q, { prefs: parsePrefs(app.household?.preferences), learned: learnedCounts(), aliases: app.household?.aliases || {}, limit })
+}
+
+// Lo que la familia llama de una forma y resulta ser un producto concreto: 'dinosaurus' -> galletas X
+export async function rememberAlias(query, id) {
+  const key = norm(query)
+  if (!key || key.length < 2 || !app.household) return
+  const aliases = { ...(app.household.aliases || {}) }
+  if (aliases[key] === id) return
+  aliases[key] = id
+  const keys = Object.keys(aliases)
+  if (keys.length > 400) delete aliases[keys[0]]
+  await updateHousehold({ aliases })
+}
+
+// ---------- Listas ----------
+
+export const listOf = (item) => item.list_id || app.household?.id
+export const itemsOfList = (id = app.listId) => app.items.filter((i) => listOf(i) === id)
+
+export function setList(id) {
+  app.listId = id
+  localStorage.setItem(LIST_KEY, id)
+}
+
+export async function createList(name) {
+  const l = { id: uid(), name: name.trim().slice(0, 40), position: app.lists.length, created_at: new Date().toISOString() }
+  app.lists.push(l)
+  setList(l.id)
+  try {
+    await be.upsert('lists', l)
+  } catch (e) {
+    fail(e)
+  }
+  return l
+}
+
+export async function renameList(id, name) {
+  const l = app.lists.find((x) => x.id === id)
+  if (!l || !name.trim()) return
+  l.name = name.trim().slice(0, 40)
+  try {
+    await be.update('lists', id, { name: l.name })
+  } catch (e) {
+    fail(e)
+  }
+}
+
+export async function deleteList(id) {
+  if (id === app.household?.id) return
+  const ids = app.items.filter((i) => i.list_id === id).map((i) => i.id)
+  app.items = app.items.filter((i) => i.list_id !== id)
+  app.lists = app.lists.filter((l) => l.id !== id)
+  if (app.listId === id) setList(app.household.id)
+  try {
+    if (ids.length) await be.remove('items', ids)
+    await be.remove('lists', id)
+  } catch (e) {
+    fail(e)
+  }
+}
+
+export async function moveItem(id, listId) {
+  await updateItem(id, { list_id: listId === app.household?.id ? null : listId })
 }
 
 // ---------- Lista ----------
 
 function newItem(fields) {
   const now = new Date().toISOString()
-  return { id: uid(), qty: 1, checked: false, note: null, price: null, merc_id: null, category: null, added_by: app.me || null, created_at: now, updated_at: now, ...fields }
+  const list_id = app.listId && app.listId !== app.household?.id ? app.listId : null
+  return { id: uid(), qty: 1, checked: false, note: null, price: null, merc_id: null, category: null, list_id, added_by: app.me || null, created_at: now, updated_at: now, ...fields }
 }
 
 function sameOnList(merc_id, name) {
-  return app.items.find((i) => !i.checked && (merc_id ? i.merc_id === merc_id : !i.merc_id && i.name.toLowerCase() === name.toLowerCase()))
+  return itemsOfList().find((i) => !i.checked && (merc_id ? i.merc_id === merc_id : !i.merc_id && i.name.toLowerCase() === name.toLowerCase()))
 }
 
 export async function addProduct(p, qty = 1, note = null) {
@@ -255,7 +334,8 @@ export async function addText(text) {
   const strong = best && tokens(t).length > 0 && (best.reasons.length || best.score > 3)
   if (strong) {
     const item = await addProduct(best.p, qty)
-    if (best.reasons.length) toast(`Elegido por tu preferencia: ${best.reasons[0]}`)
+    if (best.reasons[0] === 'Lo elegisteis antes') toast(`Puesto el de siempre: ${best.p.n}`)
+    else if (best.reasons.length) toast(`Elegido por tu preferencia: ${best.reasons[0]}`)
     return item
   }
   const name = t.charAt(0).toUpperCase() + t.slice(1)
@@ -303,8 +383,9 @@ async function restoreItem(it) {
 }
 
 export async function closeTrip({ store, date, total }) {
-  const bought = app.items.filter((i) => i.checked)
+  const bought = itemsOfList().filter((i) => i.checked)
   if (!bought.length) return
+  const boughtIds = new Set(bought.map((i) => i.id))
   const est = bought.reduce((s, i) => s + (lineTotal(i) || 0), 0)
   const trip = {
     id: uid(),
@@ -329,7 +410,7 @@ export async function closeTrip({ store, date, total }) {
   }))
   app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
   app.tripItems = [...app.tripItems, ...lines]
-  app.items = app.items.filter((i) => !i.checked)
+  app.items = app.items.filter((i) => !boughtIds.has(i.id))
   try {
     await be.upsert('trips', trip)
     await be.upsert('trip_items', lines)
@@ -372,7 +453,7 @@ export async function updateHousehold(patch) {
 // ---------- Copias de seguridad ----------
 
 export function exportBackup() {
-  const data = { app: 'mercafamily', version: 1, exported_at: new Date().toISOString(), household: app.household, items: app.items, trips: app.trips, trip_items: app.tripItems }
+  const data = { app: 'mercafamily', version: 1, exported_at: new Date().toISOString(), household: app.household, lists: app.lists, items: app.items, trips: app.trips, trip_items: app.tripItems }
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
@@ -392,6 +473,7 @@ export async function importBackup(file) {
     const { weekly_budget, preferences } = data.household
     await updateHousehold({ weekly_budget: weekly_budget ?? null, preferences: preferences ?? [] })
   }
+  if (data.lists?.length) await be.upsert('lists', data.lists.filter((l) => l.id !== data.household?.id).map(strip))
   await be.upsert('trips', (data.trips || []).map(strip))
   await be.upsert('trip_items', (data.trip_items || []).map(strip))
   await be.upsert('items', (data.items || []).map(strip))

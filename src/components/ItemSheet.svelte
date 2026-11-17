@@ -1,6 +1,6 @@
 <script>
   import { X, Minus, Plus, Trash2, Replace } from '@lucide/svelte'
-  import { app, product, unitPrice, updateItem, removeItem, searchCatalog } from '../lib/data.svelte.js'
+  import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
   import { eur, parseNum } from '../lib/format.js'
@@ -49,6 +49,9 @@
     updateItem(id, { price: v })
   }
   function useProduct(np) {
+    // Si era texto libre ('dinosaurus'), la próxima vez esa palabra lleva a este producto
+    if (!item.merc_id) rememberAlias(item.name, np.id)
+    else if (changing && q.trim()) rememberAlias(q, np.id)
     updateItem(id, { merc_id: np.id, name: np.n, category: np.c, price: np.p })
     changing = false
     q = ''
@@ -168,6 +171,15 @@
 
     {#if p}
       <Alternatives {p} grade={nutri?.grade ?? null} onuse={useProduct} />
+    {/if}
+
+    {#if app.lists.length > 1}
+      <label class="field">
+        <span>Lista</span>
+        <select class="input" value={listOf(item)} onchange={(e) => (moveItem(id, e.currentTarget.value), toast(`Movido a ${app.lists.find((l) => l.id === e.currentTarget.value)?.name}`), onclose())}>
+          {#each app.lists as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
+        </select>
+      </label>
     {/if}
 
     <button class="btn btn-danger" onclick={() => removeItem(id)}>
