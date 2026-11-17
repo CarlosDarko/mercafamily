@@ -8,6 +8,7 @@ export const DEFAULT_PUSH_PREFS = {
   summary: true, // resumen del domingo
   report: true, // informe del mes, el día 1
   summaryTime: '19:00',
+  today: { on: true, time: '09:30' }, // menú del día y qué descongelar
   work: { on: false, time: '18:30', days: [1, 2, 3, 4, 5], list_id: null }
 }
 

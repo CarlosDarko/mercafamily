@@ -8,6 +8,7 @@ Los avisos llegan al móvil aunque la app esté cerrada. Cada persona los activa
 | Alguien termina la compra | Al guardarla, con el total y lo que lleváis esta semana. |
 | Os pasáis del presupuesto | Una vez por semana, al pasarlo. |
 | Alguien va al súper | Al pulsar 'Voy yo al súper', para apuntar lo último. |
+| Menú del día | Cada día a la hora elegida (9:30 si no se cambia): qué coméis y cenáis hoy y qué sacar del congelador. Si no hay menú, invita a elegir entre dos propuestas. Abre la lista con 'Hoy coméis'. |
 | Resumen del domingo | Domingo a las 19:00: gasto de la semana y lo que queda en la lista. |
 | Informe del mes | Día 1 a las 9:00: gasto del mes anterior. Al tocarlo se abre el informe. |
 | Al salir del trabajo | A la hora y los días elegidos, si la lista elegida tiene algo. |
@@ -21,7 +22,7 @@ En iPhone solo funcionan con la app instalada en la pantalla de inicio (Safari, 
 - `supabase/functions/push/index.ts` es la función de Supabase que envía los avisos (web push con VAPID).
 - En la base de datos (`supabase/schema.sql`):
   - Los triggers `items_push` y `trips_push` llaman a la función con pg_net.
-  - La tarea `mercafamily-push-tick` de pg_cron la llama cada 15 minutos (aviso del trabajo y resumen del domingo).
+  - La tarea `mercafamily-push-tick` de pg_cron la llama cada 15 minutos (menú del día, aviso del trabajo, informe del mes y resumen del domingo).
   - `push_log` evita avisos repetidos.
 - La dirección de la función se guarda en la tabla `app_config` (clave `push_url`).
 

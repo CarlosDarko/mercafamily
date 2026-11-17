@@ -24,7 +24,7 @@
     if (Notification.permission === 'denied') return (state = 'denegado')
     const { sub, row } = await pushStatus()
     if (sub && row) {
-      prefs = { ...structuredClone(DEFAULT_PUSH_PREFS), ...row.prefs, work: { ...DEFAULT_PUSH_PREFS.work, ...(row.prefs?.work || {}) } }
+      prefs = { ...structuredClone(DEFAULT_PUSH_PREFS), ...row.prefs, work: { ...DEFAULT_PUSH_PREFS.work, ...(row.prefs?.work || {}) }, today: { ...DEFAULT_PUSH_PREFS.today, ...(row.prefs?.today || {}) } }
       state = 'activo'
     } else state = 'inactivo'
   }
@@ -77,6 +77,11 @@
       <p class="muted">Recibe en este móvil lo que apuntan los demás, el resumen del domingo y un recordatorio al salir del trabajo.</p>
       <button class="btn btn-primary" onclick={on} disabled={busy}><Bell size={18} aria-hidden="true" /> Activar avisos en este móvil</button>
     {:else if state === 'activo'}
+      <div class="today-row">
+        <label class="sw"><input type="checkbox" bind:checked={prefs.today.on} onchange={changed} /> Menú del día y qué descongelar, a las</label>
+        <label class="visually-hidden" for="push-today">Hora del menú del día</label>
+        <input id="push-today" class="input time" type="time" bind:value={prefs.today.time} onchange={changed} disabled={!prefs.today.on} />
+      </div>
       <label class="sw"><input type="checkbox" bind:checked={prefs.added} onchange={changed} /> Cuando alguien apunta algo o lo pide un peque</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.going} onchange={changed} /> Cuando alguien va al súper</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.trips} onchange={changed} /> Cuando alguien termina la compra</label>
@@ -173,5 +178,15 @@
     background: var(--primary-bg);
     border-color: var(--primary-bg);
     color: var(--primary-ink);
+  }
+  .today-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+  }
+  .today-row .time {
+    width: auto;
+    min-width: 7.5rem;
   }
 </style>

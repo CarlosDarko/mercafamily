@@ -2,7 +2,7 @@
 // GET  -> { publicKey } para que la app se suscriba
 // POST { type: 'item', id }  -> alguien ha apuntado algo (lo llama un trigger de la base de datos)
 // POST { type: 'trip', id }  -> alguien ha terminado una compra (trigger)
-// POST { type: 'tick' }      -> cada 15 minutos (pg_cron): aviso al salir del trabajo y resumen del domingo
+// POST { type: 'tick' }      -> cada 15 minutos (pg_cron): menú del día, aviso al salir del trabajo, informe del mes y resumen del domingo
 // POST { type: 'test' }      -> aviso de prueba para las suscripciones del usuario que llama
 // Secretos (en Supabase, nunca en el repositorio): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 import webpush from 'npm:web-push@3.6.7'
@@ -138,6 +138,27 @@ async function tick() {
       const total = (tr || []).reduce((acc, t: any) => acc + Number(t.total || 0), 0)
       const name = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(prev)
       if (tr?.length && (await send(s, { title: `Informe de ${name}`, body: `${eur(total)} en ${tr.length} compras. Toca para verlo.`, tag: `report-${s.id}`, url: `${APP}#gastos-informe` }))) sent++
+    }
+    // Menú del día: qué coméis y cenáis hoy y qué sacar del congelador
+    const td = p.today || { on: true, time: '09:30' }
+    const tdAt = toMin(td.time || '09:30')
+    if (td.on !== false && now.minutes >= tdAt && now.minutes < tdAt + 15 && (await once('today', `${s.id}-${now.date}`))) {
+      const { data: ms } = await db.from('meals').select('slot, name, recipe_id').eq('household_id', s.household_id).eq('day', now.date)
+      const comida = ms?.find((m: any) => m.slot === 'comida')?.name
+      const cena = ms?.find((m: any) => m.slot === 'cena')?.name
+      const ids = (ms || []).map((m: any) => m.recipe_id).filter(Boolean)
+      const { data: rs } = ids.length ? await db.from('recipes').select('ingredients').in('id', ids) : { data: [] }
+      const frozen = [...new Set((rs || []).flatMap((r: any) => (r.ingredients || []).map((i: any) => String(i.name || ''))).filter((n: string) => /congelad/i.test(n)).map((n: string) => n.replace(/ Hacendado| ultracongelad[oa]s?| congelad[oa]s?/gi, '').trim()))]
+      let title = 'Menú de hoy'
+      let body = ''
+      if (comida && cena) body = `Coméis ${comida} y cenáis ${cena}.`
+      else if (comida || cena) body = `${comida ? `Coméis ${comida}` : `Cenáis ${cena}`}. ${comida ? 'La cena' : 'La comida'} está sin decidir: toca para elegir en un toque.`
+      else {
+        title = '¿Qué coméis hoy?'
+        body = 'Aún no hay menú para hoy. Toca y elegid entre dos propuestas con lo que hay en casa.'
+      }
+      if (frozen.length) body += ` Sacad del congelador: ${frozen.join(', ')}.`
+      if (await send(s, { title, body, tag: `today-${s.id}`, url: `${APP}#lista` })) sent++
     }
     // Resumen del domingo
     const sumAt = toMin(p.summaryTime || '19:00')
