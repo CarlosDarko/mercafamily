@@ -1,10 +1,13 @@
 <script>
-  import { Search, Plus, Heart } from '@lucide/svelte'
+  import { Search, Plus, Heart, ScanBarcode } from '@lucide/svelte'
+  import Scanner from './Scanner.svelte'
   import { app, searchCatalog, addProduct, addText } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
   let text = $state('')
+  let scanning = $state(false)
+  const canScan = typeof window !== 'undefined' && 'BarcodeDetector' in window && !!navigator.mediaDevices?.getUserMedia
   let active = $state(-1)
   let input
 
@@ -73,6 +76,11 @@
       aria-activedescendant={active >= 0 ? `opt-${results[active]?.p.id}` : undefined}
       aria-describedby="add-help"
     />
+    {#if canScan}
+      <button class="btn add-btn scan" type="button" onclick={() => (scanning = true)} aria-label="Escanear código de barras">
+        <ScanBarcode size={22} aria-hidden="true" />
+      </button>
+    {/if}
     <button class="btn btn-primary add-btn" type="submit" disabled={!text.trim()}>
       <Plus size={20} aria-hidden="true" />
       <span>Añadir</span>
@@ -110,6 +118,10 @@
     <p class="noresults muted" role="status">No está en el catálogo de Mercadona. Pulsa Añadir y se apunta tal cual, sin precio.</p>
   {/if}
 </form>
+
+{#if scanning}
+  <Scanner onclose={() => (scanning = false)} />
+{/if}
 
 <style>
   .add {
@@ -157,6 +169,12 @@
       width: 52px;
       padding: 0;
     }
+  }
+  .scan {
+    width: 52px;
+    padding: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
   }
   .results {
     list-style: none;

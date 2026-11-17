@@ -46,3 +46,15 @@ export async function nutrition(ean) {
     return null
   }
 }
+
+// Código de barras -> id de producto de Mercadona
+let byEan = null
+export async function productByEan(ean) {
+  await productDetails('')
+  if (!byEan) {
+    byEan = new Map()
+    for (const [id, d] of Object.entries(details || {})) if (d?.e) byEan.set(String(d.e), id)
+  }
+  const code = String(ean).replace(/^0+(?=\d{13})/, '')
+  return byEan.get(code) || byEan.get(code.padStart(13, '0')) || null
+}

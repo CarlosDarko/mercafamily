@@ -51,6 +51,6 @@ npm run build
 
 1. Base: lista compartida, categorías, carro, terminar compra. Hecho.
 2. Costes e histórico: precios automáticos, total previsto, presupuesto, gastos con gráficas. Hecho.
-3. Precios automáticos: catálogo semanal de Mercadona, historial de precios, fichas y Open Food Facts. Hecho (falta escáner de código de barras).
+3. Precios automáticos: catálogo semanal de Mercadona, historial de precios, fichas y Open Food Facts. Hecho, con escáner de código de barras en Android (BarcodeDetector, en iPhone aún no existe).
 4. Sugerencias y avisos: 'toca comprar' por frecuencia, subidas de precio, alternativas más baratas y más sanas. Hecho dentro de la app. Faltan notificaciones push.
 5. WhatsApp y voz: pendiente.

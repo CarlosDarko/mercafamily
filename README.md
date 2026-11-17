@@ -15,6 +15,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 ## Qué hace
 
 - **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes. Al pulsar Añadir elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
+- **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.
 - **Lista por pasillos** con las categorías de Mercadona y un carro para lo que ya habéis cogido.
