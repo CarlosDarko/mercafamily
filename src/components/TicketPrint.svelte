@@ -3,6 +3,7 @@
   import { app } from '../lib/data.svelte.js'
   import { weekTotal } from '../lib/insights.js'
   import { eur, fmtLong } from '../lib/format.js'
+  import TripElsewhere from './TripElsewhere.svelte'
 
   let dlg
   const t = $derived(app.lastTrip?.trip)
@@ -28,6 +29,7 @@
       {#if lines.length > 12}<li class="more"><span>y {lines.length - 12} más</span><span></span></li>{/if}
     </ul>
     <p class="total"><span>Total{t.total_is_estimate ? ' previsto' : ''}</span><span class="num">{eur(Number(t.total))}</span></p>
+    <TripElsewhere {lines} />
     {#if budget != null}
       <p class="week">Esta semana lleváis {eur(week)} de {eur(budget)}.</p>
       {#if under}<p class="stamp" aria-label="Por debajo del presupuesto">Por debajo del presupuesto</p>{/if}

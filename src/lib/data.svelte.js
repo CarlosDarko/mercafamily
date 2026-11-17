@@ -962,3 +962,28 @@ export async function compareProducts(products) {
   }
   return out
 }
+
+// Cuánto habría costado una compra en Dia y en Consum (solo productos comparables por kilo o litro)
+export async function tripElsewhere(lines) {
+  const prods = []
+  for (const l of lines) {
+    const p = l.merc_id ? app.catalog?.byId.get(l.merc_id) : null
+    if (p && p.r && (p.rf === 'L' || p.rf === 'kg')) prods.push({ p, l })
+  }
+  if (!prods.length || !compareUrl()) return null
+  const res = await compareProducts(prods.map((x) => x.p))
+  const out = { total: lines.length, compared: 0, merc: 0, dia: 0, consum: 0, diaN: 0, consumN: 0 }
+  for (const { p, l } of prods) {
+    const r = res[p.id] || {}
+    const ok = (x) => x && x.unit && x.rf === p.rf
+    if (!ok(r.dia) && !ok(r.consum)) continue
+    const paid = (l.price ?? p.p) * (l.qty || 1)
+    // Solo cuentan los productos que existen en las tres tiendas, para comparar lo mismo
+    if (!(ok(r.dia) && ok(r.consum))) continue
+    out.compared++
+    out.merc += paid
+    out.dia += paid * (r.dia.unit / p.r)
+    out.consum += paid * (r.consum.unit / p.r)
+  }
+  return out.compared ? out : null
+}

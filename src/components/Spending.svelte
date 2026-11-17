@@ -38,6 +38,7 @@
   })
 
   let editing = $state(null)
+  let opened = $state(new Set())
   let editValue = $state('')
   function startEdit(t) {
     editing = t.id
@@ -68,6 +69,7 @@
   import BasketHealth from './BasketHealth.svelte'
   import MonthBreakdown from './MonthBreakdown.svelte'
   import CompareStores from './CompareStores.svelte'
+  import TripElsewhere from './TripElsewhere.svelte'
 </script>
 
 <div class="page">
@@ -155,7 +157,7 @@
       <ul class="trips" role="list">
         {#each app.trips as t (t.id)}
           <li class="panel">
-            <details>
+            <details ontoggle={(e) => e.currentTarget.open && (opened = new Set([...opened, t.id]))}>
               <summary>
                 <ReceiptText size={20} aria-hidden="true" />
                 <span class="t-main"><strong>{fmtLong(t.date)}</strong><small>{t.store} · {t.items_count} {t.items_count === 1 ? 'producto' : 'productos'}{t.created_by ? ` · ${t.created_by}` : ''}</small></span>
@@ -167,6 +169,7 @@
                     <li><span>{l.qty > 1 ? `${l.qty} × ` : ''}{l.name}</span><span class="num">{l.price != null ? eur(l.price * (l.qty || 1)) : '—'}</span></li>
                   {/each}
                 </ul>
+                {#if opened.has(t.id)}<TripElsewhere lines={linesOf(t)} />{/if}
                 {#if editing === t.id}
                   <form class="row" onsubmit={(e) => (e.preventDefault(), saveEdit(t))}>
                     <label class="visually-hidden" for={`tot-${t.id}`}>Total del ticket</label>

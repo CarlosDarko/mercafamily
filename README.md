@@ -51,7 +51,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Avisos en el móvil** ([docs/avisos.md](docs/avisos.md)): cuando alguien apunta algo o termina la compra, si os pasáis del presupuesto, el resumen del domingo y un aviso al salir del trabajo si la lista tiene algo. Cada persona elige los suyos.
 - **Formatos**: si otro tamaño del mismo producto sale más barato por kilo o litro ('en garrafa sale un 7 % más barato'), lo dice en la lista y en la ficha, con un botón para cambiar.
 - **Voy yo al súper**: un botón que avisa a los demás (en la app y al móvil) para que apunten lo último antes de que llegues.
-- **Comparar con Dia y Consum**: en Gastos, lo que más compráis por kilo o litro frente a Dia y Consum, y en cada ficha 'En otras tiendas'. Carrefour, Eroski y Caprabo bloquean las consultas automáticas y Alcampo no tiene buscador público, así que no se comparan.
+- **Comparar con Dia y Consum**: en Gastos, lo que más compráis por kilo o litro frente a Dia y Consum, en cada ficha 'En otras tiendas', y al terminar cada compra (y en su detalle en Gastos) lo que os habría costado en Dia y en Consum, contando solo los productos comparables. Carrefour, Eroski y Caprabo bloquean las consultas automáticas y Alcampo no tiene buscador público, así que no se comparan.
 - **Panel de estado** en Ajustes: conexión, cambios pendientes, catálogo, actualización automática, avisos, versión y últimos errores.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
