@@ -69,8 +69,9 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: |
+          # Solo la cabecera apikey: vale para la clave publishable nueva y para la anon antigua
           curl -fsS -X POST "$SUPABASE_URL/rest/v1/rpc/heartbeat" \
-            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
             -H 'Content-Type: application/json' -d '{}'
 
       - name: Construir la app

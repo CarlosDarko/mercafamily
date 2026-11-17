@@ -61,7 +61,7 @@
       toast('La dirección tiene que ser como https://xxxx.supabase.co')
       return
     }
-    if (sbKey.trim().length < 30) {
+    if (sbKey.trim().length < 30 && !sbKey.trim().startsWith('sb_publishable_')) {
       toast('La clave pública parece incompleta')
       return
     }
@@ -164,7 +164,7 @@
               <input class="input" bind:value={sbUrl} type="url" placeholder="https://xxxx.supabase.co" autocomplete="off" />
             </label>
             <label class="field">
-              <span>Clave pública (anon)</span>
+              <span>Clave pública (publishable o anon)</span>
               <input class="input" bind:value={sbKey} autocomplete="off" />
             </label>
             <p class="hint">Antes de conectar, exporta una copia abajo: después podrás importarla para no perder lo que ya tienes.</p>
