@@ -79,6 +79,14 @@
         ]
       }
     </script>
+    <script>
+      // Tema y tamaño de letra elegidos en este móvil, antes de pintar nada
+      try {
+        const p = JSON.parse(localStorage.getItem('mf:prefs') || '{}')
+        if (p.theme && p.theme !== 'auto') document.documentElement.setAttribute('data-theme', p.theme)
+        if (p.scale) document.documentElement.style.setProperty('--scale', String(p.scale))
+      } catch (e) {}
+    </script>
     <style>
       /* Pantalla inicial antes de que cargue la app */
       body { margin: 0; background: #e8efe9; color: #1d2620; font-family: system-ui, sans-serif; }

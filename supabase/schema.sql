@@ -77,6 +77,13 @@ create table if not exists public.trip_items (
 -- Columnas añadidas después de la primera versión (no hacen nada si ya existen)
 alter table public.households add column if not exists aliases jsonb not null default '{}'::jsonb;
 alter table public.items add column if not exists list_id uuid references public.lists on delete cascade;
+-- Tanda 1: en el súper
+alter table public.households add column if not exists settings jsonb not null default '{}'::jsonb;
+alter table public.items add column if not exists taken_by text;
+alter table public.items add column if not exists missing boolean not null default false;
+alter table public.lists add column if not exists icon text;
+alter table public.lists add column if not exists color text;
+alter table public.members add column if not exists color text;
 
 create index if not exists items_household_idx on public.items (household_id);
 create index if not exists lists_household_idx on public.lists (household_id);

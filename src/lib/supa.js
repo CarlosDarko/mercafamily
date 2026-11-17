@@ -70,7 +70,11 @@ export function createSupabaseBackend({ url, key }) {
       hid = h.id
     },
     async members() {
-      return ok(await sb.from('members').select('user_id, display_name').eq('household_id', hid))
+      return ok(await sb.from('members').select('user_id, display_name, color').eq('household_id', hid))
+    },
+    async updateMe(patch) {
+      const { data } = await sb.auth.getUser()
+      ok(await sb.from('members').update(patch).eq('household_id', hid).eq('user_id', data.user.id))
     },
     async household() {
       return ok(await sb.from('households').select('*').eq('id', hid).single())

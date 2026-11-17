@@ -1,8 +1,9 @@
-/* MercaFamily: mundo de mercado y ticket. Tokens en :root, tema oscuro por preferencia del sistema. */
+/* MercaFamily: mundo de mercado y ticket. Colores en :root. Tema según el móvil o forzado en Ajustes (data-theme). */
 @import '@fontsource-variable/bricolage-grotesque';
 
 :root {
   color-scheme: light dark;
+  font-size: calc(100% * var(--scale, 1));
   --font: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', ui-sans-serif, sans-serif;
 
   --paper: #e8efe9;
@@ -22,6 +23,10 @@
   --tomato-soft: #f8e0d9;
   --focus: #1a5fd0;
   --shadow: 0 1px 2px rgb(29 38 32 / 0.06), 0 6px 18px -6px rgb(29 38 32 / 0.18);
+  --accent-text: #1f4d3a;
+  --primary-bg: #1f4d3a;
+  --primary-ink: #f6f2e9;
+  --primary-hover: #2d6a50;
 
   --r-sm: 8px;
   --r: 14px;
@@ -31,7 +36,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --paper: #121713;
     --surface: #1a211c;
     --surface-2: #232c26;
@@ -49,7 +54,40 @@
     --tomato-soft: #3d1f18;
     --focus: #8ab4ff;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 22px -8px rgb(0 0 0 / 0.6);
+    --accent-text: #7cc39b;
+    --primary-bg: #7cc39b;
+    --primary-ink: #0f1712;
+    --primary-hover: #95d4b0;
   }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #121713;
+  --surface: #1a211c;
+  --surface-2: #232c26;
+  --ink: #ece7db;
+  --ink-2: #b4bdb5;
+  --line: #2f3a33;
+  --market: #163a2b;
+  --market-ink: #ece7db;
+  --market-2: #7cc39b;
+  --market-soft: #1f3a2d;
+  --lemon: #f3cd4b;
+  --lemon-soft: #3a3415;
+  --lemon-ink: #f7e39a;
+  --tomato: #ff8a70;
+  --tomato-soft: #3d1f18;
+  --focus: #8ab4ff;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 22px -8px rgb(0 0 0 / 0.6);
+  --accent-text: #7cc39b;
+  --primary-bg: #7cc39b;
+  --primary-ink: #0f1712;
+  --primary-hover: #95d4b0;
 }
 
 *,
@@ -112,13 +150,8 @@ p {
 }
 
 a {
-  color: var(--market-2);
+  color: var(--accent-text);
   text-underline-offset: 0.2em;
-}
-@media (prefers-color-scheme: light) {
-  a {
-    color: var(--market);
-  }
 }
 
 .num {
@@ -191,22 +224,15 @@ a {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--market);
-  color: var(--market-ink);
+  background: var(--primary-bg);
+  color: var(--primary-ink);
 }
 @media (hover: hover) {
   .btn:hover:not(:disabled) {
     background: var(--line);
   }
   .btn-primary:hover:not(:disabled) {
-    background: var(--market-2);
-    color: #fff;
-  }
-}
-@media (prefers-color-scheme: dark) {
-  .btn-primary {
-    background: var(--market-2);
-    color: #0f1712;
+    background: var(--primary-hover);
   }
 }
 .btn-ghost {

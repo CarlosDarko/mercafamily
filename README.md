@@ -9,12 +9,21 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/lista.png' width='190' alt='Lista de la compra agrupada por pasillos con el total previsto abajo'>
   <img src='docs/capturas/ficha.png' width='190' alt='Ficha de un producto con cantidad, Nutri-Score y valores nutricionales'>
   <img src='docs/capturas/gastos.png' width='190' alt='Gastos con el resumen del mes y la gráfica de las últimas 12 semanas'>
-  <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro'>
+  <img src='docs/capturas/modo-tienda.png' width='190' alt='Modo tienda con productos grandes, botón No había y el total del carro'>
+  <img src='docs/capturas/listas.png' width='190' alt='Varias listas con icono y color, y favoritos con foto'>
+  <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
 ## Qué hace
 
 - **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes. Al pulsar Añadir elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
+- **Varias listas compartidas** ('Compra semanal', 'Al volver del trabajo', 'Cumpleaños'), cada una con icono, color, sus pendientes, su total y su carro. Lo que apunta uno aparece al momento en el móvil de los demás.
+- **Modo tienda**: pantalla que no se apaga, letra grande, productos en el orden de los pasillos de vuestro Mercadona (se aprende del orden en que vais marcando), 'No había' con un toque y barra de progreso.
+- **En directo entre los dos**: 'Laura ha cogido la leche', 'Carlos ha apuntado pan', con el color de cada persona.
+- **No había**: lo que falta se queda en la lista para la próxima vez y, si se repite, se marca como 'suele faltar'.
+- **Favoritos** con foto para añadir con un toque (la estrella de la ficha).
+- **Ficha al tocar el producto** y búsqueda que aprende vuestras palabras ('dinosaurus' → las galletas que elegisteis).
+- **Tema claro, oscuro o el del móvil y tres tamaños de letra**, en Ajustes, Pantalla.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.

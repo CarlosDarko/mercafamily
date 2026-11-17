@@ -11,6 +11,8 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 - Nada de claves, tokens ni datos personales en el repositorio (ni nombres de la familia, ni emails, ni dirección o código postal). La configuración va en variables de GitHub Actions o en la propia app.
 - No tocar el repositorio `mr-press`: es otro proyecto (se puede leer para consultar sus referencias).
 - Todo lo más automático posible: la familia no debería tener que rellenar precios ni datos a mano.
+- Con cada cambio, actualizar también el repositorio y su información: commit y push, README, este `CLAUDE.md`, `docs/` y las capturas de `docs/capturas/` cuando cambie lo que se ve.
+- Los cambios de base de datos van siempre en `supabase/schema.sql` (que se puede ejecutar más de una vez) y se aplican al proyecto con la API de gestión de Supabase (token en el formulario seguro de la sesión, nunca en el repositorio).
 
 ## Decisiones tomadas
 
@@ -26,6 +28,9 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Preferencias | Frases libres por hogar ('leche semidesnatada sin lactosa', 'evitar aceite de palma') que ordenan la búsqueda y deciden el producto al pulsar Añadir. |
 | Avisos | De momento solo dentro de la app. WhatsApp (OpenWA y Whisper) en una fase posterior. |
 | Diseño | Skill `disenador-web` con Impeccable, modo Operate. Mundo de mercado y ticket: verde mercado, suelo verde hoja pálido con tarjetas blancas (Impeccable marcó el crema como fondo por reflejo), limón para 'toca comprar', tomate solo para alertas. Bricolage Grotesque autoalojada e iconos Lucide. |
+| Listas | Tabla `lists`. La principal tiene el mismo id que el hogar para que no se duplique si dos móviles la crean a la vez. `items.list_id` nulo significa la principal. |
+| Ajustes compartidos | `households.settings` (jsonb): favoritos, orden de pasillos aprendido (`aisle`), lo que suele faltar (`missing`). `households.aliases`: búsquedas aprendidas. Tema y tamaño de letra son de cada móvil (localStorage). |
+| Tema | Colores por variables en `:root`, oscuro por preferencia del móvil o forzado con `data-theme`. Los componentes no usan `prefers-color-scheme`, solo variables (`--accent-text`, `--primary-bg`…). |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura

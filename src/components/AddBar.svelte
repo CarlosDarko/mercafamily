@@ -229,12 +229,7 @@
     gap: 4px;
     font-size: 0.85rem;
     font-weight: 650;
-    color: var(--market-2);
-  }
-  @media (prefers-color-scheme: light) {
-    .r-pref {
-      color: var(--market);
-    }
+    color: var(--accent-text);
   }
   .r-price {
     font-weight: 700;

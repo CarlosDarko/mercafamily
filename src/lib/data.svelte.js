@@ -21,6 +21,8 @@ export const app = $state({
   tripItems: [],
   catalog: null,
   me: '',
+  myColor: null,
+  prefs: { theme: 'auto', scale: 1 },
   email: '',
   toast: null,
   error: ''
@@ -62,6 +64,8 @@ function fail(e) {
 
 export async function boot() {
   app.me = localStorage.getItem(ME_KEY) || ''
+  app.myColor = localStorage.getItem('mf:color') || null
+  loadPrefs()
   loadCatalog()
     .then((c) => (app.catalog = c))
     .catch(() => toast('No se ha podido cargar el catálogo de Mercadona'))
@@ -169,6 +173,50 @@ export async function joinHousehold(code, displayName) {
   await enterHousehold()
 }
 
+// ---------- Ajustes de este dispositivo (tema y tamaño de letra) ----------
+
+const PREFS_KEY = 'mf:prefs'
+export function loadPrefs() {
+  try {
+    Object.assign(app.prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {})
+  } catch {}
+  applyPrefs()
+}
+export function setPrefs(patch) {
+  Object.assign(app.prefs, patch)
+  localStorage.setItem(PREFS_KEY, JSON.stringify(app.prefs))
+  applyPrefs()
+}
+function applyPrefs() {
+  const root = document.documentElement
+  if (app.prefs.theme === 'auto') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', app.prefs.theme)
+  root.style.setProperty('--scale', String(app.prefs.scale || 1))
+}
+
+// ---------- Colores de cada persona ----------
+
+export const PERSON_COLORS = ['#2d6a50', '#b5476b', '#2f62a8', '#a1561c', '#6d4bb0', '#1f7a80']
+export function colorOf(name) {
+  if (!name) return 'var(--ink-2)'
+  if (name === app.me && app.myColor) return app.myColor
+  const m = app.members.find((x) => x.display_name === name)
+  if (m?.color) return m.color
+  let h = 0
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return PERSON_COLORS[h % PERSON_COLORS.length]
+}
+export async function setMyColor(color) {
+  app.myColor = color
+  localStorage.setItem('mf:color', color)
+  try {
+    await be.updateMe?.({ color })
+    if (be.members) app.members = await be.members()
+  } catch (e) {
+    fail(e)
+  }
+}
+
 export function setMe(name) {
   app.me = name.trim()
   localStorage.setItem(ME_KEY, app.me)
@@ -190,6 +238,7 @@ export async function reloadAll() {
     ])
     household.preferences ??= []
     household.aliases ??= {}
+    household.settings ??= {}
     app.household = household
     // La lista principal tiene el mismo id que el hogar: si los dos móviles la crean a la vez, es la misma
     if (!lists.some((l) => l.id === household.id)) {
@@ -200,6 +249,7 @@ export async function reloadAll() {
     app.lists = lists.sort((a, b) => a.position - b.position || (a.created_at < b.created_at ? -1 : 1))
     const saved = localStorage.getItem(LIST_KEY)
     if (!app.listId || !app.lists.some((l) => l.id === app.listId)) app.listId = app.lists.some((l) => l.id === saved) ? saved : household.id
+    notifyOthers(items)
     app.items = items
     app.trips = trips.sort((a, b) => (a.date < b.date ? 1 : -1))
     app.tripItems = tripItems
@@ -251,8 +301,8 @@ export function setList(id) {
   localStorage.setItem(LIST_KEY, id)
 }
 
-export async function createList(name) {
-  const l = { id: uid(), name: name.trim().slice(0, 40), position: app.lists.length, created_at: new Date().toISOString() }
+export async function createList(name, extra = {}) {
+  const l = { id: uid(), name: name.trim().slice(0, 40), position: app.lists.length, created_at: new Date().toISOString(), icon: extra.icon || null, color: extra.color || null }
   app.lists.push(l)
   setList(l.id)
   try {
@@ -263,12 +313,13 @@ export async function createList(name) {
   return l
 }
 
-export async function renameList(id, name) {
+export async function renameList(id, name, extra = {}) {
   const l = app.lists.find((x) => x.id === id)
   if (!l || !name.trim()) return
-  l.name = name.trim().slice(0, 40)
+  const patch = { name: name.trim().slice(0, 40), ...extra }
+  Object.assign(l, patch)
   try {
-    await be.update('lists', id, { name: l.name })
+    await be.update('lists', id, patch)
   } catch (e) {
     fail(e)
   }
@@ -360,7 +411,85 @@ export async function updateItem(id, patch) {
   }
 }
 
-export const toggleItem = (it) => updateItem(it.id, { checked: !it.checked })
+// Lo que hacen los demás, en directo: 'Laura ha cogido la leche'
+let seenOnce = false
+function notifyOthers(next) {
+  if (!seenOnce || app.kind !== 'supabase') {
+    seenOnce = true
+    return
+  }
+  const prev = new Map(app.items.map((i) => [i.id, i]))
+  const msgs = []
+  for (const it of next) {
+    const before = prev.get(it.id)
+    if (!before && it.added_by && it.added_by !== app.me) msgs.push(`${it.added_by} ha apuntado ${it.name}`)
+    else if (before && !before.checked && it.checked && it.taken_by && it.taken_by !== app.me) msgs.push(`${it.taken_by} ha cogido ${it.name}`)
+    else if (before && !before.missing && it.missing && it.taken_by !== app.me) msgs.push(`No había ${it.name}`)
+  }
+  if (msgs.length === 1) toast(msgs[0])
+  else if (msgs.length > 1) toast(`${msgs[0]} y ${msgs.length - 1} cambios más`)
+}
+
+// ---------- Ajustes compartidos del hogar ----------
+
+export const settings = () => app.household?.settings || {}
+export async function updateSettings(patch) {
+  await updateHousehold({ settings: { ...settings(), ...patch } })
+}
+
+export const isFavorite = (mercId) => (settings().favorites || []).includes(mercId)
+export async function toggleFavorite(mercId) {
+  const favs = settings().favorites || []
+  const next = favs.includes(mercId) ? favs.filter((x) => x !== mercId) : [...favs, mercId].slice(-24)
+  await updateSettings({ favorites: next })
+  toast(next.includes(mercId) ? 'Añadido a favoritos' : 'Quitado de favoritos')
+}
+
+const missKey = (it) => it.merc_id || `t:${it.name.toLowerCase()}`
+export const missingCount = (it) => settings().missing?.[missKey(it)] || 0
+
+// Orden de pasillos de vuestro Mercadona: se aprende del orden en que vais marcando
+export function aisleRank(catId) {
+  const learned = settings().aisle?.[catId]
+  if (learned != null) return learned
+  const cats = app.catalog?.categories || []
+  const i = cats.findIndex((c) => c.id === catId)
+  return i < 0 ? 2 : i / Math.max(cats.length - 1, 1)
+}
+const SEQ_KEY = 'mf:seq:'
+function recordAisle(it) {
+  if (it.category == null) return
+  try {
+    const k = SEQ_KEY + (app.listId || '')
+    const seq = JSON.parse(localStorage.getItem(k) || '[]')
+    if (!seq.includes(it.category)) seq.push(it.category)
+    localStorage.setItem(k, JSON.stringify(seq))
+  } catch {}
+}
+function learnAisle() {
+  try {
+    const k = SEQ_KEY + (app.listId || '')
+    const seq = JSON.parse(localStorage.getItem(k) || '[]')
+    localStorage.removeItem(k)
+    if (seq.length < 3) return null
+    const aisle = { ...(settings().aisle || {}) }
+    seq.forEach((cat, i) => {
+      const pos = i / (seq.length - 1)
+      aisle[cat] = aisle[cat] == null ? pos : Math.round((aisle[cat] * 0.6 + pos * 0.4) * 1000) / 1000
+    })
+    return aisle
+  } catch {
+    return null
+  }
+}
+
+export const toggleItem = (it) => {
+  const checked = !it.checked
+  if (checked) recordAisle(it)
+  return updateItem(it.id, { checked, missing: false, taken_by: checked ? app.me || null : null })
+}
+
+export const toggleMissing = (it) => updateItem(it.id, { missing: !it.missing, checked: false, taken_by: !it.missing ? app.me || null : null })
 
 export async function removeItem(id) {
   const it = app.items.find((i) => i.id === id)
@@ -411,6 +540,13 @@ export async function closeTrip({ store, date, total }) {
   app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
   app.tripItems = [...app.tripItems, ...lines]
   app.items = app.items.filter((i) => !boughtIds.has(i.id))
+  // Lo que no había se queda en la lista para la próxima vez y se cuenta como 'suele faltar'
+  const missing = itemsOfList().filter((i) => i.missing)
+  const aisle = learnAisle()
+  const counts = { ...(settings().missing || {}) }
+  for (const m of missing) counts[missKey(m)] = (counts[missKey(m)] || 0) + 1
+  if (missing.length || aisle) updateSettings({ ...(aisle ? { aisle } : {}), ...(missing.length ? { missing: counts } : {}) })
+  for (const m of missing) updateItem(m.id, { missing: false, taken_by: null })
   try {
     await be.upsert('trips', trip)
     await be.upsert('trip_items', lines)

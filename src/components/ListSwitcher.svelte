@@ -1,11 +1,16 @@
 <script>
   // Selector de listas: cada una con lo que queda por coger. Crear, renombrar y borrar en una hoja.
-  import { Plus, Pencil, X, Trash2 } from '@lucide/svelte'
-  import { app, setList, createList, renameList, deleteList, itemsOfList, toast } from '../lib/data.svelte.js'
+  import { Plus, Pencil, X, Trash2, ShoppingBasket, Briefcase, House, PartyPopper, UtensilsCrossed, Baby, PawPrint, Heart, Sun, Gift } from '@lucide/svelte'
+  import { app, setList, createList, renameList, deleteList, itemsOfList, toast, PERSON_COLORS } from '../lib/data.svelte.js'
+
+  const ICONS = { cesta: ShoppingBasket, trabajo: Briefcase, casa: House, fiesta: PartyPopper, cena: UtensilsCrossed, bebe: Baby, mascota: PawPrint, salud: Heart, verano: Sun, regalo: Gift }
+  const ICON_LABELS = { cesta: 'Cesta', trabajo: 'Trabajo', casa: 'Casa', fiesta: 'Fiesta', cena: 'Cena', bebe: 'Bebé', mascota: 'Mascota', salud: 'Salud', verano: 'Verano', regalo: 'Regalo' }
   import Sheet from './Sheet.svelte'
 
   let sheet = $state(null) // null | 'new' | 'edit'
   let name = $state('')
+  let icon = $state('cesta')
+  let color = $state(PERSON_COLORS[0])
   const IDEAS = ['Al volver del trabajo', 'Fin de semana', 'Cumpleaños', 'Cena con amigos']
 
   const pendingOf = (id) => itemsOfList(id).filter((i) => !i.checked).length
@@ -14,19 +19,23 @@
 
   function openNew() {
     name = ''
+    icon = 'trabajo'
+    color = PERSON_COLORS[(app.lists.length + 1) % PERSON_COLORS.length]
     sheet = 'new'
   }
   function openEdit() {
     name = current?.name ?? ''
+    icon = current?.icon || 'cesta'
+    color = current?.color || PERSON_COLORS[0]
     sheet = 'edit'
   }
   async function save(e) {
     e.preventDefault()
     if (!name.trim()) return
     if (sheet === 'new') {
-      const l = await createList(name)
+      const l = await createList(name, { icon, color })
       toast(`Lista creada: ${l.name}`)
-    } else await renameList(app.listId, name)
+    } else await renameList(app.listId, name, { icon, color })
     sheet = null
   }
   async function remove() {
@@ -42,7 +51,9 @@
   <div class="switcher">
     <div class="lists" role="group" aria-label="Listas de la compra">
       {#each app.lists as l (l.id)}
-        <button class="pill" aria-pressed={l.id === app.listId} onclick={() => setList(l.id)}>
+        {@const Icon = ICONS[l.icon] || ShoppingBasket}
+        <button class="pill" aria-pressed={l.id === app.listId} onclick={() => setList(l.id)} style={`--lc:${l.color || 'var(--primary-bg)'}`}>
+          <Icon size={18} aria-hidden="true" />
           <span>{l.name}</span>
           {#if pendingOf(l.id)}<span class="count num" aria-label={`${pendingOf(l.id)} por coger`}>{pendingOf(l.id)}</span>{/if}
         </button>
@@ -69,6 +80,29 @@
         <span>Nombre</span>
         <input class="input" bind:value={name} maxlength="40" required />
       </label>
+      <fieldset class="pick">
+        <legend class="label">Icono</legend>
+        <div class="icons">
+          {#each Object.entries(ICONS) as [key, I]}
+            <label class="ic" title={ICON_LABELS[key]}>
+              <input type="radio" bind:group={icon} value={key} />
+              <I size={22} aria-hidden="true" />
+              <span class="visually-hidden">{ICON_LABELS[key]}</span>
+            </label>
+          {/each}
+        </div>
+      </fieldset>
+      <fieldset class="pick">
+        <legend class="label">Color</legend>
+        <div class="icons">
+          {#each PERSON_COLORS as c, i}
+            <label class="sw" style={`--c:${c}`}>
+              <input type="radio" bind:group={color} value={c} />
+              <span class="visually-hidden">Color {i + 1}</span>
+            </label>
+          {/each}
+        </div>
+      </fieldset>
       {#if sheet === 'new'}
         <div class="ideas">
           {#each IDEAS as idea}
@@ -123,17 +157,63 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .pill[aria-pressed='true'] {
-    background: var(--market);
-    border-color: var(--market);
-    color: var(--market-ink);
+  .pill :global(svg) {
+    color: var(--lc);
   }
-  @media (prefers-color-scheme: dark) {
-    .pill[aria-pressed='true'] {
-      background: var(--market-2);
-      border-color: var(--market-2);
-      color: #0f1712;
-    }
+  .pill[aria-pressed='true'] {
+    background: var(--lc);
+    border-color: var(--lc);
+    color: #fff;
+  }
+  .pill[aria-pressed='true'] :global(svg) {
+    color: #fff;
+  }
+  .pick {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ic,
+  .sw {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    cursor: pointer;
+  }
+  .sw {
+    background: var(--c);
+    border-color: transparent;
+  }
+  .ic input,
+  .sw input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .ic:has(input:checked) {
+    border-color: var(--primary-bg);
+    background: var(--market-soft);
+  }
+  .sw:has(input:checked) {
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--c);
+  }
+  .ic:has(input:focus-visible),
+  .sw:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
   }
   .count {
     min-width: 1.6em;

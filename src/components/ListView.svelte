@@ -1,6 +1,7 @@
 <script>
-  import { CalendarClock, Plus } from '@lucide/svelte'
-  import { app, lineTotal, addProduct, addText, itemsOfList } from '../lib/data.svelte.js'
+  import { CalendarClock, Plus, Store, Star } from '@lucide/svelte'
+  import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings } from '../lib/data.svelte.js'
+  import { imgUrl } from '../lib/catalog.js'
   import { dueSuggestions, weekTotal } from '../lib/insights.js'
   import { eur } from '../lib/format.js'
   import AddBar from './AddBar.svelte'
@@ -8,18 +9,24 @@
   import ItemSheet from './ItemSheet.svelte'
   import CloseSheet from './CloseSheet.svelte'
   import ListSwitcher from './ListSwitcher.svelte'
+  import StoreMode from './StoreMode.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
   let showUsual = $state(false)
+  let store = $state(false)
 
   const current = $derived(app.listId ? itemsOfList(app.listId) : app.items)
-  const pending = $derived(current.filter((i) => !i.checked))
+  const pending = $derived(current.filter((i) => !i.checked && !i.missing))
   const inCart = $derived(current.filter((i) => i.checked))
+  const missing = $derived(current.filter((i) => i.missing))
+  const favorites = $derived(
+    (settings().favorites || [])
+      .map((id) => app.catalog?.byId.get(id))
+      .filter((p) => p && !current.some((i) => i.merc_id === p.id))
+  )
 
   const groups = $derived.by(() => {
-    const cats = app.catalog?.categories ?? []
-    const order = new Map(cats.map((c, i) => [c.id, i]))
     const map = new Map()
     for (const it of pending) {
       const key = app.catalog?.cats.has(it.category) ? it.category : 'otros'
@@ -32,7 +39,7 @@
         name: key === 'otros' ? 'Otros' : app.catalog.cats.get(key).n,
         items: items.sort((a, b) => a.name.localeCompare(b.name, 'es'))
       }))
-      .sort((a, b) => (order.get(a.key) ?? 999) - (order.get(b.key) ?? 999))
+      .sort((a, b) => (a.key === 'otros' ? 9 : aisleRank(a.key)) - (b.key === 'otros' ? 9 : aisleRank(b.key)))
   })
 
   const sum = (list) => list.reduce((s, i) => s + (lineTotal(i) || 0), 0)
@@ -59,16 +66,37 @@
   <div class="page-head">
     <h1>Lista de la compra</h1>
     <ListSwitcher />
-    <p class="muted">
+    <div class="row status">
+      <p class="muted spacer">
       {#if current.length}
-        {pending.length} por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}.
+        {pending.length} por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}{missing.length ? `, ${missing.length} no había` : ''}.
       {:else}
         Escribe lo que hace falta y elige el producto de Mercadona.
       {/if}
-    </p>
+      </p>
+      {#if pending.length}
+        <button class="btn store-btn" onclick={() => (store = true)}><Store size={20} aria-hidden="true" /> Modo tienda</button>
+      {/if}
+    </div>
   </div>
 
   <AddBar />
+
+  {#if favorites.length}
+    <section class="favs" aria-labelledby="h-favs">
+      <h2 id="h-favs" class="cat"><Star size={16} aria-hidden="true" /> Favoritos</h2>
+      <ul class="fav-row" role="list">
+        {#each favorites as p (p.id)}
+          <li>
+            <button class="fav" onclick={() => addProduct(p)} aria-label={`Añadir ${p.n}`}>
+              {#if imgUrl(p)}<img src={imgUrl(p, 96)} alt="" width="48" height="48" loading="lazy" />{/if}
+              <span>{p.n.replace(/ Hacendado$/, '')}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 
   {#if sugg.due.length}
     <section class="section due" aria-labelledby="h-due">
@@ -123,6 +151,18 @@
     <p class="section muted">Todo cogido. Cuando paguéis, pulsa 'Terminar compra' para guardarla en Gastos.</p>
   {/if}
 
+  {#if missing.length}
+    <section class="section" aria-labelledby="h-missing">
+      <h2 id="h-missing" class="cat">No había</h2>
+      <ul class="items panel cart" role="list">
+        {#each missing as it (it.id)}
+          <ItemRow item={it} onedit={() => (editing = it.id)} />
+        {/each}
+      </ul>
+      <p class="hint">Se quedan en la lista para la próxima compra.</p>
+    </section>
+  {/if}
+
   {#if inCart.length}
     <section class="section" aria-labelledby="h-cart">
       <h2 id="h-cart" class="cat">En el carro</h2>
@@ -161,11 +201,74 @@
 {#if editing}
   <ItemSheet id={editing} onclose={() => (editing = null)} />
 {/if}
+{#if store}
+  <StoreMode onclose={() => (store = false)} />
+{/if}
 {#if closing}
   <CloseSheet total={cartTotal} count={inCart.length} onclose={() => (closing = false)} />
 {/if}
 
 <style>
+  .status {
+    align-items: center;
+  }
+  .store-btn {
+    flex: none;
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--lemon);
+    color: #2b2300;
+  }
+  .favs {
+    margin-top: 10px;
+    display: grid;
+    gap: 6px;
+  }
+  .favs .cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fav-row {
+    list-style: none;
+    margin: 0 calc(var(--gutter) * -1);
+    padding: 2px var(--gutter) 6px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .fav {
+    width: 92px;
+    min-height: 112px;
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 6px;
+    padding: 8px 6px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+    cursor: pointer;
+  }
+  .fav img {
+    border-radius: 8px;
+    background: var(--surface-2);
+    object-fit: contain;
+  }
+  .fav span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .cat {
     font-size: 0.95rem;
     font-weight: 700;

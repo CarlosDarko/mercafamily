@@ -1,6 +1,6 @@
 <script>
   import { Copy, Share2, X, Plus, Download, Upload } from '@lucide/svelte'
-  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast } from '../lib/data.svelte.js'
+  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS } from '../lib/data.svelte.js'
   import { eur, parseNum, fmtLong } from '../lib/format.js'
 
   const REPO = 'https://github.com/CarlosDarko/mercafamily'
@@ -95,6 +95,18 @@
         <input class="input" bind:value={name} onblur={saveName} autocomplete="given-name" maxlength="30" />
         <span class="hint">Sale junto a lo que apuntas, para que los demás sepan quién lo ha pedido.</span>
       </label>
+      <fieldset class="pick">
+        <legend class="label">Tu color</legend>
+        <div class="swatches">
+          {#each PERSON_COLORS as c, i}
+            <label class="sw" style={`--c:${c}`}>
+              <input type="radio" name="mycolor" value={c} checked={colorOf(app.me) === c} onchange={() => setMyColor(c)} />
+              <span class="visually-hidden">Color {i + 1}</span>
+            </label>
+          {/each}
+        </div>
+        <span class="hint">Así se ve de un vistazo quién ha apuntado o cogido cada cosa.</span>
+      </fieldset>
       {#if app.kind === 'supabase'}
         {#if app.members.length}
           <p><strong>En esta lista:</strong> {app.members.map((m) => m.display_name || 'Sin nombre').join(', ')}.</p>
@@ -109,6 +121,29 @@
           <span class="hint">Quien abra la app en su móvil entra con su email y, después, este código.</span>
         </div>
       {/if}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-screen">
+    <h2 id="h-screen">Pantalla</h2>
+    <div class="panel pad stack">
+      <fieldset class="pick">
+        <legend class="label">Tema</legend>
+        <div class="seg3">
+          {#each [['auto', 'Como el móvil'], ['light', 'Claro'], ['dark', 'Oscuro']] as [v, l]}
+            <label><input type="radio" name="theme" value={v} checked={app.prefs.theme === v} onchange={() => setPrefs({ theme: v })} /> {l}</label>
+          {/each}
+        </div>
+      </fieldset>
+      <fieldset class="pick">
+        <legend class="label">Tamaño de letra</legend>
+        <div class="seg3">
+          {#each [[1, 'Normal'], [1.15, 'Grande'], [1.3, 'Muy grande']] as [v, l]}
+            <label><input type="radio" name="scale" value={v} checked={app.prefs.scale === v} onchange={() => setPrefs({ scale: v })} /> {l}</label>
+          {/each}
+        </div>
+        <span class="hint">Solo en este móvil.</span>
+      </fieldset>
     </div>
   </section>
 
@@ -283,6 +318,72 @@
   }
   label.btn {
     position: relative;
+  }
+  .pick {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sw {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--c);
+    cursor: pointer;
+  }
+  .sw input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .sw:has(input:checked) {
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--c);
+  }
+  .sw:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+  .seg3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--surface-2);
+  }
+  .seg3 label {
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-weight: 650;
+    font-size: 0.95rem;
+    text-align: center;
+    cursor: pointer;
+  }
+  .seg3 input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .seg3 label:has(input:checked) {
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .seg3 label:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
   }
   label.btn:focus-within {
     outline: 3px solid var(--focus);

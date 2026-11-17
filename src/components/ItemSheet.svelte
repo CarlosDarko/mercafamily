@@ -1,6 +1,6 @@
 <script>
-  import { X, Minus, Plus, Trash2, Replace } from '@lucide/svelte'
-  import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast } from '../lib/data.svelte.js'
+  import { X, Minus, Plus, Trash2, Replace, Star, PackageX } from '@lucide/svelte'
+  import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast, isFavorite, toggleFavorite, toggleMissing } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
   import { eur, parseNum } from '../lib/format.js'
@@ -78,6 +78,11 @@
           <p class="price num">{eur(p.p)}{#if p.pp}<span class="was"> antes {eur(p.pp)}</span>{/if}</p>
         {/if}
       </div>
+      {#if p}
+        <button class="icon-btn fav" class:on={isFavorite(p.id)} onclick={() => toggleFavorite(p.id)} aria-pressed={isFavorite(p.id)} aria-label="Favorito">
+          <Star size={24} aria-hidden="true" fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+        </button>
+      {/if}
       <button class="icon-btn" onclick={onclose} aria-label="Cerrar"><X size={24} aria-hidden="true" /></button>
     </div>
 
@@ -182,6 +187,10 @@
       </label>
     {/if}
 
+    <button class="btn" onclick={() => (toggleMissing(item), onclose())}>
+      <PackageX size={20} aria-hidden="true" /> {item.missing ? 'Sí que había' : 'No había'}
+    </button>
+
     <button class="btn btn-danger" onclick={() => removeItem(id)}>
       <Trash2 size={20} aria-hidden="true" /> Quitar de la lista
     </button>
@@ -189,6 +198,9 @@
 {/if}
 
 <style>
+  .fav.on {
+    color: #a77f00;
+  }
   .hero {
     width: 88px;
     height: 88px;

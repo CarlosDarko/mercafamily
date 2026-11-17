@@ -135,13 +135,8 @@
   .brand {
     font-weight: 800;
     letter-spacing: -0.03em;
-    color: var(--market-2);
+    color: var(--accent-text);
     font-size: 1.1rem;
-  }
-  @media (prefers-color-scheme: light) {
-    .brand {
-      color: var(--market);
-    }
   }
   h1 {
     font-size: 2rem;

@@ -1,6 +1,6 @@
 <script>
   import { ChevronRight, Check } from '@lucide/svelte'
-  import { app, product, unitPrice, lineTotal, toggleItem } from '../lib/data.svelte.js'
+  import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
@@ -12,6 +12,8 @@
     [item.qty > 1 && u != null ? `${item.qty} × ${eur(u)}` : item.qty > 1 ? `${item.qty} unidades` : null, p ? unitLabel(p) : null].filter(Boolean).join(' · ')
   )
   const byOther = $derived(item.added_by && item.added_by !== app.me ? item.added_by : null)
+  const takenOther = $derived(item.checked && item.taken_by && item.taken_by !== app.me ? item.taken_by : null)
+  const oftenMissing = $derived(!item.checked && missingCount(item) >= 2)
 </script>
 
 <li class="item" class:done={item.checked}>
@@ -30,7 +32,12 @@
         <span class="price num">{total == null ? 'Sin precio' : eur(total)}</span>
       </span>
       {#if item.note}<span class="note">{item.note}</span>{/if}
-      {#if byOther}<span class="meta">Lo ha apuntado {byOther}</span>{/if}
+      {#if takenOther}
+        <span class="who"><span class="dot" style={`background:${colorOf(takenOther)}`}></span>Lo ha cogido {takenOther}</span>
+      {:else if byOther && !item.checked}
+        <span class="who"><span class="dot" style={`background:${colorOf(byOther)}`}></span>Lo ha apuntado {byOther}</span>
+      {/if}
+      {#if item.missing}<span class="tag">No había</span>{:else if oftenMissing}<span class="tag soft">Suele faltar</span>{/if}
     </span>
     <ChevronRight size={20} aria-hidden="true" class="chev" />
     <span id={`hint-${item.id}`} class="visually-hidden">Abre la ficha: cantidad, nota, alternativas e ingredientes</span>
@@ -145,6 +152,32 @@
   .meta {
     font-size: 0.85rem;
     color: var(--ink-2);
+  }
+  .who {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--ink-2);
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .tag {
+    justify-self: start;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--tomato-soft);
+    color: var(--tomato);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .tag.soft {
+    background: var(--lemon-soft);
+    color: var(--lemon-ink);
   }
   .note {
     font-size: 0.9rem;

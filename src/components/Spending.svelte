@@ -346,12 +346,7 @@
     align-items: center;
     gap: 4px;
     font-weight: 800;
-    color: var(--market-2);
-  }
-  @media (prefers-color-scheme: light) {
-    .ch-diff {
-      color: var(--market);
-    }
+    color: var(--accent-text);
   }
   .ch-diff.up {
     color: var(--tomato);
