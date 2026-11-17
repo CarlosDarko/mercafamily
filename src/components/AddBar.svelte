@@ -4,6 +4,7 @@
   import Scanner from './Scanner.svelte'
   import { app, searchCatalog, addProduct, addText, rememberAlias, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
+  import { inSeason } from '../lib/home.js'
   import { eur } from '../lib/format.js'
 
   let text = $state('')
@@ -147,6 +148,7 @@
         <span class="r-text">
           <span class="r-name">{r.p.n}</span>
           <span class="r-meta">{unitLabel(r.p)}</span>
+          {#if inSeason(r.p, app.catalog?.cats.get(r.p.c)?.n)}<span class="r-season">De temporada</span>{/if}
           {#if r.reasons.length}
             <span class="r-pref"><Heart size={14} aria-hidden="true" /> {r.reasons[0] === 'Lo elegisteis antes' ? r.reasons[0] : 'Vuestra preferencia'}</span>
           {/if}
@@ -285,6 +287,11 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--accent-text);
+  }
+  .r-season {
     font-size: 0.85rem;
     font-weight: 650;
     color: var(--accent-text);

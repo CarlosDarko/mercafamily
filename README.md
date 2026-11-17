@@ -21,6 +21,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/avisos.png' width='190' alt='Ajustes de avisos con aviso al salir del trabajo, hora y días'>
   <img src='docs/capturas/comparar.png' width='190' alt='Comparación de lo que más compráis con Dia y Consum por kilo o litro'>
   <img src='docs/capturas/estado.png' width='190' alt='Panel de estado de la app en Ajustes'>
+  <img src='docs/capturas/propuesta-menu.png' width='190' alt='Propuesta de menú con comidas y cenas de la semana y el coste de lo que falta'>
+  <img src='docs/capturas/equilibrio.png' width='190' alt='Fruta y verdura de temporada y equilibrio de la compra con consejos'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -35,7 +37,9 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Ficha al tocar el producto** y búsqueda que aprende vuestras palabras ('dinosaurus' → las galletas que elegisteis).
 - **Tema claro, oscuro o el del móvil y tres tamaños de letra**, en Ajustes, Pantalla.
 - **Prepárame la lista**: con un botón junta lo que falta para el menú, lo que se acaba en casa y lo que toca por frecuencia, todo marcado para quitar lo que sobre.
-- **Menú de la semana y recetas**: elegís las cenas (hay recetas de partida) y la app apunta los ingredientes que faltan, eligiendo cada producto con vuestras preferencias.
+- **Menú de la semana con comidas y cenas**: 'Propón el menú de la semana' rellena los huecos sin repetir, con legumbre y pescado, cenas ligeras y aprovechando la despensa, con el coste aproximado de lo que falta. Hay 24 recetas de partida y podéis guardar las vuestras. La app apunta los ingredientes que faltan con vuestras preferencias.
+- **De temporada**: la fruta y verdura de cada mes sale marcada en el buscador y en la lista, y en Menú hay una sección para apuntarla con un toque.
+- **Equilibrio de la compra**: reparto del gasto en fruta, verdura, legumbre, pescado, carne, procesados y dulces de los últimos 30 días, con consejos sencillos (orientativo).
 - **Despensa sin rellenar nada**: se calcula con lo que compráis y cada cuánto, con 'se acaba pronto' y botones de 'Se acabó' o 'Aún queda' para corregirla.
 - **Móvil de un peque**: lo que apunta llega como petición y un adulto la acepta o no. Para salir del modo hay que resolver una multiplicación.
 - **Dietas y alergias por persona**: aviso al apuntar algo que lleve lo que alguien no puede tomar, según ingredientes y alérgenos de Mercadona.

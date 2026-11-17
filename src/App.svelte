@@ -7,7 +7,7 @@
   import MenuView from './components/MenuView.svelte'
   import Onboarding from './components/Onboarding.svelte'
   import TicketPrint from './components/TicketPrint.svelte'
-  import { needsOnboarding } from './lib/data.svelte.js'
+  import { needsOnboarding, logError } from './lib/data.svelte.js'
   import Welcome from './components/Welcome.svelte'
   import Toast from './components/Toast.svelte'
 
@@ -72,15 +72,27 @@
   </header>
 
   <main id="main" tabindex="-1">
-    {#if tab === 'lista'}
-      <ListView />
-    {:else if tab === 'menu'}
-      <MenuView />
-    {:else if tab === 'gastos' && !app.prefs.kid}
-      <Spending />
-    {:else}
-      <Settings />
-    {/if}
+    <svelte:boundary onerror={(e) => logError(e)}>
+      {#if tab === 'lista'}
+        <ListView />
+      {:else if tab === 'menu'}
+        <MenuView />
+      {:else if tab === 'gastos' && !app.prefs.kid}
+        <Spending />
+      {:else}
+        <Settings />
+      {/if}
+      {#snippet failed(error, reset)}
+        <div class="page crash" role="alert">
+          <h1>Algo ha fallado en esta pantalla</h1>
+          <p class="muted">Vuestros datos están a salvo. Prueba a volver a cargarla. Si se repite, el error queda apuntado en Ajustes, Estado de la app.</p>
+          <div class="row">
+            <button class="btn btn-primary" onclick={reset}>Volver a cargar la pantalla</button>
+            <button class="btn" onclick={() => location.reload()}>Recargar la app</button>
+          </div>
+        </div>
+      {/snippet}
+    </svelte:boundary>
   </main>
 
   <nav class="tabbar" aria-label="Secciones" style={`--tabs:${TABS.length}`}>
@@ -103,6 +115,14 @@
 <Toast />
 
 <style>
+  .crash {
+    display: grid;
+    gap: 14px;
+    padding-top: 32px;
+  }
+  .crash .row {
+    flex-wrap: wrap;
+  }
   .center {
     min-height: 60dvh;
     display: grid;

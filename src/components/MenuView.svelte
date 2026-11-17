@@ -1,8 +1,10 @@
 <script>
   // Menú de la semana, despensa estimada y recetas de la familia
-  import { ChefHat, Plus, ShoppingBasket, Check, X, Trash2, Pencil } from '@lucide/svelte'
+  import { ChefHat, Plus, ShoppingBasket, Check, X, Trash2, Pencil, Wand2, Sun } from '@lucide/svelte'
   import { app, setMeal, removeMeal, saveRecipe, deleteRecipe, resolveIngredient, mealNeeds, addMany, pantrySet, settings, toast, searchCatalog } from '../lib/data.svelte.js'
   import { pantry, STARTER_RECIPES } from '../lib/home.js'
+  import ProposalSheet from './ProposalSheet.svelte'
+  import SeasonAndBalance from './SeasonAndBalance.svelte'
   import { imgUrl } from '../lib/catalog.js'
   import { isoDate, weekStart } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
@@ -18,7 +20,12 @@
       return { iso: isoDate(d), label: DAY.format(d), today: isoDate(d) === isoDate() }
     })
   })
-  const mealOf = (day) => app.meals.find((m) => m.day === day && m.slot === 'cena')
+  const mealOf = (day, slot = 'cena') => app.meals.find((m) => m.day === day && m.slot === slot)
+  const SLOTS = [
+    ['comida', 'Comida'],
+    ['cena', 'Cena']
+  ]
+  let proposing = $state(false)
 
   const stock = $derived(pantry(app.tripItems, settings().pantry || {}))
   const low = $derived(stock.filter((p) => p.state !== 'ok'))
@@ -28,19 +35,19 @@
   // ---- Elegir cena de un día ----
   let picking = $state(null)
   let freeName = $state('')
-  function pick(day) {
-    picking = day
-    freeName = mealOf(day.iso)?.name || ''
+  function pick(day, slot) {
+    picking = { ...day, slot }
+    freeName = mealOf(day.iso, slot)?.name || ''
   }
   async function chooseRecipe(r) {
-    await setMeal({ day: picking.iso, name: r.name, recipe_id: r.id })
+    await setMeal({ day: picking.iso, slot: picking.slot, name: r.name, recipe_id: r.id })
     picking = null
   }
   async function chooseFree(e) {
     e.preventDefault()
     if (!freeName.trim()) return
     const r = app.recipes.find((x) => x.name.toLowerCase() === freeName.trim().toLowerCase())
-    await setMeal({ day: picking.iso, name: freeName, recipe_id: r?.id || null })
+    await setMeal({ day: picking.iso, slot: picking.slot, name: freeName, recipe_id: r?.id || null })
     picking = null
   }
   async function useStarter(s) {
@@ -82,7 +89,7 @@
 <div class="page">
   <div class="page-head">
     <h1>Menú y despensa</h1>
-    <p class="muted">Planificad las cenas de la semana y la app apunta lo que falta. La despensa se calcula sola con lo que compráis.</p>
+    <p class="muted">Planificad comidas y cenas (o pedid una propuesta) y la app apunta lo que falta. La despensa se calcula sola con lo que compráis.</p>
   </div>
 
   <section class="section" aria-labelledby="h-week">
@@ -90,15 +97,19 @@
       <h2 id="h-week" class="spacer">{offset === 0 ? 'Esta semana' : offset === 1 ? 'La semana que viene' : 'Semana'}</h2>
       <button class="btn mini" onclick={() => (offset = offset === 0 ? 1 : 0)}>{offset === 0 ? 'Ver la siguiente' : 'Volver a esta'}</button>
     </div>
+    <button class="btn btn-primary" onclick={() => (proposing = true)}><Wand2 size={18} aria-hidden="true" /> Propón el menú de la semana</button>
     <ul class="week panel" role="list">
       {#each days as d (d.iso)}
-        {@const m = mealOf(d.iso)}
         <li class:today={d.today}>
-          <button class="day" onclick={() => pick(d)}>
-            <span class="dname">{d.label}</span>
-            <span class="meal" class:empty={!m}>{m ? m.name : 'Elegir cena'}</span>
-            {#if m}<Pencil size={18} aria-hidden="true" />{:else}<Plus size={18} aria-hidden="true" />{/if}
-          </button>
+          <p class="dname">{d.label}</p>
+          {#each SLOTS as [slot, label] (slot)}
+            {@const m = mealOf(d.iso, slot)}
+            <button class="day" onclick={() => pick(d, slot)} aria-label={`${label} del ${d.label}: ${m ? m.name : 'sin elegir'}`}>
+              <span class="slot">{label}</span>
+              <span class="meal" class:empty={!m}>{m ? m.name : 'Elegir'}</span>
+              {#if m}<Pencil size={18} aria-hidden="true" />{:else}<Plus size={18} aria-hidden="true" />{/if}
+            </button>
+          {/each}
         </li>
       {/each}
     </ul>
@@ -144,6 +155,8 @@
     {/if}
   </section>
 
+  <SeasonAndBalance />
+
   <section class="section" aria-labelledby="h-recipes">
     <div class="row">
       <h2 id="h-recipes" class="spacer">Recetas de casa</h2>
@@ -174,7 +187,7 @@
 {#if picking}
   <Sheet onclose={() => (picking = null)} labelledby="pick-title">
     <div class="sheet-head">
-      <h2 id="pick-title">Cena del {picking.label}</h2>
+      <h2 id="pick-title">{picking.slot === 'comida' ? 'Comida' : 'Cena'} del {picking.label}</h2>
       <button class="icon-btn" onclick={() => (picking = null)} aria-label="Cerrar"><X size={24} aria-hidden="true" /></button>
     </div>
     {#if app.recipes.length}
@@ -192,15 +205,19 @@
     {#if starters.length}
       <p class="hint">O una de estas ideas:</p>
       <div class="ideas">
-        {#each starters.slice(0, 6) as s (s.name)}
+        {#each starters.filter((x) => !picking.slot || x.slot === 'ambas' || x.slot === picking.slot).slice(0, 8) as s (s.name)}
           <button class="btn mini" onclick={() => useStarter(s)}>{s.name}</button>
         {/each}
       </div>
     {/if}
-    {#if mealOf(picking.iso)}
-      <button class="btn btn-danger" onclick={() => (removeMeal(mealOf(picking.iso).id), (picking = null))}><Trash2 size={18} aria-hidden="true" /> Quitar la cena de este día</button>
+    {#if mealOf(picking.iso, picking.slot)}
+      <button class="btn btn-danger" onclick={() => (removeMeal(mealOf(picking.iso, picking.slot).id), (picking = null))}><Trash2 size={18} aria-hidden="true" /> Quitar este plato</button>
     {/if}
   </Sheet>
+{/if}
+
+{#if proposing}
+  <ProposalSheet {days} onclose={() => (proposing = false)} />
 {/if}
 
 {#if editing}
@@ -265,10 +282,21 @@
   .week li.today {
     background: var(--lemon-soft);
   }
+  .week li {
+    padding: 8px 0 4px;
+  }
+  .week .dname {
+    padding: 0 16px;
+  }
+  .slot {
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--ink-2);
+  }
   .day {
     width: 100%;
     display: grid;
-    grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     min-height: 56px;

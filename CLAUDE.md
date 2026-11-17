@@ -31,7 +31,9 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Listas | Tabla `lists`. La principal tiene el mismo id que el hogar para que no se duplique si dos móviles la crean a la vez. `items.list_id` nulo significa la principal. |
 | Ajustes compartidos | `households.settings` (jsonb): favoritos, orden de pasillos aprendido (`aisle`), lo que suele faltar (`missing`). `households.aliases`: búsquedas aprendidas. Tema y tamaño de letra son de cada móvil (localStorage). |
 | Tema | Colores por variables en `:root`, oscuro por preferencia del móvil o forzado con `data-theme`. Los componentes no usan `prefers-color-scheme`, solo variables (`--accent-text`, `--primary-bg`…). |
-| Menú y recetas | Tablas `recipes` (ingredientes en jsonb con `merc_id`) y `meals` (día y cena). Las recetas de partida resuelven cada ingrediente con el buscador al usarlas. |
+| Menú y recetas | Tablas `recipes` (ingredientes en jsonb con `merc_id`) y `meals` (día y `slot` comida o cena). Las recetas de partida (`STARTER_RECIPES` con `slot` y `tags`) resuelven cada ingrediente con el buscador al usarlas. `suggestWeek` propone el menú: sin repetir, 2 de legumbre y 2 de pescado si hay huecos, sin legumbre de cena, aprovechando la despensa. |
+| Temporada y equilibrio | Calendario de fruta y verdura de España por mes en `src/lib/home.js` (`SEASON`). `foodGroup` clasifica por categorías de Mercadona y `balance` compara el reparto del gasto con referencias sencillas (orientativo, no raciones). |
+| Errores de pantalla | Cada pantalla va dentro de `<svelte:boundary>`: si falla, aviso con botón para recargar y el error se apunta en el panel de estado. |
 | Despensa | No tiene tabla: se estima con `trip_items` (última compra y frecuencia) en `src/lib/home.js`. Las correcciones a mano van en `households.settings.pantry`. |
 | Peques | `items.requested` para peticiones. El modo peque es de cada móvil (`prefs.kid` en localStorage) y se sale resolviendo una multiplicación. |
 | Dietas | `households.settings.people` con lo que evita cada persona. Se comprueba con ingredientes y alérgenos de `details.json` (`dietConflicts`). |

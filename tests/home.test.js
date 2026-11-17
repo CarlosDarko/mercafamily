@@ -38,3 +38,26 @@ test('formato más barato del mismo producto', () => {
   assert.equal(Math.round(f.saving * 100), 20)
   assert.equal(cheaperFormat(list[1], list), null)
 })
+
+import { suggestWeek, inSeason, foodGroup, STARTER_RECIPES } from '../src/lib/home.js'
+test('menú propuesto variado con legumbre y pescado', () => {
+  const slots = []
+  for (let d = 1; d <= 7; d++) for (const slot of ['comida', 'cena']) slots.push({ day: `2026-11-${16 + d}`, slot })
+  const plan = suggestWeek(slots, STARTER_RECIPES, new Set(), [], 7)
+  assert.equal(plan.length, 14)
+  const names = plan.map((x) => x.recipe.name)
+  assert.equal(new Set(names).size, 14, 'sin repetir')
+  assert.ok(plan.filter((x) => x.recipe.tags.includes('legumbre')).length >= 2)
+  assert.ok(plan.filter((x) => x.recipe.tags.includes('pescado')).length >= 2)
+  assert.ok(plan.filter((x) => x.slot === 'cena').every((x) => !x.recipe.tags.includes('legumbre')), 'sin legumbre de cena')
+})
+
+test('temporada y grupos de alimentos', () => {
+  assert.equal(inSeason({ n: 'Mandarinas' }, 'Fruta y verdura', 12), true)
+  assert.equal(inSeason({ n: 'Sandía' }, 'Fruta y verdura', 12), false)
+  assert.equal(foodGroup('Arroz, legumbres y pasta', 'Lentejas y otros', 'Lenteja pardina'), 'legumbre')
+  assert.equal(foodGroup('Conservas, caldos y cremas', 'Atún', 'Atún claro'), 'pescado')
+  assert.equal(foodGroup('Carne', 'Embutido', 'Chorizo'), 'procesado')
+  assert.equal(foodGroup('Agua y refrescos', 'Cola clásica', 'Coca-Cola'), 'dulce')
+  assert.equal(foodGroup('Limpieza y hogar', 'Bayeta', 'Bayeta'), null)
+})
