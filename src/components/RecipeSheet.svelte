@@ -1,7 +1,7 @@
 <script>
   // Ficha de una receta: ingredientes para marcar, pasos, añadir a la lista y ponerla en el menú
-  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf } from '@lucide/svelte'
-  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast } from '../lib/data.svelte.js'
+  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown } from '@lucide/svelte'
+  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, rateRecipe } from '../lib/data.svelte.js'
   import { pantry, inSeason } from '../lib/home.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur, isoDate } from '../lib/format.js'
@@ -39,7 +39,12 @@
     return { iso: isoDate(d), label: i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DAY.format(d) }
   })
   let day = $state(next[0].iso)
-  let slot = $state(meta.slot === 'cena' ? 'cena' : 'comida')
+  let slot = $state(meta.slot === 'cena' || meta.slot === 'merienda' ? 'cena' : 'comida')
+  const rating = $derived((settings().ratings || {})[recipe.name] || 0)
+  async function rate(v) {
+    await rateRecipe(recipe.name, v)
+    toast(rating === v ? (v === 1 ? 'Apuntado: os gusta. Saldrá más en las propuestas.' : 'Apuntado: no la propondremos más.') : 'Valoración quitada')
+  }
   const taken = $derived(app.meals.find((m) => m.day === day && m.slot === slot))
   async function toMenu() {
     const r = recipe.created_at ? recipe : await adoptKbRecipe(recipe)
@@ -58,10 +63,18 @@
   <p class="meta">
     {#if meta.time}<span><Clock size={16} aria-hidden="true" /> {meta.time} min</span>{/if}
     <span>Para 3</span>
-    {#if meta.slot}<span>{meta.slot === 'ambas' ? 'Comida o cena' : meta.slot === 'comida' ? 'Comida' : 'Cena'}</span>{/if}
+    {#if meta.slot}<span>{({ ambas: 'Comida o cena', comida: 'Comida', cena: 'Cena', merienda: 'Merienda o postre' })[meta.slot]}</span>{/if}
+    {#if recipe.express || meta.express}<span><Zap size={16} aria-hidden="true" /> Exprés</span>{/if}
+    {#if recipe.fun || meta.fun}<span><PartyPopper size={16} aria-hidden="true" /> Divertida</span>{/if}
+    {#if recipe.nocook || meta.nocook}<span><Snowflake size={16} aria-hidden="true" /> Sin cocinar</span>{/if}
     {#if meta.kids}<span><Baby size={16} aria-hidden="true" /> Gusta a los peques</span>{/if}
     {#if seasonal}<span class="season"><Leaf size={16} aria-hidden="true" /> De temporada</span>{/if}
   </p>
+
+  <div class="rate" role="group" aria-label="¿Os gusta?">
+    <button class="pill" aria-pressed={rating === 1} onclick={() => rate(1)}><ThumbsUp size={18} aria-hidden="true" /> Nos gusta</button>
+    <button class="pill" aria-pressed={rating === -1} onclick={() => rate(-1)}><ThumbsDown size={18} aria-hidden="true" /> No nos gusta</button>
+  </div>
 
   <section aria-labelledby="h-ings">
     <h3 id="h-ings">Ingredientes</h3>
@@ -198,6 +211,15 @@
   .menu {
     padding-top: 10px;
     border-top: 1px solid var(--line);
+  }
+  .rate {
+    display: flex;
+    gap: 8px;
+  }
+  .rate .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
   .days {
     display: flex;

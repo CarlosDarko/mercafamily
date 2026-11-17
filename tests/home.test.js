@@ -61,3 +61,34 @@ test('temporada y grupos de alimentos', () => {
   assert.equal(foodGroup('Agua y refrescos', 'Cola clásica', 'Coca-Cola'), 'dulce')
   assert.equal(foodGroup('Limpieza y hogar', 'Bayeta', 'Bayeta'), null)
 })
+
+test('atHome cuenta lo que hay en casa sin los básicos', async () => {
+  const { atHome } = await import('../src/lib/home.js')
+  const r = { ingredients: [{ q: 'lenteja cocida' }, { q: 'zanahoria' }, { q: 'cebolla' }, { q: 'sal fina', basic: true }] }
+  const h = atHome(r, ['Lenteja cocida Hacendado', 'Zanahorias bolsa'])
+  assert.equal(h.total, 3)
+  assert.equal(h.have, 2)
+  assert.deepEqual(h.missing, ['cebolla'])
+})
+
+test('suggestWeek quita lo que no gusta y evita lo que no es de temporada', async () => {
+  const { suggestWeek } = await import('../src/lib/home.js')
+  const recipes = [
+    { name: 'Gazpacho', slot: 'cena', tags: ['verdura'], season: [7, 8] },
+    { name: 'Crema', slot: 'cena', tags: ['verdura'] },
+    { name: 'Tortilla', slot: 'cena', tags: ['huevo'] }
+  ]
+  for (let seed = 1; seed < 30; seed++) {
+    const [p] = suggestWeek([{ day: '2026-11-17', slot: 'cena' }], recipes, new Set(), [], seed, { ratings: { Tortilla: -1 }, month: 11 })
+    assert.equal(p.recipe.name, 'Crema')
+  }
+})
+
+test('el recetario tiene más de 250 recetas sin ids repetidos y las meriendas no entran en el menú', async () => {
+  const { KB } = await import('../src/lib/recipes-kb.js')
+  const { suggestWeek } = await import('../src/lib/home.js')
+  assert.ok(KB.length > 250)
+  assert.equal(new Set(KB.map((r) => r.id)).size, KB.length)
+  const plan = suggestWeek([{ day: '2026-11-17', slot: 'cena' }, { day: '2026-11-18', slot: 'comida' }], KB.filter((r) => r.slot === 'merienda'))
+  assert.equal(plan.length, 0)
+})

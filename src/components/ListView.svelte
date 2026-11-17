@@ -12,6 +12,7 @@
   import StoreMode from './StoreMode.svelte'
   import PrepareSheet from './PrepareSheet.svelte'
   import HealthySwaps from './HealthySwaps.svelte'
+  import TodayCard from './TodayCard.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
@@ -98,6 +99,8 @@
   </div>
 
   <AddBar />
+
+  <TodayCard />
 
   {#if requests.length}
     <section class="section reqs" aria-labelledby="h-reqs">

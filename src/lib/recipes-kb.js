@@ -7,7 +7,9 @@
 const ACEITE = { q: 'aceite de oliva virgen extra', amount: 'un chorro', basic: true }
 const SAL = { q: 'sal fina', amount: 'al gusto', basic: true }
 
-export const KB = [
+import { MORE } from './recipes-more.js'
+
+const BASE = [
   // ---------- Legumbre ----------
   {
     id: 'lentejas-verduras',
@@ -705,6 +707,10 @@ export const KB = [
     steps: ['Dora los muslos con sal.', 'Añade la cebolla, la zanahoria y los champiñones y sofríe 5 minutos.', 'Echa agua hasta la mitad y cuece 25 minutos.', 'Añade la patata en dados y cuece 15 minutos más.']
   }
 ]
+
+// Las de este archivo más las de recipes-more.js (exprés, divertidas, de temporada…)
+const seen = new Set()
+export const KB = [...BASE.map((r) => ({ ...r, express: r.time <= 10 })), ...MORE].filter((r) => !seen.has(r.id) && seen.add(r.id))
 
 // Lo que sí es comida de verdad para el filtro 'rápidas'
 export const QUICK_MIN = 20

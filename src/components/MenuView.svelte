@@ -13,7 +13,10 @@
   import Sheet from './Sheet.svelte'
 
   const DAY = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric' })
-  let offset = $state(0) // semanas desde la actual
+  // '#menu-proponer' (desde 'Hoy coméis' el fin de semana) abre la propuesta de la semana siguiente
+  const fromToday = location.hash === '#menu-proponer'
+  const wd = new Date().getDay()
+  let offset = $state(fromToday && (wd === 0 || wd >= 5) ? 1 : 0) // semanas desde la actual
   const days = $derived.by(() => {
     const start = weekStart(new Date())
     start.setDate(start.getDate() + offset * 7)
@@ -28,7 +31,7 @@
     ['comida', 'Comida'],
     ['cena', 'Cena']
   ]
-  let proposing = $state(false)
+  let proposing = $state(fromToday)
 
   const stock = $derived(pantry(app.tripItems, settings().pantry || {}))
   const low = $derived(stock.filter((p) => p.state !== 'ok'))

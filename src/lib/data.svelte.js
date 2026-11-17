@@ -744,6 +744,9 @@ export async function deleteRecipe(id) {
 // De texto a producto del catálogo: 'lenteja pardina' -> el que soléis comprar o el más probable
 export function resolveIngredient(text) {
   const best = app.catalog ? searchCatalog(text, 1)[0] : null
+  // Fuera de temporada la búsqueda puede caer en algo 'sabor sandía': mejor dejarlo sin producto
+  const head = norm(text).split(' ')[0]
+  if (best && head.length > 3 && norm(best.p.n).includes('sabor ' + head)) return { merc_id: null, name: text, qty: 1 }
   return best ? { merc_id: best.p.id, name: best.p.n, qty: 1 } : { merc_id: null, name: text, qty: 1 }
 }
 
@@ -795,6 +798,16 @@ export async function addMany(entries) {
     n++
   }
   return n
+}
+
+// ---------- Me gusta / no me gusta de las recetas (por hogar) ----------
+
+export const ratingOf = (name) => (settings().ratings || {})[name] || 0
+export async function rateRecipe(name, v) {
+  const r = { ...(settings().ratings || {}) }
+  if (!v || r[name] === v) delete r[name]
+  else r[name] = v
+  await updateSettings({ ratings: r })
 }
 
 // ---------- Despensa (correcciones a mano) ----------
@@ -1011,5 +1024,5 @@ export function resolveKbIngredient(i) {
 export async function adoptKbRecipe(k) {
   const existing = app.recipes.find((r) => r.kb_id === k.id || r.name === k.name)
   if (existing) return existing
-  return saveRecipe({ name: k.name, kb_id: k.id, ingredients: k.ingredients.map(resolveKbIngredient), steps: k.steps, meta: { time: k.time, tags: k.tags, slot: k.slot, kids: k.kids, season: k.season || null } })
+  return saveRecipe({ name: k.name, kb_id: k.id, ingredients: k.ingredients.map(resolveKbIngredient), steps: k.steps, meta: { time: k.time, tags: k.tags, slot: k.slot, kids: k.kids, season: k.season || null, express: !!k.express, fun: !!k.fun, nocook: !!k.nocook } })
 }

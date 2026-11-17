@@ -1,9 +1,9 @@
 <script>
   // Recetario: buscar y filtrar recetas sencillas y saludables, y las guardadas de casa
-  import { Search, Clock, Baby, Leaf, BookOpen } from '@lucide/svelte'
-  import { app } from '../lib/data.svelte.js'
+  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator } from '@lucide/svelte'
+  import { app, settings } from '../lib/data.svelte.js'
   import { KB, QUICK_MIN } from '../lib/recipes-kb.js'
-  import { tagsOf } from '../lib/home.js'
+  import { tagsOf, atHome, pantry } from '../lib/home.js'
   import { norm } from '../lib/format.js'
   import RecipeSheet from './RecipeSheet.svelte'
 
@@ -15,11 +15,17 @@
 
   const FILTERS = [
     ['todas', 'Todas'],
+    ['hay', 'Con lo que hay'],
+    ['expres', 'Exprés'],
+    ['divertidas', 'Divertidas'],
+    ['temporada', 'De temporada'],
+    ['gustan', 'Os gustan'],
     ['comida', 'Comidas'],
     ['cena', 'Cenas'],
     ['rapidas', `Rápidas`],
     ['peques', 'Para peques'],
-    ['temporada', 'De temporada'],
+    ['sincocinar', 'Sin cocinar'],
+    ['merienda', 'Meriendas'],
     ['legumbre', 'Legumbre'],
     ['pescado', 'Pescado'],
     ['verdura', 'Verdura'],
@@ -32,8 +38,20 @@
   // Las de casa que no vienen del recetario, con el mismo formato
   const own = $derived(app.recipes.filter((r) => !r.kb_id).map((r) => ({ ...r, tags: tagsOf(r), own: true })))
   const all = $derived([...KB, ...own])
+  const ratings = $derived(settings().ratings || {})
+  // Lo que hay en casa según las últimas compras (sin lo que se ha terminado)
+  const stock = $derived(pantry(app.tripItems, settings().pantry || {}).filter((p) => p.state !== 'out'))
+  const have = $derived(stock.map((p) => p.name))
+  const haveIds = $derived(new Set(stock.filter((p) => p.merc_id).map((p) => p.merc_id)))
   const list = $derived.by(() => {
     const words = norm(q).split(' ').filter(Boolean)
+    if (filter === 'hay')
+      return all
+        .map((r) => ({ r, h: atHome(r, have, haveIds) }))
+        .filter((x) => x.h.have > 0 && x.h.ratio >= 0.5 && ratings[x.r.name] !== -1)
+        .sort((a, b) => b.h.ratio - a.h.ratio || a.h.total - b.h.total)
+        .map((x) => ({ ...x.r, home: x.h }))
+        .filter((r) => !words.length || words.every((w) => norm(r.name).includes(w)))
     return all.filter((r) => {
       if (words.length) {
         const text = norm(r.name + ' ' + (r.ingredients || []).map((i) => i.q || i.name).join(' '))
@@ -50,10 +68,20 @@
           return r.kids || r.meta?.kids
         case 'temporada':
           return (r.season || r.meta?.season || []).includes(month)
+        case 'expres':
+          return r.express || (r.time || r.meta?.time || 99) <= 10
+        case 'divertidas':
+          return r.fun
+        case 'sincocinar':
+          return r.nocook
+        case 'merienda':
+          return slot === 'merienda'
+        case 'gustan':
+          return ratings[r.name] === 1
         case 'casa':
           return r.own || app.recipes.some((x) => x.kb_id === r.id)
         case 'todas':
-          return true
+          return slot !== 'merienda'
         default:
           return (r.tags || []).includes(filter)
       }
@@ -64,7 +92,7 @@
 
 <section class="section" aria-labelledby="h-book">
   <h2 id="h-book"><BookOpen size={20} aria-hidden="true" /> Recetario</h2>
-  <p class="hint">{KB.length} recetas sencillas y saludables de cocina de casa, para 3. Al abrir una podéis añadir sus ingredientes a la lista o ponerla en el menú.</p>
+  <p class="hint">{KB.length} recetas sencillas y saludables de cocina de casa, para 3: exprés de 5 o 10 minutos, divertidas para peques, de temporada y de toda la vida. Al abrir una podéis añadir lo que falta a la lista o ponerla en el menú.</p>
   <div class="search">
     <Search size={18} aria-hidden="true" />
     <label class="visually-hidden" for="book-q">Buscar receta o ingrediente</label>
@@ -75,6 +103,9 @@
       <button class="pill" aria-pressed={filter === k} onclick={() => (filter = k)}>{label}</button>
     {/each}
   </div>
+  {#if filter === 'hay'}
+    <p class="hint">{stock.length ? `Recetas para las que ya tenéis al menos la mitad de los ingredientes, según lo que habéis comprado últimamente.` : 'Cuando terminéis alguna compra, aquí saldrán las recetas que podéis hacer con lo que hay en casa.'}</p>
+  {/if}
   {#if !list.length}
     <p class="muted">No hay recetas con ese filtro.</p>
   {:else}
@@ -85,7 +116,12 @@
             <span class="name">{r.name}</span>
             <span class="meta">
               {#if r.time || r.meta?.time}<span><Clock size={14} aria-hidden="true" /> {r.time || r.meta?.time} min</span>{/if}
+              {#if r.express}<span class="x"><Zap size={14} aria-hidden="true" /> Exprés</span>{/if}
+              {#if r.fun}<span class="f"><PartyPopper size={14} aria-hidden="true" /> Divertida</span>{/if}
+              {#if r.nocook}<span><Snowflake size={14} aria-hidden="true" /> Sin cocinar</span>{/if}
               {#if r.kids || r.meta?.kids}<span><Baby size={14} aria-hidden="true" /> Peques</span>{/if}
+              {#if ratings[r.name] === 1}<span class="f"><Heart size={14} aria-hidden="true" /> Os gusta</span>{/if}
+              {#if r.home}<span class="season"><Refrigerator size={14} aria-hidden="true" /> Tenéis {r.home.have} de {r.home.total}</span>{/if}
               {#if (r.season || r.meta?.season || []).includes(month)}<span class="season"><Leaf size={14} aria-hidden="true" /> Temporada</span>{/if}
               {#if r.own}<span>De casa</span>{/if}
             </span>
@@ -190,6 +226,12 @@
   }
   .season {
     color: var(--accent-text);
+  }
+  .x {
+    color: var(--lemon-ink);
+  }
+  .f {
+    color: var(--tomato);
   }
   .tags {
     font-size: 0.8rem;

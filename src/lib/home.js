@@ -38,6 +38,26 @@ export function pantry(tripItems, overrides = {}, today = new Date(), days = 90)
   return out.sort((a, b) => a.left - b.left || a.name.localeCompare(b.name, 'es'))
 }
 
+// ¿Cuánto de una receta hay ya en casa? have: nombres de lo que hay (de pantry con state ok o low).
+// Cuenta los ingredientes que no son básicos y cuyo producto o búsqueda aparece entre lo que hay.
+const stems = (t) => norm(t).split(' ').filter((w) => w.length > 2 && !['con', 'para', 'del', 'las', 'los', 'sin'].includes(w)).map((w) => w.slice(0, 5))
+export function atHome(recipe, have, haveIds = new Set()) {
+  const names = have.map((h) => ' ' + norm(h))
+  const ings = (recipe.ingredients || []).filter((i) => !i.basic)
+  if (!ings.length) return { have: 0, total: 0, ratio: 0, missing: [] }
+  const missing = []
+  let n = 0
+  for (const i of ings) {
+    const ok = (i.merc_id && haveIds.has(i.merc_id)) || (() => {
+      const st = stems(i.q || i.name || '').slice(0, 2)
+      return st.length && names.some((h) => st.every((w) => h.includes(' ' + w)))
+    })()
+    if (ok) n++
+    else missing.push(i.q || i.name)
+  }
+  return { have: n, total: ings.length, ratio: n / ings.length, missing }
+}
+
 // Recetas de partida: el recetario de src/lib/recipes-kb.js
 import { KB } from './recipes-kb.js'
 export const STARTER_RECIPES = KB
@@ -63,11 +83,15 @@ export function tagsOf(recipe) {
  * slots: [{ day, slot }] libres. recipes: [{ id?, name, slot, ingredients, tags? }]. pantryOk: Set de merc_id que hay en casa.
  * Reglas: no repetir en la semana si hay recetas de sobra, al menos 2 de legumbre y 2 de pescado si hay huecos,
  * las cenas más ligeras (verdura, huevo, pescado) y se prefiere lo que aprovecha la despensa. 'seed' cambia la propuesta.
+ * opts.ratings quita lo que no gusta y sube lo que gusta, y se prefiere lo de temporada (opts.month) y cenas rápidas entre semana.
  */
-export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], seed = 1) {
+export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], seed = 1, opts = {}) {
   let r = seed >>> 0 || 1
   const rand = () => ((r = (r * 1103515245 + 12345) >>> 0) / 4294967296)
-  const pool = recipes.map((x) => ({ ...x, tags: tagsOf(x), uses: used.filter((u) => u === x.name).length }))
+  // ratings: { [nombre]: 1 | -1 } (me gusta / no me gusta). month: para preferir lo de temporada.
+  const ratings = opts.ratings || {}
+  const month = opts.month || new Date().getMonth() + 1
+  const pool = recipes.filter((x) => ratings[x.name] !== -1).map((x) => ({ ...x, tags: tagsOf(x), uses: used.filter((u) => u === x.name).length }))
   const slotOf = (x) => x.slot || x.meta?.slot
   const fits = (x, slot) => !slotOf(x) || slotOf(x) === 'ambas' || slotOf(x) === slot
   const out = []
@@ -82,7 +106,13 @@ export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], see
       if (x.tags.includes('pescado') && need.pescado > 0) score += 3
       if (s.slot === 'cena' && x.tags.some((t) => ['verdura', 'huevo', 'pescado'].includes(t))) score += 1.5
       if (s.slot === 'cena' && x.tags.includes('legumbre')) score -= 3
-      score += (x.ingredients || []).filter((i) => i.merc_id && pantryOk.has(i.merc_id)).length * 0.8
+      score += opts.have ? atHome(x, opts.have, pantryOk).ratio * 3 : (x.ingredients || []).filter((i) => i.merc_id && pantryOk.has(i.merc_id)).length * 0.8
+      if (ratings[x.name] === 1) score += 2.5
+      const season = x.season || x.meta?.season
+      if (season?.length) score += season.includes(month) ? 1 : -5
+      // Entre semana, cenas rápidas
+      const wd = s.day ? new Date(s.day + 'T12:00').getDay() : 0
+      if (s.slot === 'cena' && wd >= 1 && wd <= 5 && (x.time || x.meta?.time || 30) <= 20) score += 0.8
       // El mismo tipo de plato dos veces seguidas no
       const prev = out[out.length - 1]
       if (prev && prev.recipe.tags.some((t) => x.tags.includes(t) && t !== 'verdura')) score -= 2
