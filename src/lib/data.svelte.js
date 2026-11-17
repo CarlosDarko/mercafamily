@@ -719,7 +719,7 @@ export async function rejectRequest(it) {
 // ---------- Recetas y menú de la semana ----------
 
 export async function saveRecipe(r) {
-  const row = { id: r.id || uid(), name: r.name.trim().slice(0, 60), ingredients: r.ingredients || [], created_at: r.created_at || new Date().toISOString() }
+  const row = { id: r.id || uid(), name: r.name.trim().slice(0, 60), ingredients: r.ingredients || [], kb_id: r.kb_id || null, steps: r.steps || [], meta: r.meta || {}, created_at: r.created_at || new Date().toISOString() }
   const i = app.recipes.findIndex((x) => x.id === row.id)
   if (i >= 0) app.recipes[i] = row
   else app.recipes.push(row)
@@ -777,6 +777,7 @@ export function mealNeeds(from, to, pantryList = []) {
     if (m.day < from || m.day > to || !m.recipe_id) continue
     const r = app.recipes.find((x) => x.id === m.recipe_id)
     for (const ing of r?.ingredients || []) {
+      if (ing.basic) continue
       const k = ing.merc_id || `t:${ing.name.toLowerCase()}`
       if (onAnyList(ing) || fresh.has(ing.merc_id) || need.has(k)) continue
       need.set(k, { ...ing, why: m.name })
@@ -995,4 +996,20 @@ export function loadIpc() {
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null)
   return ipcPromise
+}
+
+// ---------- Recetario ----------
+
+// Ingrediente del recetario ({ q, amount, basic }) o de una receta guardada -> producto del catálogo
+export function resolveKbIngredient(i) {
+  if (i.merc_id !== undefined && !i.q) return i
+  const r = resolveIngredient(i.q)
+  return { ...r, amount: i.amount || null, basic: !!i.basic, q: i.q }
+}
+
+// Guarda una receta del recetario como receta de casa (si no estaba) y la devuelve
+export async function adoptKbRecipe(k) {
+  const existing = app.recipes.find((r) => r.kb_id === k.id || r.name === k.name)
+  if (existing) return existing
+  return saveRecipe({ name: k.name, kb_id: k.id, ingredients: k.ingredients.map(resolveKbIngredient), steps: k.steps, meta: { time: k.time, tags: k.tags, slot: k.slot, kids: k.kids, season: k.season || null } })
 }

@@ -25,6 +25,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/equilibrio.png' width='190' alt='Fruta y verdura de temporada y equilibrio de la compra con consejos'>
   <img src='docs/capturas/informe.png' width='190' alt='Informe mensual con gasto, categorías y lo que más compráis'>
   <img src='docs/capturas/ipc.png' width='190' alt='Vuestra cesta frente al IPC de alimentos del INE'>
+  <img src='docs/capturas/recetario.png' width='190' alt='Recetario con buscador y filtros por legumbre, pescado, verdura y más'>
+  <img src='docs/capturas/receta.png' width='190' alt='Receta de lentejas con ingredientes marcados para añadir a la lista y los básicos desmarcados'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -39,7 +41,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Ficha al tocar el producto** y búsqueda que aprende vuestras palabras ('dinosaurus' → las galletas que elegisteis).
 - **Tema claro, oscuro o el del móvil y tres tamaños de letra**, en Ajustes, Pantalla.
 - **Prepárame la lista**: con un botón junta lo que falta para el menú, lo que se acaba en casa y lo que toca por frecuencia, todo marcado para quitar lo que sobre.
-- **Menú de la semana con comidas y cenas**: 'Propón el menú de la semana' rellena los huecos sin repetir, con legumbre y pescado, cenas ligeras y aprovechando la despensa, con el coste aproximado de lo que falta. Hay 24 recetas de partida y podéis guardar las vuestras. La app apunta los ingredientes que faltan con vuestras preferencias.
+- **Recetario** con 66 recetas sencillas y saludables de cocina de casa para 3 (legumbre, pescado, verdura, huevo, arroz, pasta y algo de carne), con cantidades, pasos, tiempo, si gustan a los peques y temporada. Se busca y filtra (comidas, cenas, rápidas, para peques, de temporada…). Al abrir una receta, un toque añade sus ingredientes a la lista con productos de Mercadona (desmarca lo que ya hay en casa, lo que ya está en la lista y los básicos como sal o aceite) o la pone en el menú de un día.
+- **Menú de la semana con comidas y cenas**: 'Propón el menú de la semana' rellena los huecos sin repetir, con legumbre y pescado, cenas ligeras y aprovechando la despensa, con el coste aproximado de lo que falta. Usa todo el recetario y también vuestras recetas guardadas. La app apunta los ingredientes que faltan con vuestras preferencias.
 - **De temporada**: la fruta y verdura de cada mes sale marcada en el buscador y en la lista, y en Menú hay una sección para apuntarla con un toque.
 - **Equilibrio de la compra**: reparto del gasto en fruta, verdura, legumbre, pescado, carne, procesados y dulces de los últimos 30 días, con consejos sencillos (orientativo).
 - **Despensa sin rellenar nada**: se calcula con lo que compráis y cada cuánto, con 'se acaba pronto' y botones de 'Se acabó' o 'Aún queda' para corregirla.

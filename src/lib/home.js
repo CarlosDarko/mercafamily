@@ -38,38 +38,14 @@ export function pantry(tripItems, overrides = {}, today = new Date(), days = 90)
   return out.sort((a, b) => a.left - b.left || a.name.localeCompare(b.name, 'es'))
 }
 
-// Recetas de partida: los ingredientes se buscan en el catálogo al usarlas.
-// slot: comida, cena o ambas. tags: para variar el menú (legumbre, pescado, carne, verdura, huevo, pasta, arroz).
-export const STARTER_RECIPES = [
-  { name: 'Lentejas estofadas', slot: 'comida', tags: ['legumbre'], ingredients: ['lenteja pardina', 'chorizo', 'zanahoria', 'patata', 'cebolla', 'pimentón'] },
-  { name: 'Garbanzos con espinacas', slot: 'comida', tags: ['legumbre', 'verdura'], ingredients: ['garbanzo cocido', 'espinacas', 'ajo', 'pimentón', 'huevos'] },
-  { name: 'Alubias con verduras', slot: 'comida', tags: ['legumbre', 'verdura'], ingredients: ['alubia blanca cocida', 'pimiento', 'cebolla', 'zanahoria', 'tomate frito'] },
-  { name: 'Macarrones con tomate', slot: 'comida', tags: ['pasta', 'carne'], ingredients: ['macarrón', 'tomate frito', 'carne picada', 'queso rallado'] },
-  { name: 'Espaguetis con atún', slot: 'comida', tags: ['pasta', 'pescado'], ingredients: ['spaghetti', 'atún', 'tomate frito', 'cebolla'] },
-  { name: 'Arroz con pollo', slot: 'comida', tags: ['arroz', 'carne'], ingredients: ['arroz redondo', 'muslo de pollo', 'pimiento', 'tomate triturado', 'guisantes'] },
-  { name: 'Paella de verduras', slot: 'comida', tags: ['arroz', 'verdura'], ingredients: ['arroz redondo', 'judía verde', 'alcachofa', 'pimiento', 'tomate triturado'] },
-  { name: 'Pollo al horno con patatas', slot: 'comida', tags: ['carne'], ingredients: ['pollo entero', 'patatas', 'limón', 'ajo'] },
-  { name: 'Albóndigas en salsa', slot: 'comida', tags: ['carne'], ingredients: ['albóndigas', 'tomate frito', 'cebolla', 'guisantes'] },
-  { name: 'Merluza con verduras', slot: 'ambas', tags: ['pescado', 'verdura'], ingredients: ['merluza', 'calabacín', 'pimiento', 'cebolla'] },
-  { name: 'Salmón a la plancha', slot: 'ambas', tags: ['pescado'], ingredients: ['salmón', 'espárragos verdes', 'limón'] },
-  { name: 'Lubina al horno', slot: 'ambas', tags: ['pescado', 'verdura'], ingredients: ['lubina', 'patata', 'cebolla', 'tomate'] },
-  { name: 'Tortilla de patata', slot: 'cena', tags: ['huevo'], ingredients: ['huevos', 'patatas', 'cebolla', 'aceite de oliva'] },
-  { name: 'Tortilla francesa con ensalada', slot: 'cena', tags: ['huevo', 'verdura'], ingredients: ['huevos', 'lechuga', 'tomate', 'pepino'] },
-  { name: 'Ensalada completa', slot: 'cena', tags: ['verdura', 'pescado'], ingredients: ['lechuga', 'tomate', 'atún', 'maíz dulce', 'huevos'] },
-  { name: 'Crema de calabacín', slot: 'cena', tags: ['verdura'], ingredients: ['calabacín', 'patata', 'cebolla', 'quesitos'] },
-  { name: 'Crema de calabaza', slot: 'cena', tags: ['verdura'], ingredients: ['calabaza', 'zanahoria', 'cebolla', 'patata'] },
-  { name: 'Sopa de fideos', slot: 'cena', tags: ['pasta'], ingredients: ['caldo de pollo', 'fideo', 'huevos'] },
-  { name: 'Verduras salteadas con huevo', slot: 'cena', tags: ['verdura', 'huevo'], ingredients: ['brócoli', 'zanahoria', 'champiñón', 'huevos'] },
-  { name: 'Pizza casera', slot: 'cena', tags: ['pasta'], ingredients: ['masa pizza', 'tomate frito', 'mozzarella', 'jamón cocido', 'orégano'] },
-  { name: 'Hamburguesas caseras', slot: 'cena', tags: ['carne'], ingredients: ['burger vacuno', 'pan de burger', 'queso lonchas', 'lechuga', 'tomate'] },
-  { name: 'Arroz a la cubana', slot: 'ambas', tags: ['arroz', 'huevo'], ingredients: ['arroz redondo', 'tomate frito', 'huevos', 'plátano'] },
-  { name: 'Revuelto de champiñones', slot: 'cena', tags: ['huevo', 'verdura'], ingredients: ['huevos', 'champiñón', 'ajo', 'pan'] },
-  { name: 'Lomo a la plancha con pimientos', slot: 'cena', tags: ['carne', 'verdura'], ingredients: ['lomo de cerdo', 'pimiento', 'patata'] }
-]
+// Recetas de partida: el recetario de src/lib/recipes-kb.js
+import { KB } from './recipes-kb.js'
+export const STARTER_RECIPES = KB
 
 // Etiquetas de una receta propia a partir de sus ingredientes
 export function tagsOf(recipe) {
   if (recipe.tags?.length) return recipe.tags
+  if (recipe.meta?.tags?.length) return recipe.meta.tags
   const t = norm((recipe.ingredients || []).map((i) => i.name).join(' ') + ' ' + recipe.name)
   const tags = []
   if (/lentej|garbanz|alubi|judia blanca|frijol/.test(t)) tags.push('legumbre')
@@ -92,7 +68,8 @@ export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], see
   let r = seed >>> 0 || 1
   const rand = () => ((r = (r * 1103515245 + 12345) >>> 0) / 4294967296)
   const pool = recipes.map((x) => ({ ...x, tags: tagsOf(x), uses: used.filter((u) => u === x.name).length }))
-  const fits = (x, slot) => !x.slot || x.slot === 'ambas' || x.slot === slot
+  const slotOf = (x) => x.slot || x.meta?.slot
+  const fits = (x, slot) => !slotOf(x) || slotOf(x) === 'ambas' || slotOf(x) === slot
   const out = []
   const need = { legumbre: 2, pescado: 2 }
   for (const s of slots) {

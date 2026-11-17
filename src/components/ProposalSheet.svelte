@@ -1,7 +1,7 @@
 <script>
   // Propuesta de menú para los huecos libres: variada, con legumbre y pescado, aprovechando la despensa
   import { X, Shuffle, Check } from '@lucide/svelte'
-  import { app, saveRecipe, setMeal, resolveIngredient, settings, toast } from '../lib/data.svelte.js'
+  import { app, saveRecipe, setMeal, resolveIngredient, resolveKbIngredient, adoptKbRecipe, settings, toast } from '../lib/data.svelte.js'
   import { suggestWeek, pantry, STARTER_RECIPES } from '../lib/home.js'
   import { eur, isoDate } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
@@ -28,7 +28,7 @@
   const resolved = new Map()
   function ingredientsOf(recipe) {
     if (resolved.has(recipe.name)) return resolved.get(recipe.name)
-    const list = (recipe.ingredients || []).map((i) => (typeof i === 'string' ? resolveIngredient(i) : i))
+    const list = (recipe.ingredients || []).map((i) => (typeof i === 'string' ? resolveIngredient(i) : i.q ? resolveKbIngredient(i) : i)).filter((i) => !i.basic)
     resolved.set(recipe.name, list)
     return list
   }
@@ -44,7 +44,7 @@
     const chosen = [...plan]
     for (const e of chosen) {
       let r = app.recipes.find((x) => x.name === e.recipe.name)
-      if (!r) r = await saveRecipe({ name: e.recipe.name, ingredients: ingredientsOf(e.recipe) })
+      if (!r) r = e.recipe.id && e.recipe.steps && !e.recipe.created_at ? await adoptKbRecipe(e.recipe) : await saveRecipe({ name: e.recipe.name, ingredients: ingredientsOf(e.recipe) })
       await setMeal({ day: e.day, slot: e.slot, name: r.name, recipe_id: r.id })
     }
     saving = false

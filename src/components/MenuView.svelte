@@ -1,7 +1,10 @@
 <script>
   // Menú de la semana, despensa estimada y recetas de la familia
   import { ChefHat, Plus, ShoppingBasket, Check, X, Trash2, Pencil, Wand2, Sun } from '@lucide/svelte'
-  import { app, setMeal, removeMeal, saveRecipe, deleteRecipe, resolveIngredient, mealNeeds, addMany, pantrySet, settings, toast, searchCatalog } from '../lib/data.svelte.js'
+  import { app, setMeal, removeMeal, saveRecipe, deleteRecipe, resolveIngredient, mealNeeds, addMany, pantrySet, settings, toast, searchCatalog, adoptKbRecipe } from '../lib/data.svelte.js'
+  import RecipeBook from './RecipeBook.svelte'
+  import RecipeSheet from './RecipeSheet.svelte'
+  import { norm } from '../lib/format.js'
   import { pantry, STARTER_RECIPES } from '../lib/home.js'
   import ProposalSheet from './ProposalSheet.svelte'
   import SeasonAndBalance from './SeasonAndBalance.svelte'
@@ -51,13 +54,22 @@
     picking = null
   }
   async function useStarter(s) {
-    const r = await saveRecipe({ name: s.name, ingredients: s.ingredients.map(resolveIngredient) })
+    const r = await adoptKbRecipe(s)
     if (picking) await chooseRecipe(r)
-    toast(`Receta guardada: ${r.name}`)
   }
+  // Buscar en el recetario al elegir el plato de un día
+  let pickQ = $state('')
+  const pickList = $derived.by(() => {
+    if (!picking) return []
+    const w = norm(pickQ).split(' ').filter(Boolean)
+    return STARTER_RECIPES.filter((x) => (x.slot === 'ambas' || x.slot === picking.slot) && !app.recipes.some((r) => r.kb_id === x.id || r.name === x.name))
+      .filter((x) => !w.length || w.every((t) => norm(x.name + ' ' + x.ingredients.map((i) => i.q).join(' ')).includes(t)))
+      .slice(0, pickQ ? 12 : 8)
+  })
 
   // ---- Editar receta ----
   let editing = $state(null)
+  let viewing = $state(null)
   let ingQ = $state('')
   const ingResults = $derived(ingQ.trim().length >= 2 ? searchCatalog(ingQ, 6) : [])
   function newRecipe() {
@@ -155,11 +167,13 @@
     {/if}
   </section>
 
+  <RecipeBook />
+
   <SeasonAndBalance />
 
   <section class="section" aria-labelledby="h-recipes">
     <div class="row">
-      <h2 id="h-recipes" class="spacer">Recetas de casa</h2>
+      <h2 id="h-recipes" class="spacer">Recetas guardadas</h2>
       <button class="btn mini" onclick={newRecipe}><Plus size={18} aria-hidden="true" /> Nueva</button>
     </div>
     {#if app.recipes.length}
@@ -167,19 +181,11 @@
         {#each app.recipes as r (r.id)}
           <li class="panel">
             <ChefHat size={20} aria-hidden="true" />
-            <span class="r-text"><strong>{r.name}</strong><small>{r.ingredients.length} ingredientes</small></span>
+            <button class="r-text r-open" onclick={() => (viewing = r)}><strong>{r.name}</strong><small>{r.ingredients.length} ingredientes{r.steps?.length ? ' · con pasos' : ''}</small></button>
             <button class="icon-btn" onclick={() => (editing = JSON.parse(JSON.stringify(r)))} aria-label={`Editar ${r.name}`}><Pencil size={18} aria-hidden="true" /></button>
           </li>
         {/each}
       </ul>
-    {/if}
-    {#if starters.length}
-      <p class="hint">Ideas para empezar (los ingredientes se eligen solos con vuestras preferencias):</p>
-      <div class="ideas">
-        {#each starters as s (s.name)}
-          <button class="btn mini" onclick={() => useStarter(s)}><Plus size={16} aria-hidden="true" /> {s.name}</button>
-        {/each}
-      </div>
     {/if}
   </section>
 </div>
@@ -202,18 +208,23 @@
       <input id="free-meal" class="input" bind:value={freeName} placeholder="Otra cosa: cenar fuera, sobras…" maxlength="60" />
       <button class="btn btn-primary" type="submit" disabled={!freeName.trim()}>Poner</button>
     </form>
-    {#if starters.length}
-      <p class="hint">O una de estas ideas:</p>
-      <div class="ideas">
-        {#each starters.filter((x) => !picking.slot || x.slot === 'ambas' || x.slot === picking.slot).slice(0, 8) as s (s.name)}
-          <button class="btn mini" onclick={() => useStarter(s)}>{s.name}</button>
-        {/each}
-      </div>
-    {/if}
+    <div class="field">
+      <label class="label" for="pick-q">Del recetario</label>
+      <input id="pick-q" class="input" bind:value={pickQ} placeholder="Buscar: lentejas, merluza, tortilla…" autocomplete="off" />
+    </div>
+    <ul class="choose" role="list">
+      {#each pickList as x (x.id)}
+        <li><button class="choice" onclick={() => useStarter(x)}><ChefHat size={18} aria-hidden="true" /> {x.name}<small class="mins">{x.time} min</small></button></li>
+      {/each}
+    </ul>
     {#if mealOf(picking.iso, picking.slot)}
       <button class="btn btn-danger" onclick={() => (removeMeal(mealOf(picking.iso, picking.slot).id), (picking = null))}><Trash2 size={18} aria-hidden="true" /> Quitar este plato</button>
     {/if}
   </Sheet>
+{/if}
+
+{#if viewing}
+  <RecipeSheet recipe={viewing} onclose={() => (viewing = null)} />
 {/if}
 
 {#if proposing}
@@ -401,6 +412,21 @@
   }
   .r-text small {
     color: var(--ink-2);
+  }
+  .r-open {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    min-height: 44px;
+    padding: 0;
+  }
+  .mins {
+    margin-left: auto;
+    color: var(--ink-2);
+    font-weight: 500;
   }
   .ideas {
     display: flex;

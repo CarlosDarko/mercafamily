@@ -343,3 +343,8 @@ create table if not exists public.compare_cache (
   at timestamptz not null default now()
 );
 alter table public.compare_cache enable row level security;
+
+-- Recetario: las recetas guardadas desde el recetario llevan sus pasos y datos
+alter table public.recipes add column if not exists kb_id text;
+alter table public.recipes add column if not exists steps jsonb not null default '[]'::jsonb;
+alter table public.recipes add column if not exists meta jsonb not null default '{}'::jsonb;
