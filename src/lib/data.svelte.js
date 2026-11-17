@@ -802,3 +802,44 @@ export function markOnboarded() {
   localStorage.setItem('mf:onboarded', '1')
 }
 export const needsOnboarding = () => !localStorage.getItem('mf:onboarded')
+
+// ---------- Avisos push ----------
+
+export const pushUrl = () => {
+  const cfg = supabaseConfig()
+  return cfg ? `${cfg.url.replace(/\/$/, '')}/functions/v1/push` : null
+}
+
+export async function pushStatus() {
+  const { currentSubscription } = await import('./push.js')
+  if (app.kind !== 'supabase') return { sub: null, row: null }
+  const sub = await currentSubscription()
+  const row = sub ? await be.getPushSub(sub.endpoint).catch(() => null) : null
+  return { sub, row }
+}
+
+export async function enablePush(prefs) {
+  const { subscribe } = await import('./push.js')
+  const sub = await subscribe(pushUrl())
+  const j = sub.toJSON()
+  await be.savePushSub({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, member_name: app.me || null, prefs })
+  return sub
+}
+
+export async function savePushPrefs(endpoint, prefs) {
+  const { currentSubscription } = await import('./push.js')
+  const sub = await currentSubscription()
+  if (!sub) return
+  const j = sub.toJSON()
+  await be.savePushSub({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, member_name: app.me || null, prefs })
+}
+
+export async function disablePush() {
+  const { currentSubscription } = await import('./push.js')
+  const sub = await currentSubscription()
+  if (!sub) return
+  await be.deletePushSub(sub.endpoint).catch(() => {})
+  await sub.unsubscribe()
+}
+
+export const testPush = () => be.testPush(pushUrl())

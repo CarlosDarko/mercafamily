@@ -1,5 +1,5 @@
 // Service worker: la app abre sin conexión. La página se pide primero a la red; lo demás, de la caché.
-const VERSION = 'mf-v1'
+const VERSION = 'mf-v2'
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg']
 
 self.addEventListener('install', (e) => {
@@ -42,4 +42,41 @@ self.addEventListener('fetch', (e) => {
   if (req.mode === 'navigate' || url.pathname.includes('/data/')) return e.respondWith(networkFirst(req))
   if (url.pathname.includes('/assets/')) return e.respondWith(cacheFirst(req))
   e.respondWith(networkFirst(req))
+})
+
+// Avisos push: se muestran aunque la app esté cerrada y al tocarlos abren la sección
+self.addEventListener('push', (e) => {
+  let d = {}
+  try {
+    d = e.data ? e.data.json() : {}
+  } catch {
+    d = { title: 'MercaFamily', body: e.data ? e.data.text() : '' }
+  }
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'MercaFamily', {
+      body: d.body || '',
+      tag: d.tag,
+      renotify: !!d.tag,
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      lang: 'es',
+      data: { url: d.url || './' }
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = e.notification.data?.url || './'
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if (c.url.startsWith(self.registration.scope)) {
+          c.focus()
+          return c.navigate ? c.navigate(url) : null
+        }
+      }
+      return self.clients.openWindow(url)
+    })
+  )
 })

@@ -76,6 +76,22 @@ export function createSupabaseBackend({ url, key }) {
       const { data } = await sb.auth.getUser()
       ok(await sb.from('members').update(patch).eq('household_id', hid).eq('user_id', data.user.id))
     },
+    async savePushSub(row) {
+      const { data } = await sb.auth.getUser()
+      ok(await sb.from('push_subs').upsert({ ...row, household_id: hid, user_id: data.user.id, updated_at: new Date().toISOString() }, { onConflict: 'endpoint' }))
+    },
+    async getPushSub(endpoint) {
+      const rows = ok(await sb.from('push_subs').select('*').eq('endpoint', endpoint).limit(1))
+      return rows[0] || null
+    },
+    async deletePushSub(endpoint) {
+      ok(await sb.from('push_subs').delete().eq('endpoint', endpoint))
+    },
+    async testPush(url) {
+      const { data } = await sb.auth.getSession()
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` }, body: JSON.stringify({ type: 'test' }) })
+      return res.json()
+    },
     async household() {
       return ok(await sb.from('households').select('*').eq('id', hid).single())
     },

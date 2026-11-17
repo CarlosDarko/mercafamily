@@ -247,3 +247,91 @@ begin
   end loop;
 end;
 $$;
+
+-- Tanda 5: avisos push
+create extension if not exists pg_net;
+create extension if not exists pg_cron;
+
+-- Configuración del proyecto (la dirección de la función de avisos). Se rellena al desplegar.
+create table if not exists public.app_config (
+  key text primary key,
+  value text not null
+);
+alter table public.app_config enable row level security;
+
+-- Suscripciones de cada móvil a los avisos
+create table if not exists public.push_subs (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  member_name text,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  prefs jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+drop policy if exists push_subs_own on public.push_subs;
+create policy push_subs_own on public.push_subs for all to authenticated
+  using (user_id = auth.uid() and public.is_member(household_id))
+  with check (user_id = auth.uid() and public.is_member(household_id));
+grant select, insert, update, delete on public.push_subs to authenticated;
+
+-- Registro de avisos enviados para no repetirlos (solo lo usa la función)
+create table if not exists public.push_log (
+  kind text not null,
+  key text not null,
+  created_at timestamptz not null default now(),
+  primary key (kind, key)
+);
+alter table public.push_log enable row level security;
+
+-- Llamar a la función de avisos cuando alguien apunta algo o termina una compra
+create or replace function public.notify_push()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  fn text;
+begin
+  select value into fn from public.app_config where key = 'push_url';
+  if fn is not null then
+    perform net.http_post(
+      url := fn,
+      body := jsonb_build_object('type', tg_argv[0], 'id', new.id),
+      headers := '{"Content-Type": "application/json"}'::jsonb
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists items_push on public.items;
+create trigger items_push after insert on public.items for each row execute function public.notify_push('item');
+drop trigger if exists trips_push on public.trips;
+create trigger trips_push after insert on public.trips for each row execute function public.notify_push('trip');
+
+-- Cada 15 minutos: aviso al salir del trabajo y resumen del domingo
+create or replace function public.push_tick()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  fn text;
+begin
+  select value into fn from public.app_config where key = 'push_url';
+  if fn is not null then
+    perform net.http_post(url := fn, body := '{"type": "tick"}'::jsonb, headers := '{"Content-Type": "application/json"}'::jsonb);
+  end if;
+  delete from public.push_log where created_at < now() - interval '30 days';
+end;
+$$;
+
+select cron.unschedule(jobid) from cron.job where jobname = 'mercafamily-push-tick';
+select cron.schedule('mercafamily-push-tick', '*/15 * * * *', 'select public.push_tick()');

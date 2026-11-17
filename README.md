@@ -18,6 +18,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/bienvenida.png' width='190' alt='Primer paso de la guía de bienvenida'>
   <img src='docs/capturas/voz.png' width='190' alt='Cuatro productos apuntados de una sola frase con el micrófono'>
   <img src='docs/capturas/ticket-foto.png' width='190' alt='Terminar compra con el total y los precios leídos de la foto del ticket'>
+  <img src='docs/capturas/avisos.png' width='190' alt='Ajustes de avisos con aviso al salir del trabajo, hora y días'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -45,6 +46,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Guía de bienvenida** de cuatro pasos (y en Ajustes, Ayuda, para verla otra vez).
 - **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y apunta cada cosa con su producto.
 - **Ticket con foto**: al terminar la compra, una foto del ticket de papel rellena el total y guarda los precios reales de cada producto (el lector se descarga solo la primera vez).
+- **Avisos en el móvil** ([docs/avisos.md](docs/avisos.md)): cuando alguien apunta algo o termina la compra, si os pasáis del presupuesto, el resumen del domingo y un aviso al salir del trabajo si la lista tiene algo. Cada persona elige los suyos.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.
@@ -62,7 +64,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 |---|---|
 | GitHub Pages | Aloja la app (gratis). |
 | GitHub Actions | Cada lunes descarga el catálogo de Mercadona (unos 4.400 productos), completa fichas, guarda el historial de precios y publica. |
-| Supabase | Base de datos con tiempo real y acceso por código de email. Guía: [docs/supabase.md](docs/supabase.md). |
+| Supabase | Base de datos con tiempo real y acceso con email y contraseña. Guía: [docs/supabase.md](docs/supabase.md). |
+| Función de avisos | Función de Supabase que envía los avisos push, llamada por la base de datos (pg_net y pg_cron). [docs/avisos.md](docs/avisos.md). |
 | Open Food Facts | Nutri-Score y nutrición por código de barras, consultado desde la app. |
 
 ### Variables de GitHub (Settings, Secrets and variables, Actions, Variables)

@@ -26,7 +26,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Historial de precios | `public/data/history.json`, solo se añade un punto cuando cambia el precio. |
 | Nutrición | Ingredientes y alérgenos de Mercadona (`public/data/details.json`, incremental, 1.500 fichas por semana). Nutri-Score y valores por 100 g de Open Food Facts en vivo desde la app por código de barras. |
 | Preferencias | Frases libres por hogar ('leche semidesnatada sin lactosa', 'evitar aceite de palma') que ordenan la búsqueda y deciden el producto al pulsar Añadir. |
-| Avisos | De momento solo dentro de la app. WhatsApp (OpenWA y Whisper) en una fase posterior. |
+| Avisos | Web push con VAPID: función de Supabase `push` (`supabase/functions/push`), triggers con pg_net en `items` y `trips`, pg_cron cada 15 minutos, suscripciones en `push_subs`. Claves VAPID solo como secretos de Supabase. Detalle en `docs/avisos.md`. WhatsApp en una fase posterior. |
 | Diseño | Skill `disenador-web` con Impeccable, modo Operate. Mundo de mercado y ticket: verde mercado, suelo verde hoja pálido con tarjetas blancas (Impeccable marcó el crema como fondo por reflejo), limón para 'toca comprar', tomate solo para alertas. Bricolage Grotesque autoalojada e iconos Lucide. |
 | Listas | Tabla `lists`. La principal tiene el mismo id que el hogar para que no se duplique si dos móviles la crean a la vez. `items.list_id` nulo significa la principal. |
 | Ajustes compartidos | `households.settings` (jsonb): favoritos, orden de pasillos aprendido (`aisle`), lo que suele faltar (`missing`). `households.aliases`: búsquedas aprendidas. Tema y tamaño de letra son de cada móvil (localStorage). |
@@ -52,6 +52,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 - `src/components/`: pantallas y piezas de la interfaz.
 - `scripts/`: descargadores del catálogo y de las fichas de Mercadona.
 - `supabase/schema.sql`: esquema completo, se puede ejecutar más de una vez.
+- `supabase/functions/push/`: función de Supabase que envía los avisos push.
 - `.github/workflows/actualizar-y-publicar.yml`: actualización semanal y publicación.
 
 ## Comandos
@@ -68,5 +69,5 @@ npm run build
 1. Base: lista compartida, categorías, carro, terminar compra. Hecho.
 2. Costes e histórico: precios automáticos, total previsto, presupuesto, gastos con gráficas. Hecho.
 3. Precios automáticos: catálogo semanal de Mercadona, historial de precios, fichas y Open Food Facts. Hecho, con escáner de código de barras en Android (BarcodeDetector, en iPhone aún no existe).
-4. Sugerencias y avisos: 'toca comprar' por frecuencia, subidas de precio, alternativas más baratas y más sanas. Hecho dentro de la app. Faltan notificaciones push.
+4. Sugerencias y avisos: 'toca comprar' por frecuencia, subidas de precio, alternativas más baratas y más sanas, y avisos push. Hecho.
 5. WhatsApp y voz: voz dentro de la app hecha. WhatsApp pendiente.

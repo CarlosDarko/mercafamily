@@ -2,6 +2,7 @@
   import { Copy, Share2, X, Plus, Download, Upload } from '@lucide/svelte'
   import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS, people, setPeople } from '../lib/data.svelte.js'
   import { DIETS } from '../lib/home.js'
+  import PushSettings from './PushSettings.svelte'
   import { eur, parseNum, fmtLong } from '../lib/format.js'
 
   const REPO = 'https://github.com/CarlosDarko/mercafamily'
@@ -180,6 +181,8 @@
       </div>
     </section>
   {:else}
+  <PushSettings />
+
   <section class="section" aria-labelledby="h-screen">
     <h2 id="h-screen">Pantalla</h2>
     <div class="panel pad stack">
