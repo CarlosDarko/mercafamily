@@ -56,6 +56,7 @@
   const linesOf = (t) => app.tripItems.filter((x) => x.trip_id === t.id)
 
   const diff = $derived(lastMonth > 0 ? (thisMonth - lastMonth) / lastMonth : null)
+  import BasketHealth from './BasketHealth.svelte'
 </script>
 
 <div class="page">
@@ -123,6 +124,8 @@
       </section>
     {/if}
   {/if}
+
+  <BasketHealth />
 
   {#if changes.length}
     <section class="section" aria-labelledby="h-prices">

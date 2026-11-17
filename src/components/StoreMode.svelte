@@ -14,7 +14,7 @@
   const items = $derived(itemsOfList())
   const todo = $derived(
     items
-      .filter((i) => !i.checked && !i.missing)
+      .filter((i) => !i.checked && !i.missing && !i.requested)
       .sort((a, b) => aisleRank(a.category) - aisleRank(b.category) || a.name.localeCompare(b.name, 'es'))
   )
   const done = $derived(items.filter((i) => i.checked))

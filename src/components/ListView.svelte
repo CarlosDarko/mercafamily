@@ -1,6 +1,6 @@
 <script>
-  import { CalendarClock, Plus, Store, Star } from '@lucide/svelte'
-  import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings } from '../lib/data.svelte.js'
+  import { CalendarClock, Plus, Store, Star, Sparkles, Check, X } from '@lucide/svelte'
+  import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings, approveRequest, rejectRequest, colorOf } from '../lib/data.svelte.js'
   import { imgUrl } from '../lib/catalog.js'
   import { dueSuggestions, weekTotal } from '../lib/insights.js'
   import { eur } from '../lib/format.js'
@@ -10,14 +10,18 @@
   import CloseSheet from './CloseSheet.svelte'
   import ListSwitcher from './ListSwitcher.svelte'
   import StoreMode from './StoreMode.svelte'
+  import PrepareSheet from './PrepareSheet.svelte'
+  import HealthySwaps from './HealthySwaps.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
   let showUsual = $state(false)
   let store = $state(false)
+  let preparing = $state(false)
 
   const current = $derived(app.listId ? itemsOfList(app.listId) : app.items)
-  const pending = $derived(current.filter((i) => !i.checked && !i.missing))
+  const requests = $derived(current.filter((i) => i.requested && !i.checked))
+  const pending = $derived(current.filter((i) => !i.checked && !i.missing && !i.requested))
   const inCart = $derived(current.filter((i) => i.checked))
   const missing = $derived(current.filter((i) => i.missing))
   const favorites = $derived(
@@ -74,13 +78,34 @@
         Escribe lo que hace falta y elige el producto de Mercadona.
       {/if}
       </p>
-      {#if pending.length}
+      {#if pending.length && !app.prefs.kid}
         <button class="btn store-btn" onclick={() => (store = true)}><Store size={20} aria-hidden="true" /> Modo tienda</button>
       {/if}
     </div>
+    {#if !app.prefs.kid}
+      <button class="btn prep" onclick={() => (preparing = true)}><Sparkles size={18} aria-hidden="true" /> Prepárame la lista</button>
+    {/if}
   </div>
 
   <AddBar />
+
+  {#if requests.length}
+    <section class="section reqs" aria-labelledby="h-reqs">
+      <h2 id="h-reqs" class="cat">{app.prefs.kid ? 'Tus peticiones' : 'Peticiones'}</h2>
+      <ul class="items panel" role="list">
+        {#each requests as it (it.id)}
+          <li class="req">
+            <span class="dot" style={`background:${colorOf(it.added_by)}`} aria-hidden="true"></span>
+            <span class="req-text"><strong>{it.name}</strong><small>{app.prefs.kid ? 'Esperando a que un adulto diga que sí' : `Lo pide ${it.added_by || 'alguien'}`}</small></span>
+            {#if !app.prefs.kid}
+              <button class="icon-btn ok" onclick={() => approveRequest(it)} aria-label={`Aceptar ${it.name}`}><Check size={22} aria-hidden="true" /></button>
+              <button class="icon-btn no" onclick={() => rejectRequest(it)} aria-label={`Rechazar ${it.name}`}><X size={22} aria-hidden="true" /></button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
 
   {#if favorites.length}
     <section class="favs" aria-labelledby="h-favs">
@@ -98,7 +123,11 @@
     </section>
   {/if}
 
-  {#if sugg.due.length}
+  {#if !app.prefs.kid}
+    <HealthySwaps items={current} />
+  {/if}
+
+  {#if sugg.due.length && !app.prefs.kid}
     <section class="section due" aria-labelledby="h-due">
       <div class="row">
         <h2 id="h-due" class="spacer">Toca comprar</h2>
@@ -201,6 +230,9 @@
 {#if editing}
   <ItemSheet id={editing} onclose={() => (editing = null)} />
 {/if}
+{#if preparing}
+  <PrepareSheet onclose={() => (preparing = false)} />
+{/if}
 {#if store}
   <StoreMode onclose={() => (store = false)} />
 {/if}
@@ -209,6 +241,44 @@
 {/if}
 
 <style>
+  .prep {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 16px;
+    background: var(--market-soft);
+    color: var(--ink);
+  }
+  .req {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .req:last-child {
+    border-bottom: 0;
+  }
+  .req .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .req-text {
+    flex: 1;
+    display: grid;
+    line-height: 1.3;
+  }
+  .req-text small {
+    color: var(--ink-2);
+  }
+  .ok {
+    color: var(--accent-text);
+    background: var(--market-soft);
+  }
+  .no {
+    color: var(--tomato);
+  }
   .status {
     align-items: center;
   }

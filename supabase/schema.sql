@@ -85,6 +85,49 @@ alter table public.lists add column if not exists icon text;
 alter table public.lists add column if not exists color text;
 alter table public.members add column if not exists color text;
 
+-- Tanda 2: antes de ir
+alter table public.items add column if not exists requested boolean not null default false;
+alter table public.members add column if not exists role text not null default 'adulto';
+
+create table if not exists public.recipes (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households on delete cascade,
+  name text not null,
+  ingredients jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.meals (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households on delete cascade,
+  day date not null,
+  slot text not null default 'cena',
+  recipe_id uuid references public.recipes on delete set null,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists meals_household_day_idx on public.meals (household_id, day);
+
+alter table public.recipes enable row level security;
+alter table public.meals enable row level security;
+drop policy if exists recipes_all on public.recipes;
+drop policy if exists meals_all on public.meals;
+create policy recipes_all on public.recipes for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
+create policy meals_all on public.meals for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
+grant select, insert, update, delete on public.recipes, public.meals to authenticated;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['recipes', 'meals'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end;
+$$;
+
 create index if not exists items_household_idx on public.items (household_id);
 create index if not exists lists_household_idx on public.lists (household_id);
 create index if not exists trips_household_idx on public.trips (household_id, date desc);

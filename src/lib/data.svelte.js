@@ -1,6 +1,8 @@
 // Estado de la app y acciones. La interfaz no sabe si los datos están en el móvil o en Supabase.
 import { createLocalBackend } from './local.js'
 import { loadCatalog, search, parsePrefs } from './catalog.js'
+import { dietConflicts } from './home.js'
+import { loadDetails, detailsSync } from './nutrition.js'
 import { uid, isoDate, tokens, norm } from './format.js'
 
 const CFG_KEY = 'mf:supabase'
@@ -16,13 +18,16 @@ export const app = $state({
   members: [],
   lists: [],
   listId: null,
+  recipes: [],
+  meals: [],
   items: [],
   trips: [],
   tripItems: [],
   catalog: null,
   me: '',
   myColor: null,
-  prefs: { theme: 'auto', scale: 1 },
+  prefs: { theme: 'auto', scale: 1, kid: false },
+  detailsTick: 0,
   email: '',
   toast: null,
   error: ''
@@ -229,13 +234,17 @@ function scheduleReload() {
 
 export async function reloadAll() {
   try {
-    const [household, lists, items, trips, tripItems] = await Promise.all([
+    const [household, lists, items, trips, tripItems, recipes, meals] = await Promise.all([
       be.household(),
       be.select('lists'),
       be.select('items'),
       be.select('trips'),
-      be.select('trip_items')
+      be.select('trip_items'),
+      be.select('recipes').catch(() => []),
+      be.select('meals').catch(() => [])
     ])
+    app.recipes = recipes.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+    app.meals = meals
     household.preferences ??= []
     household.aliases ??= {}
     household.settings ??= {}
@@ -254,6 +263,7 @@ export async function reloadAll() {
     app.trips = trips.sort((a, b) => (a.date < b.date ? 1 : -1))
     app.tripItems = tripItems
     if (be.members) app.members = await be.members()
+    ensureDetails()
   } catch (e) {
     console.error(e)
     toast('Sin conexión. Mostrando lo último guardado.')
@@ -348,7 +358,8 @@ export async function moveItem(id, listId) {
 function newItem(fields) {
   const now = new Date().toISOString()
   const list_id = app.listId && app.listId !== app.household?.id ? app.listId : null
-  return { id: uid(), qty: 1, checked: false, note: null, price: null, merc_id: null, category: null, list_id, added_by: app.me || null, created_at: now, updated_at: now, ...fields }
+  // En el móvil de los peques, lo que se apunta queda como petición hasta que un adulto la acepte
+  return { id: uid(), qty: 1, checked: false, note: null, price: null, merc_id: null, category: null, list_id, requested: !!app.prefs.kid, added_by: app.me || null, created_at: now, updated_at: now, ...fields }
 }
 
 function sameOnList(merc_id, name) {
@@ -357,12 +368,20 @@ function sameOnList(merc_id, name) {
 
 export async function addProduct(p, qty = 1, note = null) {
   const existing = sameOnList(p.id, p.n)
+  if (existing && app.prefs.kid) {
+    toast(`${p.n} ya está en la lista`)
+    return existing
+  }
   if (existing) {
     toast(`'${p.n}' ya estaba: ahora ${existing.qty + qty}`)
     return updateItem(existing.id, { qty: existing.qty + qty })
   }
   const item = newItem({ merc_id: p.id, name: p.n, category: p.c, price: p.p, qty, note })
   app.items.push(item)
+  ensureDetails().then(() => {
+    const c = conflictsOf(item)
+    if (c.length) toast(`Ojo: ${p.n} lleva ${c[0].word} (${c[0].person}: ${c[0].label.toLowerCase()})`, null, 6000)
+  })
   try {
     await be.upsert('items', item)
   } catch (e) {
@@ -614,4 +633,129 @@ export async function importBackup(file) {
   await be.upsert('trip_items', (data.trip_items || []).map(strip))
   await be.upsert('items', (data.items || []).map(strip))
   await reloadAll()
+}
+
+
+// ---------- Peticiones de los peques ----------
+
+export const approveRequest = (it) => updateItem(it.id, { requested: false })
+export async function rejectRequest(it) {
+  app.items = app.items.filter((i) => i.id !== it.id)
+  try {
+    await be.remove('items', it.id)
+  } catch (e) {
+    fail(e)
+  }
+}
+
+// ---------- Recetas y menú de la semana ----------
+
+export async function saveRecipe(r) {
+  const row = { id: r.id || uid(), name: r.name.trim().slice(0, 60), ingredients: r.ingredients || [], created_at: r.created_at || new Date().toISOString() }
+  const i = app.recipes.findIndex((x) => x.id === row.id)
+  if (i >= 0) app.recipes[i] = row
+  else app.recipes.push(row)
+  app.recipes.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  try {
+    await be.upsert('recipes', row)
+  } catch (e) {
+    fail(e)
+  }
+  return row
+}
+
+export async function deleteRecipe(id) {
+  app.recipes = app.recipes.filter((r) => r.id !== id)
+  try {
+    await be.remove('recipes', id)
+  } catch (e) {
+    fail(e)
+  }
+}
+
+// De texto a producto del catálogo: 'lenteja pardina' -> el que soléis comprar o el más probable
+export function resolveIngredient(text) {
+  const best = app.catalog ? searchCatalog(text, 1)[0] : null
+  return best ? { merc_id: best.p.id, name: best.p.n, qty: 1 } : { merc_id: null, name: text, qty: 1 }
+}
+
+export async function setMeal({ day, slot = 'cena', name, recipe_id = null }) {
+  const existing = app.meals.find((m) => m.day === day && m.slot === slot)
+  const row = { id: existing?.id || uid(), day, slot, name: name.trim().slice(0, 60), recipe_id, created_at: existing?.created_at || new Date().toISOString() }
+  app.meals = [...app.meals.filter((m) => m.id !== row.id), row]
+  try {
+    await be.upsert('meals', row)
+  } catch (e) {
+    fail(e)
+  }
+}
+
+export async function removeMeal(id) {
+  app.meals = app.meals.filter((m) => m.id !== id)
+  try {
+    await be.remove('meals', id)
+  } catch (e) {
+    fail(e)
+  }
+}
+
+const onAnyList = (x) => app.items.some((i) => (x.merc_id ? i.merc_id === x.merc_id : !i.merc_id && i.name.toLowerCase() === x.name.toLowerCase()))
+
+// Ingredientes del menú entre dos fechas que no están ya en ninguna lista ni en la despensa
+export function mealNeeds(from, to, pantryList = []) {
+  const fresh = new Set(pantryList.filter((p) => p.state === 'ok').map((p) => p.merc_id || p.key))
+  const need = new Map()
+  for (const m of app.meals) {
+    if (m.day < from || m.day > to || !m.recipe_id) continue
+    const r = app.recipes.find((x) => x.id === m.recipe_id)
+    for (const ing of r?.ingredients || []) {
+      const k = ing.merc_id || `t:${ing.name.toLowerCase()}`
+      if (onAnyList(ing) || fresh.has(ing.merc_id) || need.has(k)) continue
+      need.set(k, { ...ing, why: m.name })
+    }
+  }
+  return [...need.values()]
+}
+
+export async function addMany(entries) {
+  let n = 0
+  for (const e of entries) {
+    const p = e.merc_id ? app.catalog?.byId.get(e.merc_id) : null
+    if (p) await addProduct(p, e.qty || 1)
+    else await addText(`${e.qty || 1} ${e.name}`)
+    n++
+  }
+  return n
+}
+
+// ---------- Despensa (correcciones a mano) ----------
+
+export async function pantrySet(entry, state) {
+  const overrides = { ...(settings().pantry || {}), [entry.key]: { state, at: isoDate() } }
+  await updateSettings({ pantry: overrides })
+  if (state === 'out' && !onAnyList(entry)) {
+    await addMany([{ merc_id: entry.merc_id, name: entry.name, qty: 1 }])
+    toast(`${entry.name}: apuntado en la lista`)
+  }
+}
+
+// ---------- Personas: dietas y alérgenos ----------
+
+export async function setPeople(people) {
+  await updateSettings({ people })
+}
+
+// ---------- Avisos de dieta al apuntar ----------
+
+export const people = () => settings().people || []
+export function conflictsOf(item) {
+  app.detailsTick
+  const ppl = people().filter((p) => p.avoid?.length)
+  if (!ppl.length || !item) return []
+  return dietConflicts(item.name, detailsSync(item.merc_id), ppl)
+}
+export async function ensureDetails() {
+  if (!people().some((p) => p.avoid?.length)) return
+  await loadDetails()
+  app.detailsTick++
 }

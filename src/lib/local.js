@@ -2,7 +2,7 @@
 import { uid } from './format.js'
 
 const KEY = 'mf:local:v1'
-const TABLES = ['households', 'lists', 'items', 'trips', 'trip_items']
+const TABLES = ['households', 'lists', 'items', 'trips', 'trip_items', 'recipes', 'meals']
 
 function read() {
   try {
@@ -15,7 +15,7 @@ function read() {
 export function createLocalBackend() {
   let d = read()
   if (!d) {
-    d = { households: [], lists: [], items: [], trips: [], trip_items: [] }
+    d = { households: [], lists: [], items: [], trips: [], trip_items: [], recipes: [], meals: [] }
   }
   for (const t of TABLES) d[t] ??= []
   if (!d.households.length) {

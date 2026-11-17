@@ -1,6 +1,6 @@
 <script>
   import { ChevronRight, Check } from '@lucide/svelte'
-  import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount } from '../lib/data.svelte.js'
+  import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount, conflictsOf } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
@@ -14,6 +14,7 @@
   const byOther = $derived(item.added_by && item.added_by !== app.me ? item.added_by : null)
   const takenOther = $derived(item.checked && item.taken_by && item.taken_by !== app.me ? item.taken_by : null)
   const oftenMissing = $derived(!item.checked && missingCount(item) >= 2)
+  const diet = $derived(conflictsOf(item))
 </script>
 
 <li class="item" class:done={item.checked}>
@@ -38,6 +39,7 @@
         <span class="who"><span class="dot" style={`background:${colorOf(byOther)}`}></span>Lo ha apuntado {byOther}</span>
       {/if}
       {#if item.missing}<span class="tag">No había</span>{:else if oftenMissing}<span class="tag soft">Suele faltar</span>{/if}
+      {#if diet.length}<span class="tag">Ojo: {diet.map((d) => `${d.person}, ${d.label.toLowerCase()}`).join(' · ')}</span>{/if}
     </span>
     <ChevronRight size={20} aria-hidden="true" class="chev" />
     <span id={`hint-${item.id}`} class="visually-hidden">Abre la ficha: cantidad, nota, alternativas e ingredientes</span>

@@ -1,18 +1,21 @@
 <script>
-  import { ShoppingBasket, ChartColumnBig, Settings as SettingsIcon } from '@lucide/svelte'
+  import { ShoppingBasket, ChartColumnBig, Settings as SettingsIcon, ChefHat } from '@lucide/svelte'
   import { app, boot } from './lib/data.svelte.js'
   import ListView from './components/ListView.svelte'
   import Spending from './components/Spending.svelte'
   import Settings from './components/Settings.svelte'
+  import MenuView from './components/MenuView.svelte'
   import Welcome from './components/Welcome.svelte'
   import Toast from './components/Toast.svelte'
 
-  const TABS = [
+  const ALL_TABS = [
     { id: 'lista', label: 'Lista', title: 'Lista de la compra', icon: ShoppingBasket },
-    { id: 'gastos', label: 'Gastos', title: 'Gastos', icon: ChartColumnBig },
+    { id: 'menu', label: 'Menú', title: 'Menú y despensa', icon: ChefHat },
+    { id: 'gastos', label: 'Gastos', title: 'Gastos', icon: ChartColumnBig, adults: true },
     { id: 'ajustes', label: 'Ajustes', title: 'Ajustes', icon: SettingsIcon }
   ]
-  const fromHash = () => TABS.find((t) => `#${t.id}` === location.hash)?.id ?? 'lista'
+  const TABS = $derived(ALL_TABS.filter((t) => !t.adults || !app.prefs.kid))
+  const fromHash = () => ALL_TABS.find((t) => `#${t.id}` === location.hash)?.id ?? 'lista'
   let tab = $state(fromHash())
 
   function go(id) {
@@ -23,7 +26,7 @@
   }
 
   $effect(() => {
-    const t = TABS.find((x) => x.id === tab)
+    const t = ALL_TABS.find((x) => x.id === tab)
     document.title = `${t.title} · MercaFamily`
   })
 
@@ -59,14 +62,16 @@
   <main id="main" tabindex="-1">
     {#if tab === 'lista'}
       <ListView />
-    {:else if tab === 'gastos'}
+    {:else if tab === 'menu'}
+      <MenuView />
+    {:else if tab === 'gastos' && !app.prefs.kid}
       <Spending />
     {:else}
       <Settings />
     {/if}
   </main>
 
-  <nav class="tabbar" aria-label="Secciones">
+  <nav class="tabbar" aria-label="Secciones" style={`--tabs:${TABS.length}`}>
     {#each TABS as t (t.id)}
       <a href={`#${t.id}`} aria-current={tab === t.id ? 'page' : undefined} onclick={(e) => (e.preventDefault(), go(t.id))}>
         <t.icon size={24} strokeWidth={tab === t.id ? 2.4 : 1.8} aria-hidden="true" />
@@ -129,7 +134,7 @@
     inset: auto 0 0 0;
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--tabs, 4), minmax(0, 1fr));
     background: var(--surface);
     border-top: 1px solid var(--line);
     padding-bottom: env(safe-area-inset-bottom);
@@ -158,7 +163,7 @@
       left: 50%;
       right: auto;
       bottom: 16px;
-      width: 420px;
+      width: 480px;
       transform: translateX(-50%);
       border: 1px solid var(--line);
       border-radius: 20px;

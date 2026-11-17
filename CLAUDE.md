@@ -31,12 +31,19 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Listas | Tabla `lists`. La principal tiene el mismo id que el hogar para que no se duplique si dos móviles la crean a la vez. `items.list_id` nulo significa la principal. |
 | Ajustes compartidos | `households.settings` (jsonb): favoritos, orden de pasillos aprendido (`aisle`), lo que suele faltar (`missing`). `households.aliases`: búsquedas aprendidas. Tema y tamaño de letra son de cada móvil (localStorage). |
 | Tema | Colores por variables en `:root`, oscuro por preferencia del móvil o forzado con `data-theme`. Los componentes no usan `prefers-color-scheme`, solo variables (`--accent-text`, `--primary-bg`…). |
+| Menú y recetas | Tablas `recipes` (ingredientes en jsonb con `merc_id`) y `meals` (día y cena). Las recetas de partida resuelven cada ingrediente con el buscador al usarlas. |
+| Despensa | No tiene tabla: se estima con `trip_items` (última compra y frecuencia) en `src/lib/home.js`. Las correcciones a mano van en `households.settings.pantry`. |
+| Peques | `items.requested` para peticiones. El modo peque es de cada móvil (`prefs.kid` en localStorage) y se sale resolviendo una multiplicación. |
+| Dietas | `households.settings.people` con lo que evita cada persona. Se comprueba con ingredientes y alérgenos de `details.json` (`dietConflicts`). |
+| Salud | Cambios más sanos: misma familia o familia parecida, Nutri-Score A o B o dos letras mejor, precio por kilo como mucho un 30 % mayor. Si no hay ninguno real, no se propone nada. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura
 
 - `src/lib/data.svelte.js`: estado y acciones. `local.js` y `supa.js` tienen la misma interfaz.
 - `src/lib/catalog.js`: carga y búsqueda del catálogo con preferencias e historial.
+- `src/lib/home.js`: despensa estimada, recetas de partida y dietas (con pruebas en `tests/`).
+- `src/lib/search.js`: motor de búsqueda (índice, plurales, erratas, sinónimos, lo aprendido).
 - `src/lib/insights.js`: frecuencia de compra, gasto por periodos y cambios de precio (con pruebas en `tests/`).
 - `src/components/`: pantallas y piezas de la interfaz.
 - `scripts/`: descargadores del catálogo y de las fichas de Mercadona.

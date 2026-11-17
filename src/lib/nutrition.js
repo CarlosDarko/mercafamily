@@ -2,6 +2,10 @@
 let details = null
 const OFF_KEY = 'mf:off:'
 
+// Acceso síncrono a la ficha si ya está cargada (para pintar avisos sin esperar)
+export const detailsSync = (id) => (details && id ? details[id] || null : null)
+export const loadDetails = () => productDetails('')
+
 export async function productDetails(id) {
   if (!details) {
     try {

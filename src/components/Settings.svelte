@@ -1,6 +1,7 @@
 <script>
   import { Copy, Share2, X, Plus, Download, Upload } from '@lucide/svelte'
-  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS } from '../lib/data.svelte.js'
+  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS, people, setPeople } from '../lib/data.svelte.js'
+  import { DIETS } from '../lib/home.js'
   import { eur, parseNum, fmtLong } from '../lib/format.js'
 
   const REPO = 'https://github.com/CarlosDarko/mercafamily'
@@ -20,6 +21,42 @@
   })
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+
+  // ---- Dietas y alergias por persona ----
+  const names = $derived([...new Set([app.me, ...app.members.map((m) => m.display_name), ...people().map((p) => p.name)].filter(Boolean))])
+  let newPerson = $state('')
+  const avoidOf = (n) => people().find((p) => p.name === n)?.avoid || []
+  function toggleDiet(n, d) {
+    const list = people().filter((p) => p.name !== n)
+    const cur = avoidOf(n)
+    const avoid = cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]
+    setPeople(avoid.length ? [...list, { name: n, avoid }] : list)
+  }
+  function addPerson(e) {
+    e.preventDefault()
+    const n = newPerson.trim()
+    if (!n || names.includes(n)) return
+    setPeople([...people(), { name: n, avoid: [] }])
+    newPerson = ''
+  }
+
+  // ---- Móvil de un peque ----
+  let challenge = $state(null)
+  let answer = $state('')
+  function exitKid() {
+    const a = 6 + Math.floor(Math.random() * 4)
+    const b = 6 + Math.floor(Math.random() * 4)
+    challenge = { a, b }
+    answer = ''
+  }
+  function checkKid(e) {
+    e.preventDefault()
+    if (Number(answer) === challenge.a * challenge.b) {
+      setPrefs({ kid: false })
+      challenge = null
+      toast('Modo peque desactivado')
+    } else toast('Esa no es. Pide ayuda a un adulto.')
+  }
 
   function saveName() {
     if (name.trim()) setMe(name)
@@ -124,6 +161,25 @@
     </div>
   </section>
 
+  {#if app.prefs.kid}
+    <section class="section" aria-labelledby="h-kid">
+      <h2 id="h-kid">Modo peque</h2>
+      <div class="panel pad stack">
+        <p>Lo que apuntes llega como petición a los adultos de casa.</p>
+        {#if challenge}
+          <form class="stack" onsubmit={checkKid}>
+            <label class="field">
+              <span>Para salir: ¿cuánto es {challenge.a} × {challenge.b}?</span>
+              <input class="input num" bind:value={answer} inputmode="numeric" autocomplete="off" />
+            </label>
+            <button class="btn btn-primary" type="submit">Salir del modo peque</button>
+          </form>
+        {:else}
+          <button class="btn" onclick={exitKid}>Salir del modo peque</button>
+        {/if}
+      </div>
+    </section>
+  {:else}
   <section class="section" aria-labelledby="h-screen">
     <h2 id="h-screen">Pantalla</h2>
     <div class="panel pad stack">
@@ -255,6 +311,38 @@
     </section>
   {/if}
 
+  <section class="section" aria-labelledby="h-diets">
+    <h2 id="h-diets">Dietas y alergias</h2>
+    <div class="panel pad stack">
+      <p class="muted">Si alguien de casa no puede tomar algo, la app avisa al apuntar un producto que lo lleve (mira los ingredientes y alérgenos de Mercadona).</p>
+      {#each names as n (n)}
+        <fieldset class="pick">
+          <legend class="label">{n}</legend>
+          <div class="chips">
+            {#each Object.entries(DIETS) as [k, d]}
+              <label class="chip-check"><input type="checkbox" checked={avoidOf(n).includes(k)} onchange={() => toggleDiet(n, k)} /> {d.label}</label>
+            {/each}
+          </div>
+        </fieldset>
+      {/each}
+      <form class="row" onsubmit={addPerson}>
+        <label class="visually-hidden" for="new-person">Añadir persona</label>
+        <input id="new-person" class="input" bind:value={newPerson} placeholder="Otra persona de casa" maxlength="30" />
+        <button class="btn" type="submit" disabled={!newPerson.trim()}>Añadir</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="h-kid">
+    <h2 id="h-kid">Móvil de un peque</h2>
+    <div class="panel pad stack">
+      <p class="muted">Lo que apunte desde este móvil llega como petición y un adulto la acepta o no. Se ocultan Gastos y casi todos los ajustes.</p>
+      <button class="btn" onclick={() => (setPrefs({ kid: true }), toast('Modo peque activado en este móvil'))}>Activar en este móvil</button>
+    </div>
+  </section>
+
+  {/if}
+
   <section class="section" aria-labelledby="h-about">
     <h2 id="h-about">Sobre MercaFamily</h2>
     <p class="muted">App familiar sin anuncios ni seguimiento. Precios del catálogo público de Mercadona (consulta semanal, uso doméstico) y nutrición de <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a>. Código en <a href={REPO} target="_blank" rel="noopener">GitHub</a>.</p>
@@ -352,6 +440,31 @@
   .sw:has(input:focus-visible) {
     outline: 3px solid var(--focus);
     outline-offset: 4px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .chip-check:has(input:checked) {
+    border-color: var(--tomato);
+    background: var(--tomato-soft);
+    color: var(--tomato);
+  }
+  .chip-check input {
+    accent-color: var(--tomato);
   }
   .seg3 {
     display: grid;

@@ -11,6 +11,9 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/gastos.png' width='190' alt='Gastos con el resumen del mes y la gráfica de las últimas 12 semanas'>
   <img src='docs/capturas/modo-tienda.png' width='190' alt='Modo tienda con productos grandes, botón No había y el total del carro'>
   <img src='docs/capturas/listas.png' width='190' alt='Varias listas con icono y color, y favoritos con foto'>
+  <img src='docs/capturas/menu.png' width='190' alt='Menú de la semana con las cenas elegidas y los ingredientes que faltan'>
+  <img src='docs/capturas/preparame.png' width='190' alt='Prepárame la lista con lo del menú y lo que se acaba en casa, todo marcado'>
+  <img src='docs/capturas/peticiones.png' width='190' alt='Petición de un peque pendiente de aceptar en la lista'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -24,6 +27,12 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Favoritos** con foto para añadir con un toque (la estrella de la ficha).
 - **Ficha al tocar el producto** y búsqueda que aprende vuestras palabras ('dinosaurus' → las galletas que elegisteis).
 - **Tema claro, oscuro o el del móvil y tres tamaños de letra**, en Ajustes, Pantalla.
+- **Prepárame la lista**: con un botón junta lo que falta para el menú, lo que se acaba en casa y lo que toca por frecuencia, todo marcado para quitar lo que sobre.
+- **Menú de la semana y recetas**: elegís las cenas (hay recetas de partida) y la app apunta los ingredientes que faltan, eligiendo cada producto con vuestras preferencias.
+- **Despensa sin rellenar nada**: se calcula con lo que compráis y cada cuánto, con 'se acaba pronto' y botones de 'Se acabó' o 'Aún queda' para corregirla.
+- **Móvil de un peque**: lo que apunta llega como petición y un adulto la acepta o no. Para salir del modo hay que resolver una multiplicación.
+- **Dietas y alergias por persona**: aviso al apuntar algo que lleve lo que alguien no puede tomar, según ingredientes y alérgenos de Mercadona.
+- **Cambios más sanos** en la lista (mismo tipo de producto, Nutri-Score mejor y precio parecido) y **nota de salud de la cesta** en Gastos.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.
