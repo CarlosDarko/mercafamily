@@ -1,0 +1,18 @@
+# MercaFamily
+
+> Lista de la compra familiar compartida en tiempo real, con el catálogo y los precios de Mercadona actualizados cada semana, total previsto, gastos y sugerencias.
+
+- App: https://carlosdarko.github.io/mercafamily/
+- Código y documentación: https://github.com/CarlosDarko/mercafamily
+
+## Qué hace
+
+- Al apuntar un producto ('leche', '2 tomates') elige el artículo de Mercadona más probable según las preferencias guardadas por la familia y lo que suelen comprar.
+- Suma el total previsto con precios de la zona y avisa si se supera el presupuesto semanal.
+- Guarda cada compra y muestra el gasto por semana, mes y categoría.
+- Avisa de lo que toca comprar por frecuencia y de los cambios de precio.
+- Propone alternativas más baratas por kilo o litro y más sanas por Nutri-Score (Open Food Facts).
+
+## Herramientas para agentes (WebMCP)
+
+ver_lista, buscar_producto, anadir_a_la_lista (pide confirmación) e ir_a.

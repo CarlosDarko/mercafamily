@@ -1,0 +1,94 @@
+name: Actualizar y publicar
+
+# Cada lunes: descarga el catálogo y los precios de Mercadona, completa fichas de productos,
+# guarda el historial de precios, mantiene despierto Supabase y publica la app en GitHub Pages.
+# También publica en cada push a main y se puede lanzar a mano desde la pestaña Actions.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Catálogo y precios de Mercadona
+        if: github.event_name != 'push'
+        env:
+          MERCADONA_CP: ${{ vars.MERCADONA_CP }}
+          MERCADONA_WH: ${{ vars.MERCADONA_WH }}
+        run: node scripts/fetch-mercadona.mjs
+
+      - name: Fichas de productos (ingredientes y alérgenos)
+        if: github.event_name != 'push'
+        env:
+          MAX: '1500'
+        run: node scripts/fetch-details.mjs
+
+      - name: Guardar los datos nuevos en el repositorio
+        if: github.event_name != 'push'
+        run: |
+          git config user.name 'mercafamily-bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data
+          if git diff --cached --quiet; then
+            echo 'Sin cambios en los datos'
+          else
+            git commit -m 'Actualizar catálogo y precios de Mercadona'
+            git push
+          fi
+
+      - name: Latido de Supabase (evita que el plan gratuito se pause)
+        if: vars.SUPABASE_URL != '' && vars.SUPABASE_ANON_KEY != ''
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/rest/v1/rpc/heartbeat" \
+            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H 'Content-Type: application/json' -d '{}'
+
+      - name: Construir la app
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

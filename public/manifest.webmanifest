@@ -1,0 +1,23 @@
+{
+  "name": "MercaFamily: lista de la compra familiar",
+  "short_name": "MercaFamily",
+  "description": "Lista de la compra compartida con precios de Mercadona, gastos y sugerencias.",
+  "lang": "es",
+  "start_url": "./#lista",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f2e9",
+  "theme_color": "#1f4d3a",
+  "categories": ["food", "lifestyle", "shopping"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Lista", "url": "./#lista" },
+    { "name": "Gastos", "url": "./#gastos" }
+  ]
+}

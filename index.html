@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MercaFamily: lista de la compra familiar con precios de Mercadona</title>
+    <meta name="description" content="Lista de la compra compartida en tiempo real con precios de Mercadona actualizados cada semana, total previsto, gastos por mes y avisos de lo que toca comprar." />
+    <link rel="canonical" href="https://carlosdarko.github.io/mercafamily/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#1f4d3a" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#163a2b" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MercaFamily" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" href="/mercafamily/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/mercafamily/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/mercafamily/apple-touch-icon.png" />
+    <link rel="manifest" href="/mercafamily/manifest.webmanifest" />
+    <link rel="preconnect" href="https://prod-mercadona.imgix.net" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:site_name" content="MercaFamily" />
+    <meta property="og:title" content="MercaFamily: la lista de la compra de casa, entre todos" />
+    <meta property="og:description" content="Apuntáis lo que falta, la app pone el producto y el precio de Mercadona y lleva la cuenta de lo que gastáis." />
+    <meta property="og:url" content="https://carlosdarko.github.io/mercafamily/" />
+    <meta property="og:image" content="https://carlosdarko.github.io/mercafamily/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Icono de MercaFamily, un ticket amarillo con una marca de comprado sobre fondo verde, junto al nombre de la app" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://carlosdarko.github.io/mercafamily/#website",
+            "url": "https://carlosdarko.github.io/mercafamily/",
+            "name": "MercaFamily",
+            "inLanguage": "es-ES"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://carlosdarko.github.io/mercafamily/#app",
+            "name": "MercaFamily",
+            "url": "https://carlosdarko.github.io/mercafamily/",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Android, iOS, navegadores web",
+            "browserRequirements": "Requiere JavaScript",
+            "inLanguage": "es-ES",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "description": "Lista de la compra familiar compartida en tiempo real, con precios de Mercadona actualizados cada semana, total previsto, gastos y sugerencias de lo que toca comprar.",
+            "featureList": [
+              "Lista compartida en tiempo real",
+              "Catálogo y precios de Mercadona actualizados cada semana",
+              "Preferencias de la familia al elegir productos",
+              "Total previsto y presupuesto semanal",
+              "Gastos por semana, mes y categoría",
+              "Avisos de subidas de precio",
+              "Alternativas más baratas y más sanas"
+            ],
+            "isPartOf": { "@id": "https://carlosdarko.github.io/mercafamily/#website" }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://carlosdarko.github.io/mercafamily/#webpage",
+            "url": "https://carlosdarko.github.io/mercafamily/",
+            "name": "MercaFamily: lista de la compra familiar con precios de Mercadona",
+            "inLanguage": "es-ES",
+            "dateModified": "2026-11-17",
+            "isPartOf": { "@id": "https://carlosdarko.github.io/mercafamily/#website" },
+            "mainEntity": { "@id": "https://carlosdarko.github.io/mercafamily/#app" }
+          }
+        ]
+      }
+    </script>
+    <style>
+      /* Pantalla inicial antes de que cargue la app */
+      body { margin: 0; background: #f6f2e9; color: #1d2620; font-family: system-ui, sans-serif; }
+      .boot { max-width: 640px; margin: 0 auto; padding: 32px 16px; line-height: 1.5; }
+      .boot h1 { font-size: 1.75rem; line-height: 1.15; margin: 0 0 12px; }
+      @media (prefers-color-scheme: dark) { body { background: #121713; color: #ece7db; } }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="boot">
+        <h1>MercaFamily: la lista de la compra de casa, entre todos</h1>
+        <p>MercaFamily es una lista de la compra familiar que se comparte en tiempo real entre varios móviles. Al apuntar algo, elige el producto de Mercadona con su foto y su precio, actualizado cada semana para vuestra zona, y suma el total previsto antes de ir a comprar.</p>
+        <p>Guarda cada compra para ver el gasto por semana, mes, tienda y categoría, avisa de lo que toca comprar según cada cuánto lo compráis y de los productos que han subido de precio, y propone alternativas más baratas por kilo o más sanas por Nutri-Score.</p>
+        <noscript><p><strong>Para usar MercaFamily hay que activar JavaScript en el navegador.</strong></p></noscript>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
