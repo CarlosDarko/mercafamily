@@ -1,12 +1,43 @@
 <script>
-  import { Search, Plus, Heart, ScanBarcode } from '@lucide/svelte'
+  import { Search, Plus, Heart, ScanBarcode, Mic, MicOff } from '@lucide/svelte'
+  import { voiceSupported, listen, parseSpoken } from '../lib/voice.js'
   import Scanner from './Scanner.svelte'
-  import { app, searchCatalog, addProduct, addText, rememberAlias } from '../lib/data.svelte.js'
+  import { app, searchCatalog, addProduct, addText, rememberAlias, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
   let text = $state('')
   let scanning = $state(false)
+  let listening = $state(false)
+  let heard = $state('')
+  let stopVoice = null
+  const canVoice = voiceSupported()
+
+  function toggleVoice() {
+    if (listening) return stopVoice?.()
+    heard = ''
+    listening = true
+    stopVoice = listen({
+      onResult: (t) => (heard = t),
+      onError: (err) => {
+        listening = false
+        if (err === 'not-allowed') toast('Sin permiso para el micrófono. Actívalo en los ajustes del navegador.')
+        else if (err !== 'aborted' && err !== 'no-speech') toast('No te he entendido. Prueba otra vez.')
+      },
+      onEnd: async (final) => {
+        listening = false
+        const things = parseSpoken(final || heard)
+        heard = ''
+        if (!things.length) return
+        const names = []
+        for (const t of things) {
+          const it = await addText(t)
+          if (it?.name) names.push(it.name.replace(/ Hacendado$/, ''))
+        }
+        toast(`Apuntado: ${names.join(', ')}`, null, 5000)
+      }
+    })
+  }
   const canScan = typeof window !== 'undefined' && 'BarcodeDetector' in window && !!navigator.mediaDevices?.getUserMedia
   let active = $state(-1)
   let input
@@ -78,6 +109,11 @@
       aria-activedescendant={active >= 0 ? `opt-${results[active]?.p.id}` : undefined}
       aria-describedby="add-help"
     />
+    {#if canVoice}
+      <button class="btn add-btn scan" class:live={listening} type="button" onclick={toggleVoice} aria-pressed={listening} aria-label={listening ? 'Dejar de escuchar' : 'Apuntar hablando'}>
+        {#if listening}<MicOff size={22} aria-hidden="true" />{:else}<Mic size={22} aria-hidden="true" />{/if}
+      </button>
+    {/if}
     {#if canScan}
       <button class="btn add-btn scan" type="button" onclick={() => (scanning = true)} aria-label="Escanear código de barras">
         <ScanBarcode size={22} aria-hidden="true" />
@@ -88,6 +124,9 @@
       <span>Añadir</span>
     </button>
   </div>
+  {#if listening}
+    <p class="heard" role="status">{heard ? `'${heard}'` : "Te escucho… di por ejemplo 'leche, dos de tomate y pan de molde'"}</p>
+  {/if}
   <p id="add-help" class="visually-hidden">Al pulsar Añadir se elige el producto más probable según vuestras preferencias e historial. También puedes elegir uno de la lista.</p>
 
   <ul id="add-results" class="results panel" role="listbox" aria-label="Productos de Mercadona" hidden={!open}>
@@ -172,7 +211,26 @@
       padding: 0;
     }
   }
+  .scan.live {
+    background: var(--tomato);
+    border-color: var(--tomato);
+    color: #fff;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    50% {
+      box-shadow: 0 0 0 8px rgb(185 58 36 / 0.18);
+    }
+  }
+  .heard {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: var(--surface);
+    font-weight: 600;
+  }
   .scan {
+    flex: none;
     width: 52px;
     padding: 0;
     background: var(--surface);

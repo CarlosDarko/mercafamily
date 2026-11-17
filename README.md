@@ -16,6 +16,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/peticiones.png' width='190' alt='Petición de un peque pendiente de aceptar en la lista'>
   <img src='docs/capturas/ticket.png' width='190' alt='Ticket que se imprime al terminar la compra con el sello Por debajo del presupuesto'>
   <img src='docs/capturas/bienvenida.png' width='190' alt='Primer paso de la guía de bienvenida'>
+  <img src='docs/capturas/voz.png' width='190' alt='Cuatro productos apuntados de una sola frase con el micrófono'>
+  <img src='docs/capturas/ticket-foto.png' width='190' alt='Terminar compra con el total y los precios leídos de la foto del ticket'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -41,6 +43,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Historial de cada producto** en su ficha: cuántas veces lo compráis y cómo ha ido su precio.
 - **Ticket al terminar la compra**, que se imprime con el total y un sello si la semana va por debajo del presupuesto.
 - **Guía de bienvenida** de cuatro pasos (y en Ajustes, Ayuda, para verla otra vez).
+- **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y apunta cada cosa con su producto.
+- **Ticket con foto**: al terminar la compra, una foto del ticket de papel rellena el total y guarda los precios reales de cada producto (el lector se descarga solo la primera vez).
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.

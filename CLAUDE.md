@@ -38,6 +38,8 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Salud | Cambios más sanos: misma familia o familia parecida, Nutri-Score A o B o dos letras mejor, precio por kilo como mucho un 30 % mayor. Si no hay ninguno real, no se propone nada. |
 | Dinero | Objetivos (`settings.goals` por categoría), ahorro (`settings.savings`, se apunta al cambiar por un producto más barato), tendencia de precio desde `history.json`. Sin tablas nuevas. |
 | Bienvenida | Guía de cuatro pasos la primera vez (`mf:onboarded` en localStorage). No se muestra a navegadores automatizados. |
+| Voz | Web Speech API (`SpeechRecognition`, en iPhone y Android). `src/lib/voice.js` convierte la frase en productos con cantidades. |
+| Ticket con foto | tesseract.js con idioma español, cargado bajo demanda (worker y datos desde CDN la primera vez). `src/lib/ticket.js` lee total y líneas de Mercadona y las une con el carro. Los precios leídos se guardan en `trip_items.price`. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura
@@ -67,4 +69,4 @@ npm run build
 2. Costes e histórico: precios automáticos, total previsto, presupuesto, gastos con gráficas. Hecho.
 3. Precios automáticos: catálogo semanal de Mercadona, historial de precios, fichas y Open Food Facts. Hecho, con escáner de código de barras en Android (BarcodeDetector, en iPhone aún no existe).
 4. Sugerencias y avisos: 'toca comprar' por frecuencia, subidas de precio, alternativas más baratas y más sanas. Hecho dentro de la app. Faltan notificaciones push.
-5. WhatsApp y voz: pendiente.
+5. WhatsApp y voz: voz dentro de la app hecha. WhatsApp pendiente.

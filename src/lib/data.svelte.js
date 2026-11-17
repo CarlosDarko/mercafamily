@@ -535,7 +535,7 @@ async function restoreItem(it) {
   }
 }
 
-export async function closeTrip({ store, date, total }) {
+export async function closeTrip({ store, date, total, prices = {} }) {
   const bought = itemsOfList().filter((i) => i.checked)
   if (!bought.length) return
   const boughtIds = new Set(bought.map((i) => i.id))
@@ -558,7 +558,7 @@ export async function closeTrip({ store, date, total }) {
     name: i.name,
     category: i.category,
     qty: i.qty || 1,
-    price: unitPrice(i),
+    price: prices[i.id] ?? unitPrice(i),
     bought_on: trip.date
   }))
   app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
