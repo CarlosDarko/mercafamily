@@ -22,11 +22,14 @@ try { details = JSON.parse(await readFile(DETAILS, 'utf8')) } catch {}
 const live = new Set(catalog.products.map((p) => p.id))
 for (const id of Object.keys(details)) if (!live.has(id)) delete details[id]
 
+// Las fichas se piden al mismo almacén que el catálogo: hay productos que solo existen en algunos almacenes
+const wh = catalog.wh ? `&wh=${catalog.wh}` : ''
 const todo = catalog.products.filter((p) => !details[p.id]).slice(0, MAX)
 let done = 0
+const failed = {}
 for (const p of todo) {
   try {
-    const res = await fetch(`https://tienda.mercadona.es/api/products/${p.id}/?lang=es`, {
+    const res = await fetch(`https://tienda.mercadona.es/api/products/${p.id}/?lang=es${wh}`, {
       headers: { 'User-Agent': 'mercafamily (uso doméstico)', Accept: 'application/json' }
     })
     if (res.ok) {
@@ -40,10 +43,15 @@ for (const p of todo) {
         o: d.details?.origin || null
       }
       done++
+    } else {
+      failed[`HTTP ${res.status}`] = (failed[`HTTP ${res.status}`] || 0) + 1
     }
-  } catch {}
+  } catch (e) {
+    failed[e.name] = (failed[e.name] || 0) + 1
+  }
   await sleep(300)
   if (done && done % 250 === 0) await writeFile(DETAILS, JSON.stringify(details))
 }
 await writeFile(DETAILS, JSON.stringify(details))
 console.log(`Fichas nuevas: ${done}. Total: ${Object.keys(details).length} de ${catalog.products.length}.`)
+if (Object.keys(failed).length) console.log('Sin ficha esta vez:', JSON.stringify(failed))
