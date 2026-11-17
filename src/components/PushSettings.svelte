@@ -78,6 +78,7 @@
       <button class="btn btn-primary" onclick={on} disabled={busy}><Bell size={18} aria-hidden="true" /> Activar avisos en este móvil</button>
     {:else if state === 'activo'}
       <label class="sw"><input type="checkbox" bind:checked={prefs.added} onchange={changed} /> Cuando alguien apunta algo o lo pide un peque</label>
+      <label class="sw"><input type="checkbox" bind:checked={prefs.going} onchange={changed} /> Cuando alguien va al súper</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.trips} onchange={changed} /> Cuando alguien termina la compra</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.budget} onchange={changed} /> Si os pasáis del presupuesto semanal</label>
       <label class="sw"><input type="checkbox" bind:checked={prefs.summary} onchange={changed} /> Resumen del domingo a las {prefs.summaryTime}</label>

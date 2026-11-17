@@ -15,7 +15,7 @@ export async function loadCatalog() {
     byId.set(p.id, p)
   }
   const cats = new Map(data.categories.map((c) => [c.id, c]))
-  cache = { updated: data.updated, products: data.products, byId, cats, categories: data.categories }
+  cache = { updated: data.updated, wh: data.wh, products: data.products, byId, cats, categories: data.categories }
   cache.index = buildIndex(cache)
   return cache
 }

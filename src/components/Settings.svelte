@@ -3,6 +3,7 @@
   import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS, people, setPeople } from '../lib/data.svelte.js'
   import { DIETS } from '../lib/home.js'
   import PushSettings from './PushSettings.svelte'
+  import StatusPanel from './StatusPanel.svelte'
   import { eur, parseNum, fmtLong } from '../lib/format.js'
 
   const REPO = 'https://github.com/CarlosDarko/mercafamily'
@@ -345,6 +346,8 @@
   </section>
 
   {/if}
+
+  <StatusPanel />
 
   <section class="section" aria-labelledby="h-help">
     <h2 id="h-help">Ayuda</h2>

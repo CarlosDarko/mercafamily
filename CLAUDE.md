@@ -41,6 +41,9 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Voz | Web Speech API (`SpeechRecognition`, en iPhone y Android). `src/lib/voice.js` convierte la frase en productos con cantidades. |
 | Ticket con foto | tesseract.js con idioma español, cargado bajo demanda (worker y datos desde CDN la primera vez). `src/lib/ticket.js` lee total y líneas de Mercadona y las une con el carro. Los precios leídos se guardan en `trip_items.price`. |
 | Sin cobertura | `src/lib/offline.js`: los cambios a Supabase pasan por una cola en localStorage (`mf:queue`) y se envían en orden. Lo que falla por red se queda, lo demás se descarta con aviso. Copia local de los datos (`mf:snap`) para abrir sin red. El service worker guarda todos los archivos de `asset-list.json` (lo genera `vite.config.js`) y el catálogo. |
+| Otras tiendas | Función de Supabase `compare` (`supabase/functions/compare`): busca en las APIs públicas de Dia y Consum con caché de 7 días (`compare_cache`). Solo se compara por kilo o litro. Carrefour, Eroski y Caprabo bloquean consultas automáticas (no se fuerzan) y Alcampo no tiene buscador público. |
+| Quién va | `households.settings.going` (nombre y hora, dura 2 horas o hasta terminar la compra). Aviso push con `type: 'going'` en la función `push`. |
+| Formatos | `cheaperFormat` en `src/lib/home.js`: mismo nombre quitando palabras de tamaño, misma familia y unidad, al menos un 5 % más barato. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura
@@ -54,6 +57,8 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 - `scripts/`: descargadores del catálogo y de las fichas de Mercadona.
 - `supabase/schema.sql`: esquema completo, se puede ejecutar más de una vez.
 - `supabase/functions/push/`: función de Supabase que envía los avisos push.
+- `supabase/functions/compare/`: función de Supabase que compara con Dia y Consum.
+- `src/lib/offline.js`: cola de cambios sin cobertura y copia local (con pruebas en `tests/`).
 - `.github/workflows/actualizar-y-publicar.yml`: actualización semanal y publicación.
 
 ## Comandos

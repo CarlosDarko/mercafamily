@@ -34,7 +34,8 @@ export function createSupabaseBackend({ url, key }) {
       return data.session?.user ?? null
     },
     onAuth(cb) {
-      sb.auth.onAuthStateChange((event) => cb(event))
+      // Fuera del aviso de Supabase: hacer peticiones dentro de él bloquea su cliente
+      sb.auth.onAuthStateChange((event) => setTimeout(() => cb(event), 0))
     },
     async signIn(email, password) {
       ok(await sb.auth.signInWithPassword({ email, password }))
@@ -89,6 +90,10 @@ export function createSupabaseBackend({ url, key }) {
     },
     async deletePushSub(endpoint) {
       ok(await sb.from('push_subs').delete().eq('endpoint', endpoint))
+    },
+    async notifyGoing(url) {
+      const { data } = await sb.auth.getSession()
+      await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` }, body: JSON.stringify({ type: 'going' }) })
     },
     async testPush(url) {
       const { data } = await sb.auth.getSession()

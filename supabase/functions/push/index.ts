@@ -142,6 +142,21 @@ async function tick() {
   return { sent, at: now }
 }
 
+// 'Voy yo al súper': avisa a los demás de la casa para que añadan lo último
+async function going(req: Request) {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer /i, '')
+  const { data } = await db.auth.getUser(token)
+  if (!data?.user) return { error: 'sin sesión' }
+  const { data: m } = await db.from('members').select('household_id, display_name').eq('user_id', data.user.id).limit(1).single()
+  if (!m || !(await once('going', `${m.household_id}-${new Date().toISOString().slice(0, 13)}`))) return { skipped: true }
+  let sent = 0
+  for (const s of await subsOf(m.household_id)) {
+    if (s.user_id === data.user.id || s.prefs?.going === false) continue
+    if (await send(s, { title: `${m.display_name || 'Alguien'} va al súper`, body: 'Si falta algo, apúntalo ahora en la lista.', tag: `going-${m.household_id}`, url: `${APP}#lista` })) sent++
+  }
+  return { sent }
+}
+
 async function test(req: Request) {
   const token = (req.headers.get('authorization') || '').replace(/^Bearer /i, '')
   const { data } = await db.auth.getUser(token)
@@ -161,6 +176,7 @@ Deno.serve(async (req) => {
     if (body.type === 'trip' && body.id) return json(await onTrip(body.id))
     if (body.type === 'tick') return json(await tick())
     if (body.type === 'test') return json(await test(req))
+    if (body.type === 'going') return json(await going(req))
     return json({ error: 'tipo desconocido' }, 400)
   } catch (e) {
     console.error(e)

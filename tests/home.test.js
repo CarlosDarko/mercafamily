@@ -28,3 +28,13 @@ test('alérgenos y dietas por persona', () => {
   const c = dietConflicts('Galletas rellenas de chocolate', { a: 'Contiene gluten, leche y avellana' }, people)
   assert.deepEqual(c.map((x) => x.person).sort(), ['Ana', 'Leo'])
 })
+
+import { cheaperFormat } from '../src/lib/home.js'
+test('formato más barato del mismo producto', () => {
+  const mk = (id, n, r, z) => ({ id, n, s: 'Aceite', rf: 'L', r, z })
+  const list = [mk('1', 'Aceite de oliva 0,4º Hacendado', 4.2, 'Botella 1 l'), mk('2', 'Aceite de oliva 0,4º Hacendado garrafa', 3.35, 'Garrafa 5 l'), mk('3', 'Aceite de girasol Hacendado', 1.9, '1 l')]
+  const f = cheaperFormat(list[0], list)
+  assert.equal(f.p.id, '2')
+  assert.equal(Math.round(f.saving * 100), 20)
+  assert.equal(cheaperFormat(list[1], list), null)
+})

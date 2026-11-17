@@ -7,6 +7,8 @@
   import Sheet from './Sheet.svelte'
   import Alternatives from './Alternatives.svelte'
   import ProductHistory from './ProductHistory.svelte'
+  import { cheaperFormat } from '../lib/home.js'
+  import CompareStores from './CompareStores.svelte'
 
   let { id, onclose } = $props()
   const item = $derived(app.items.find((i) => i.id === id))
@@ -68,6 +70,7 @@
     q = item.name
   }
 
+  const fmt = $derived(p && app.catalog ? cheaperFormat(p, app.catalog.products) : null)
   const NUTRI_COLORS = { a: '#1e7a3c', b: '#5aa636', c: '#c99a06', d: '#d8661c', e: '#c2361f' }
   const n1 = (v) => (v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ','))
 </script>
@@ -92,6 +95,13 @@
       {/if}
       <button class="icon-btn" onclick={onclose} aria-label="Cerrar"><X size={24} aria-hidden="true" /></button>
     </div>
+
+    {#if fmt}
+      <div class="fmt">
+        <p><strong>Otro formato sale más barato:</strong> {fmt.p.z} a {eur(fmt.p.r)}/{fmt.p.rf}, un {Math.round(fmt.saving * 100)} % menos que {eur(p.r)}/{p.rf}.</p>
+        <button class="btn mini btn-primary" onclick={() => useProduct(fmt.p)}>Cambiar a {fmt.p.z.split(' · ')[0].toLowerCase()}</button>
+      </div>
+    {/if}
 
     <div class="field">
       <span id="qty-label" class="label">Cantidad</span>
@@ -183,6 +193,7 @@
 
     {#if p}
       <ProductHistory {p} />
+      {#key p.id}<CompareStores products={[p]} compact />{/key}
     {/if}
 
     {#if p}
@@ -211,6 +222,18 @@
 <style>
   .fav.on {
     color: #a77f00;
+  }
+  .fmt {
+    display: grid;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--lemon-soft);
+    color: var(--lemon-ink);
+  }
+  .fmt .mini {
+    justify-self: start;
+    min-height: 44px;
   }
   .hero {
     width: 88px;

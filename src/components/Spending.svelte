@@ -56,11 +56,18 @@
     if (!p.r || !p.rf || !app.catalog) return null
     return app.catalog.products.filter((x) => x.s === p.s && x.rf === p.rf && x.r && x.r < p.r * 0.9 && x.id !== p.id).sort((a, b) => a.r - b.r)[0] || null
   }
+  // Lo que más compráis (para comparar con otras tiendas)
+  const topBought = $derived.by(() => {
+    const c = new Map()
+    for (const t of app.tripItems) if (t.merc_id) c.set(t.merc_id, (c.get(t.merc_id) || 0) + 1)
+    return [...c.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => app.catalog?.byId.get(id)).filter(Boolean).slice(0, 15)
+  })
   const linesOf = (t) => app.tripItems.filter((x) => x.trip_id === t.id)
 
   const diff = $derived(lastMonth > 0 ? (thisMonth - lastMonth) / lastMonth : null)
   import BasketHealth from './BasketHealth.svelte'
   import MonthBreakdown from './MonthBreakdown.svelte'
+  import CompareStores from './CompareStores.svelte'
 </script>
 
 <div class="page">
@@ -114,6 +121,10 @@
   {/if}
 
   <BasketHealth />
+
+  {#if topBought.length}
+    <CompareStores products={topBought} />
+  {/if}
 
   {#if changes.length}
     <section class="section" aria-labelledby="h-prices">

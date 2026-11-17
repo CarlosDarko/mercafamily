@@ -285,7 +285,12 @@ function scheduleReload() {
   reloadTimer = setTimeout(reloadAll, 250)
 }
 
-export async function reloadAll() {
+let reloading = null
+export function reloadAll() {
+  if (!reloading) reloading = doReload().finally(() => (reloading = null))
+  return reloading
+}
+async function doReload() {
   try {
     // Primero se envían los cambios pendientes; si aún quedan, no se pisa lo que hay en el móvil
     const left = be.flush ? await be.flush() : 0
@@ -619,6 +624,7 @@ export async function closeTrip({ store, date, total, prices = {} }) {
   }))
   app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
   app.lastTrip = { trip, lines }
+  if (settings().going?.name === app.me) updateSettings({ going: null })
   app.tripItems = [...app.tripItems, ...lines]
   app.items = app.items.filter((i) => !boughtIds.has(i.id))
   // Lo que no había se queda en la lista para la próxima vez y se cuenta como 'suele faltar'
@@ -915,4 +921,44 @@ export const recentErrors = () => {
   } catch {
     return []
   }
+}
+
+export async function syncNow() {
+  if (be?.flush) await be.flush()
+  await reloadAll()
+}
+export const catalogInfo = () => (app.catalog ? { updated: app.catalog.updated, count: app.catalog.products.length, wh: app.catalog.wh } : null)
+
+// ---------- Quién va hoy al súper ----------
+
+const GOING_MS = 2 * 3600 * 1000
+export function going() {
+  const g = settings().going
+  return g && Date.now() - new Date(g.at).getTime() < GOING_MS ? g : null
+}
+export async function setGoing(on) {
+  if (on) {
+    await updateSettings({ going: { name: app.me || 'Alguien', at: new Date().toISOString(), list_id: app.listId } })
+    be.notifyGoing?.(pushUrl()).catch(() => {})
+    toast('Avisado: los demás saben que vas al súper')
+  } else await updateSettings({ going: null })
+}
+
+// ---------- Comparar con Dia y Consum ----------
+
+const OWN_BRANDS = /\b(hacendado|deliplus|bosque verde|compy|solcare|nuestra cocina)\b/gi
+export const compareUrl = () => {
+  const cfg = supabaseConfig()
+  return cfg ? `${cfg.url.replace(/\/$/, '')}/functions/v1/compare` : null
+}
+export async function compareProducts(products) {
+  const url = compareUrl()
+  if (!url) return {}
+  const items = products.map((p) => ({ key: p.id, q: p.n.replace(OWN_BRANDS, '').replace(/\s+/g, ' ').trim(), rf: p.rf === 'L' ? 'L' : p.rf === 'kg' ? 'kg' : 'ud', ean: detailsSync(p.id)?.e || undefined }))
+  const out = {}
+  for (let i = 0; i < items.length; i += 15) {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: items.slice(i, i + 15) }) })
+    if (res.ok) Object.assign(out, (await res.json()).results || {})
+  }
+  return out
 }

@@ -1,6 +1,6 @@
 <script>
-  import { CalendarClock, Plus, Store, Star, Sparkles, Check, X } from '@lucide/svelte'
-  import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings, approveRequest, rejectRequest, colorOf } from '../lib/data.svelte.js'
+  import { CalendarClock, Plus, Store, Star, Sparkles, Check, X, Footprints } from '@lucide/svelte'
+  import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings, approveRequest, rejectRequest, colorOf, going, setGoing } from '../lib/data.svelte.js'
   import { imgUrl } from '../lib/catalog.js'
   import { dueSuggestions, weekTotal } from '../lib/insights.js'
   import { eur } from '../lib/format.js'
@@ -83,7 +83,17 @@
       {/if}
     </div>
     {#if !app.prefs.kid}
-      <button class="btn prep" onclick={() => (preparing = true)}><Sparkles size={18} aria-hidden="true" /> Prepárame la lista</button>
+      <div class="row wrap-actions">
+        <button class="btn prep" onclick={() => (preparing = true)}><Sparkles size={18} aria-hidden="true" /> Prepárame la lista</button>
+        {#if going()?.name === app.me}
+          <button class="btn prep" onclick={() => setGoing(false)} aria-pressed="true"><Footprints size={18} aria-hidden="true" /> Ya no voy</button>
+        {:else if !going()}
+          <button class="btn prep" onclick={() => setGoing(true)}><Footprints size={18} aria-hidden="true" /> Voy yo al súper</button>
+        {/if}
+      </div>
+    {/if}
+    {#if going() && going().name !== app.me}
+      <p class="going" role="status"><span class="dot" style={`background:${colorOf(going().name)}`} aria-hidden="true"></span><strong>{going().name} va al súper.</strong> Si falta algo, apúntalo ahora.</p>
     {/if}
   </div>
 
@@ -241,6 +251,25 @@
 {/if}
 
 <style>
+  .wrap-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .going {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--lemon-soft);
+    color: var(--lemon-ink);
+  }
+  .going .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: none;
+  }
   .prep {
     justify-self: start;
     min-height: 44px;

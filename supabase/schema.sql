@@ -335,3 +335,11 @@ $$;
 
 select cron.unschedule(jobid) from cron.job where jobname = 'mercafamily-push-tick';
 select cron.schedule('mercafamily-push-tick', '*/15 * * * *', 'select public.push_tick()');
+
+-- Comparar con Dia y Consum: resultados guardados 7 días (solo los usa la función compare)
+create table if not exists public.compare_cache (
+  key text primary key,
+  data jsonb not null,
+  at timestamptz not null default now()
+);
+alter table public.compare_cache enable row level security;

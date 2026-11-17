@@ -3,6 +3,7 @@
 export const DEFAULT_PUSH_PREFS = {
   added: true, // alguien apunta algo
   trips: true, // alguien termina la compra
+  going: true, // alguien va al súper
   budget: true, // os pasáis del presupuesto
   summary: true, // resumen del domingo
   summaryTime: '19:00',

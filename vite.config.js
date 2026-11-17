@@ -13,5 +13,6 @@ const assetList = () => ({
 export default defineConfig({
   base: '/mercafamily/',
   plugins: [svelte(), assetList()],
-  build: { target: 'es2022' }
+  build: { target: 'es2022' },
+  define: { __BUILD__: JSON.stringify(new Date().toISOString()) }
 })

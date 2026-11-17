@@ -21,12 +21,20 @@ export function withQueue(inner, { onChange, onDrop }) {
 
   async function flush() {
     if (flushing) return flushing
-    flushing = (async () => {
-      let q = load()
+    // Ojo: liberar 'flushing' con .finally, que va siempre después de la asignación.
+    // Si se libera dentro, con la cola vacía se liberaría antes de marcarse y se quedaría ocupada para siempre.
+    flushing = run().finally(() => (flushing = null))
+    return flushing
+  }
+
+  async function run() {
+    let q = load()
+    try {
       while (q.length) {
         const op = q[0]
         try {
-          await inner[op.m](...op.a)
+          // Con tiempo máximo: si no responde, se reintenta más tarde en vez de atascar la cola
+          await Promise.race([inner[op.m](...op.a), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 15000))])
         } catch (e) {
           if (isNetworkError(e)) break
           console.error('Cambio descartado', op, e)
@@ -35,11 +43,14 @@ export function withQueue(inner, { onChange, onDrop }) {
         q.shift()
         save(q)
       }
-      onChange?.(q.length)
-      flushing = null
-      return q.length
-    })()
-    return flushing
+    } finally {
+      try {
+        onChange?.(q.length)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    return q.length
   }
 
   const write =
@@ -48,7 +59,11 @@ export function withQueue(inner, { onChange, onDrop }) {
       const q = load()
       q.push({ m, a, at: Date.now() })
       save(q)
-      onChange?.(q.length)
+      try {
+        onChange?.(q.length)
+      } catch (e) {
+        console.error(e)
+      }
       await flush()
     }
 

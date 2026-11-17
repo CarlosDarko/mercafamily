@@ -2,6 +2,7 @@
   import { ChevronRight, Check } from '@lucide/svelte'
   import { app, product, unitPrice, lineTotal, toggleItem, colorOf, missingCount, conflictsOf, priceTrend } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
+  import { cheaperFormat } from '../lib/home.js'
   import { eur } from '../lib/format.js'
 
   let { item, onedit } = $props()
@@ -15,6 +16,7 @@
   const takenOther = $derived(item.checked && item.taken_by && item.taken_by !== app.me ? item.taken_by : null)
   const oftenMissing = $derived(!item.checked && missingCount(item) >= 2)
   const diet = $derived(conflictsOf(item))
+  const fmt = $derived(p && !item.checked && app.catalog ? cheaperFormat(p, app.catalog.products) : null)
   const trend = $derived(item.merc_id && !item.checked ? priceTrend(item.merc_id) : null)
 </script>
 
@@ -41,6 +43,7 @@
       {/if}
       {#if item.missing}<span class="tag">No había</span>{:else if oftenMissing}<span class="tag soft">Suele faltar</span>{/if}
       {#if trend && Math.abs(trend.diff) >= 0.03}<span class="tag" class:soft={trend.diff < 0}>{trend.diff > 0 ? 'Ha subido' : 'Ha bajado'} un {Math.round(Math.abs(trend.diff) * 100)} %</span>{/if}
+      {#if fmt}<span class="tag soft">En {fmt.p.z.split(' · ')[0].toLowerCase()} sale un {Math.round(fmt.saving * 100)} % más barato</span>{/if}
       {#if diet.length}<span class="tag">Ojo: {diet.map((d) => `${d.person}, ${d.label.toLowerCase()}`).join(' · ')}</span>{/if}
     </span>
     <ChevronRight size={20} aria-hidden="true" class="chev" />

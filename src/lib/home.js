@@ -86,3 +86,31 @@ export function dietConflicts(productName, details, people = []) {
   }
   return hits
 }
+
+// ---------- Formatos del mismo producto ----------
+
+const SIZE_WORDS = new Set(['pack', 'brik', 'brick', 'briks', 'botella', 'botellas', 'garrafa', 'lata', 'latas', 'bote', 'x', 'mini', 'grande', 'familiar', 'formato', 'ahorro', 'bolsa', 'paquete', 'caja', 'tarro', 'pequena', 'pequeno', 'mediano', 'mediana'])
+const baseTokens = (name) =>
+  norm(name)
+    .replace(/[^a-z0-9ñ ]/g, ' ')
+    .split(' ')
+    .filter((w) => w && !SIZE_WORDS.has(w) && !/^(ml|l|g|kg|cl|ud|uds|de|del|con|y)$/.test(w))
+
+/**
+ * Otro formato del mismo producto que sale más barato por kilo o litro (al menos un 5 %).
+ * Mismo tipo de producto, misma unidad de referencia y casi el mismo nombre sin tamaños.
+ */
+export function cheaperFormat(p, products) {
+  if (!p?.r || !p.rf) return null
+  const base = baseTokens(p.n)
+  if (!base.length) return null
+  let best = null
+  for (const x of products) {
+    if (x.id === p.id || x.s !== p.s || x.rf !== p.rf || !x.r || x.r >= p.r * 0.95) continue
+    // El mismo producto: mismas palabras quitando las de tamaño ('virgen extra' no es 'virgen')
+    const xb = baseTokens(x.n)
+    if (xb.length !== base.length || !base.every((w) => xb.includes(w))) continue
+    if (!best || x.r < best.r) best = x
+  }
+  return best ? { p: best, saving: 1 - best.r / p.r } : null
+}

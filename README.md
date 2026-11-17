@@ -19,6 +19,8 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/voz.png' width='190' alt='Cuatro productos apuntados de una sola frase con el micrófono'>
   <img src='docs/capturas/ticket-foto.png' width='190' alt='Terminar compra con el total y los precios leídos de la foto del ticket'>
   <img src='docs/capturas/avisos.png' width='190' alt='Ajustes de avisos con aviso al salir del trabajo, hora y días'>
+  <img src='docs/capturas/comparar.png' width='190' alt='Comparación de lo que más compráis con Dia y Consum por kilo o litro'>
+  <img src='docs/capturas/estado.png' width='190' alt='Panel de estado de la app en Ajustes'>
   <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro con letra muy grande'>
 </p>
 
@@ -47,6 +49,10 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y apunta cada cosa con su producto.
 - **Ticket con foto**: al terminar la compra, una foto del ticket de papel rellena el total y guarda los precios reales de cada producto (el lector se descarga solo la primera vez).
 - **Avisos en el móvil** ([docs/avisos.md](docs/avisos.md)): cuando alguien apunta algo o termina la compra, si os pasáis del presupuesto, el resumen del domingo y un aviso al salir del trabajo si la lista tiene algo. Cada persona elige los suyos.
+- **Formatos**: si otro tamaño del mismo producto sale más barato por kilo o litro ('en garrafa sale un 7 % más barato'), lo dice en la lista y en la ficha, con un botón para cambiar.
+- **Voy yo al súper**: un botón que avisa a los demás (en la app y al móvil) para que apunten lo último antes de que llegues.
+- **Comparar con Dia y Consum**: en Gastos, lo que más compráis por kilo o litro frente a Dia y Consum, y en cada ficha 'En otras tiendas'. Carrefour, Eroski y Caprabo bloquean las consultas automáticas y Alcampo no tiene buscador público, así que no se comparan.
+- **Panel de estado** en Ajustes: conexión, cambios pendientes, catálogo, actualización automática, avisos, versión y últimos errores.
 - **Escáner de código de barras** (Android): apuntas al envase vacío y se añade solo.
 - **Preferencias de la familia.** Frases como 'leche semidesnatada sin lactosa' o 'evitar aceite de palma' deciden qué producto se elige.
 - **Total previsto** con precios de vuestra zona, en una tira fija abajo, y aviso si os pasáis del presupuesto semanal.
