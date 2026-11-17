@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs'
 import { search, stem } from '../src/lib/catalog.js'
 
 // Búsquedas reales de casa contra el catálogo descargado de Mercadona
-const cat = JSON.parse(readFileSync(new URL('../public/data/catalog.json', import.meta.url), 'utf8'))
+const data = JSON.parse(readFileSync(new URL('../public/data/catalog.json', import.meta.url), 'utf8'))
+const cat = { ...data, cats: new Map(data.categories.map((c) => [c.id, c])) }
 const first = (q) => search(cat, q, { limit: 5 }).map((r) => r.p.n.toLowerCase())
 
 test('plurales y singulares', () => {

@@ -22,7 +22,16 @@ create table if not exists public.members (
   primary key (household_id, user_id)
 );
 
--- Lista actual
+-- Listas de la compra de cada hogar (la principal tiene el mismo id que el hogar)
+create table if not exists public.lists (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households on delete cascade,
+  name text not null,
+  position integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- Productos apuntados
 create table if not exists public.items (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households on delete cascade,
@@ -65,7 +74,12 @@ create table if not exists public.trip_items (
   bought_on date not null
 );
 
+-- Columnas añadidas después de la primera versión (no hacen nada si ya existen)
+alter table public.households add column if not exists aliases jsonb not null default '{}'::jsonb;
+alter table public.items add column if not exists list_id uuid references public.lists on delete cascade;
+
 create index if not exists items_household_idx on public.items (household_id);
+create index if not exists lists_household_idx on public.lists (household_id);
 create index if not exists trips_household_idx on public.trips (household_id, date desc);
 create index if not exists trip_items_household_idx on public.trip_items (household_id);
 create index if not exists trip_items_trip_idx on public.trip_items (trip_id);
@@ -84,6 +98,7 @@ $$;
 -- Seguridad por filas: cada familia solo ve y cambia lo suyo
 alter table public.households enable row level security;
 alter table public.members enable row level security;
+alter table public.lists enable row level security;
 alter table public.items enable row level security;
 alter table public.trips enable row level security;
 alter table public.trip_items enable row level security;
@@ -100,14 +115,16 @@ create policy members_select on public.members for select to authenticated using
 create policy members_update_self on public.members for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy members_delete_self on public.members for delete to authenticated using (user_id = auth.uid());
 
+drop policy if exists lists_all on public.lists;
 drop policy if exists items_all on public.items;
 drop policy if exists trips_all on public.trips;
 drop policy if exists trip_items_all on public.trip_items;
+create policy lists_all on public.lists for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
 create policy items_all on public.items for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
 create policy trips_all on public.trips for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
 create policy trip_items_all on public.trip_items for all to authenticated using (public.is_member(household_id)) with check (public.is_member(household_id));
 
-grant select, insert, update, delete on public.households, public.members, public.items, public.trips, public.trip_items to authenticated;
+grant select, insert, update, delete on public.households, public.members, public.lists, public.items, public.trips, public.trip_items to authenticated;
 
 -- Crear un hogar y entrar en él
 create or replace function public.create_household(p_name text, p_display_name text)
@@ -171,7 +188,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['households', 'items', 'trips', 'trip_items'] loop
+  foreach t in array array['households', 'lists', 'items', 'trips', 'trip_items'] loop
     if not exists (
       select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
     ) then
