@@ -57,3 +57,30 @@ node scripts/fetch-details.mjs     # fichas pendientes (MAX=1500 por defecto)
 
 - Catálogo público de la tienda online de Mercadona, consultado una vez por semana y solo para uso doméstico. Mercadona no tiene API oficial.
 - [Open Food Facts](https://world.openfoodfacts.org/), base de datos abierta de alimentos (licencia ODbL).
+
+## Diseño, accesibilidad y auditoría
+
+- **Dirección:** modo 'Operate' de Impeccable (herramienta de uso diario). Mundo de mercado y ticket: cabecera verde mercado, suelo verde hoja pálido con tarjetas blancas, limón para lo que toca comprar y tomate solo para alertas. El total previsto vive en una tira de ticket con borde troquelado, fija sobre las pestañas. Tipografía Bricolage Grotesque autoalojada, cifras tabulares e iconos Lucide.
+- **Escena de uso:** el pasillo del súper con una mano libre. Botones de 48 px, buscador fijo arriba, lista por pasillos y fotos de producto en caché para cuando no hay cobertura. Tema oscuro automático.
+- **Accesibilidad (WCAG 2.2 AA):** enlace 'Saltar al contenido', un `h1` por pantalla y `h2` por sección, buscador con patrón combobox (flechas, Intro y Esc), casillas reales, hojas con `<dialog>` nativo (foco atrapado, Esc y foco devuelto), avisos con `aria-live`, gráfica con tabla de datos equivalente, contraste comprobado en claro y oscuro (mínimo 4,5:1) y `prefers-reduced-motion`.
+- **SEO y GEO:** `title` y `description` propios, `canonical`, Open Graph con imagen 1200 × 630, JSON-LD (`WebSite`, `WebApplication`, `WebPage`), contenido descriptivo en el HTML servido, `robots.txt`, `sitemap.xml`, `llms.txt`, 404 con `noindex` y manifest con iconos normales y *maskable*.
+
+### Impeccable (v4.9.2, 17 de noviembre de 2026)
+
+| Pasada | Resultado |
+|---|---|
+| Código fuente | 1 hallazgo (borde grueso en la casilla, era el trazo de la marca dibujada con CSS). Cambiado por el icono de Lucide. |
+| Renderizado a 390, 360 y 1280 px (Lista, Gastos, Ajustes, bienvenida) | Antes: fondo crema por reflejo, interlineado de 1,2 y preferencias sin relleno. Después de corregirlo, sin hallazgos. |
+
+### Herramientas WebMCP
+
+| Herramienta | Qué hace | Efectos |
+|---|---|---|
+| `ver_lista` | Devuelve la lista con cantidades, precios y total previsto | Ninguno |
+| `buscar_producto` | Busca en el catálogo de Mercadona teniendo en cuenta las preferencias | Ninguno |
+| `anadir_a_la_lista` | Añade un producto por id o texto | Pide confirmación a la persona |
+| `ir_a` | Abre Lista, Gastos o Ajustes | Ninguno |
+
+### Pendiente de comprobar con la app publicada
+
+Rich Results Test, PageSpeed con datos reales y el envío del sitemap a Search Console.
