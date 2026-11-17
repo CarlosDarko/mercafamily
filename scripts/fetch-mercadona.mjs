@@ -14,8 +14,17 @@ async function warehouseFor(cp) {
   return res.headers.get('x-customer-wh')
 }
 
+// Si no hay variables, se mantiene el almacén del último catálogo descargado
+async function previousWarehouse() {
+  try {
+    return JSON.parse(await readFile(new URL('../public/data/catalog.json', import.meta.url), 'utf8')).wh
+  } catch {
+    return null
+  }
+}
+
 const CP = (process.env.MERCADONA_CP || '').trim()
-const WH = process.env.MERCADONA_WH || (CP && (await warehouseFor(CP))) || 'vlc1'
+const WH = process.env.MERCADONA_WH || (CP && (await warehouseFor(CP))) || (await previousWarehouse()) || 'vlc1'
 console.log(`Almacén: ${WH}`)
 const BASE = 'https://tienda.mercadona.es/api'
 const CATALOG = new URL('../public/data/catalog.json', import.meta.url)

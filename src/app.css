@@ -5,16 +5,16 @@
   color-scheme: light dark;
   --font: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', ui-sans-serif, sans-serif;
 
-  --paper: #f6f2e9;
-  --surface: #fffdf8;
-  --surface-2: #efe9dc;
-  --ink: #1d2620;
-  --ink-2: #4c5a51;
-  --line: #ddd5c4;
+  --paper: #e8efe9;
+  --surface: #ffffff;
+  --surface-2: #e2eae4;
+  --ink: #17231c;
+  --ink-2: #445549;
+  --line: #ccd9cf;
   --market: #1f4d3a;
   --market-ink: #f6f2e9;
   --market-2: #2d6a50;
-  --market-soft: #dcebe2;
+  --market-soft: #d3e7da;
   --lemon: #f3cd4b;
   --lemon-soft: #fbf0c4;
   --lemon-ink: #4a3b00;

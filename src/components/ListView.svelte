@@ -222,7 +222,7 @@
   }
   .chip-text {
     display: grid;
-    line-height: 1.2;
+    line-height: 1.3;
   }
   .chip-text small {
     color: var(--ink-2);

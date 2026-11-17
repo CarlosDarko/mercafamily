@@ -194,7 +194,7 @@
     flex: 1;
     min-width: 0;
     display: grid;
-    line-height: 1.25;
+    line-height: 1.3;
   }
   .r-name {
     font-weight: 600;

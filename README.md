@@ -4,6 +4,14 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 
 **App:** https://carlosdarko.github.io/mercafamily/
 
+<p>
+  <img src='docs/capturas/buscar.png' width='190' alt='Buscador con productos de Mercadona, foto y precio mientras se escribe aceite'>
+  <img src='docs/capturas/lista.png' width='190' alt='Lista de la compra agrupada por pasillos con el total previsto abajo'>
+  <img src='docs/capturas/ficha.png' width='190' alt='Ficha de un producto con cantidad, Nutri-Score y valores nutricionales'>
+  <img src='docs/capturas/gastos.png' width='190' alt='Gastos con el resumen del mes y la gráfica de las últimas 12 semanas'>
+  <img src='docs/capturas/lista-oscuro.png' width='190' alt='La lista en modo oscuro'>
+</p>
+
 ## Qué hace
 
 - **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes. Al pulsar Añadir elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
@@ -30,7 +38,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 
 | Variable | Para qué |
 |---|---|
-| `MERCADONA_CP` | Código postal de casa: decide el almacén y por tanto los precios. Si os mudáis, se cambia aquí. |
+| `MERCADONA_CP` | Código postal de casa: decide el almacén y por tanto los precios. Sin ella se mantiene el almacén del último catálogo. Si os mudáis, se crea o se cambia aquí. |
 | `SUPABASE_URL` | Dirección del proyecto de Supabase. |
 | `SUPABASE_ANON_KEY` | Clave pública de Supabase. |
 

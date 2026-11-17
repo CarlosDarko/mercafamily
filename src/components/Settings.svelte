@@ -185,7 +185,7 @@
       {/if}
       <details>
         <summary>Si os mudáis</summary>
-        <p class="top">Los precios dependen del código postal. Para cambiarlo, en GitHub abre <a href={`${REPO}/settings/variables/actions`} target="_blank" rel="noopener">Settings, Secrets and variables, Actions, Variables</a>, edita <code>MERCADONA_CP</code> con el nuevo código postal y lanza la tarea 'Actualizar y publicar' desde la pestaña Actions.</p>
+        <p class="top">Los precios dependen del código postal. Para cambiarlo, en GitHub abre <a href={`${REPO}/settings/variables/actions`} target="_blank" rel="noopener">Settings, Secrets and variables, Actions, Variables</a>, crea o edita <code>MERCADONA_CP</code> con el nuevo código postal y lanza la tarea 'Actualizar y publicar' desde la pestaña Actions.</p>
       </details>
     </div>
   </section>
@@ -257,7 +257,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding-left: 14px;
+    padding: 4px 0 4px 14px;
     border-radius: 12px;
     background: var(--market-soft);
     font-weight: 600;

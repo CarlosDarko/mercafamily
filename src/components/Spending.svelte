@@ -336,7 +336,7 @@
     flex: 1;
     min-width: 0;
     display: grid;
-    line-height: 1.25;
+    line-height: 1.3;
   }
   .ch-text small {
     color: var(--ink-2);
@@ -375,7 +375,7 @@
   .t-main {
     flex: 1;
     display: grid;
-    line-height: 1.25;
+    line-height: 1.3;
   }
   .t-main strong::first-letter {
     text-transform: uppercase;

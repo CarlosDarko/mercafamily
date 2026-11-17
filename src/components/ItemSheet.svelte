@@ -249,7 +249,7 @@
   .alt-text {
     flex: 1;
     display: grid;
-    line-height: 1.2;
+    line-height: 1.3;
   }
   .alt-text small {
     color: var(--ink-2);

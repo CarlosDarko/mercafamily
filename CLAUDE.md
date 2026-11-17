@@ -25,7 +25,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Nutrición | Ingredientes y alérgenos de Mercadona (`public/data/details.json`, incremental, 1.500 fichas por semana). Nutri-Score y valores por 100 g de Open Food Facts en vivo desde la app por código de barras. |
 | Preferencias | Frases libres por hogar ('leche semidesnatada sin lactosa', 'evitar aceite de palma') que ordenan la búsqueda y deciden el producto al pulsar Añadir. |
 | Avisos | De momento solo dentro de la app. WhatsApp (OpenWA y Whisper) en una fase posterior. |
-| Diseño | Skill `disenador-web` con Impeccable, modo Operate. Mundo de mercado y ticket: verde mercado, papel cálido, limón para 'toca comprar', tomate solo para alertas. Bricolage Grotesque autoalojada e iconos Lucide. |
+| Diseño | Skill `disenador-web` con Impeccable, modo Operate. Mundo de mercado y ticket: verde mercado, suelo verde hoja pálido con tarjetas blancas (Impeccable marcó el crema como fondo por reflejo), limón para 'toca comprar', tomate solo para alertas. Bricolage Grotesque autoalojada e iconos Lucide. |
 | Keep-alive | La misma Action llama cada lunes a `rpc/heartbeat` de Supabase para que el proyecto gratuito no se pause. |
 
 ## Estructura

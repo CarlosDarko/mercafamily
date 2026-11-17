@@ -152,7 +152,7 @@
     flex: 1;
     min-width: 0;
     display: grid;
-    line-height: 1.25;
+    line-height: 1.3;
   }
   .alt-text small {
     color: var(--ink-2);

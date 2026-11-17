@@ -1,5 +1,5 @@
 <script>
-  import { Ellipsis } from '@lucide/svelte'
+  import { Ellipsis, Check } from '@lucide/svelte'
   import { app, product, unitPrice, lineTotal, toggleItem } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
@@ -17,7 +17,7 @@
 <li class="item" class:done={item.checked}>
   <label class="tap">
     <input type="checkbox" checked={item.checked} onchange={() => toggleItem(item)} />
-    <span class="box" aria-hidden="true"></span>
+    <span class="box" aria-hidden="true"><Check size={18} strokeWidth={3.5} /></span>
     {#if p && imgUrl(p)}
       <img src={imgUrl(p, 96)} alt="" width="44" height="44" loading="lazy" />
     {/if}
@@ -73,21 +73,17 @@
     place-items: center;
     transition: background-color 0.15s, border-color 0.15s;
   }
-  .box::after {
-    content: '';
-    width: 12px;
-    height: 7px;
-    border-left: 3px solid #fff;
-    border-bottom: 3px solid #fff;
-    transform: translateY(-2px) rotate(-45deg) scale(0);
+  .box :global(svg) {
+    color: #fff;
+    transform: scale(0);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   input:checked + .box {
     background: var(--market-2);
     border-color: var(--market-2);
   }
-  input:checked + .box::after {
-    transform: translateY(-2px) rotate(-45deg) scale(1);
+  input:checked + .box :global(svg) {
+    transform: scale(1);
   }
   input:focus-visible + .box {
     outline: 3px solid var(--focus);
@@ -106,7 +102,7 @@
     display: grid;
     gap: 2px;
     min-width: 0;
-    line-height: 1.25;
+    line-height: 1.3;
   }
   .name {
     font-weight: 600;

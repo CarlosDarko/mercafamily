@@ -22,6 +22,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      pages: ${{ steps.pages.outcome }}
     steps:
       - uses: actions/checkout@v4
 
@@ -77,14 +79,23 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: npm run build
 
-      - uses: actions/configure-pages@v5
+      # Si GitHub Pages aún no está activado (Settings, Pages, Source: GitHub Actions), se avisa y no se publica
+      - id: pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Aviso si Pages no está activado
+        if: steps.pages.outcome != 'success'
+        run: echo "::warning::GitHub Pages no está activado. Settings, Pages, Source, GitHub Actions. La app se ha construido pero no se ha publicado."
+
+      - if: steps.pages.outcome == 'success'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: needs.build.outputs.pages == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
