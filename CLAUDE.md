@@ -19,7 +19,7 @@ App familiar para llevar juntos la compra de casa: lista compartida en tiempo re
 | Tienda | Mercadona (el 95 % de la compra). Otras tiendas se pueden anotar al terminar la compra, sin catálogo. |
 | App | PWA con Svelte 5 y Vite, publicada en GitHub Pages (`/mercafamily/`). Navegación por pestañas con `#lista`, `#gastos` y `#ajustes`. |
 | Datos | Supabase (plan gratuito) con seguridad por filas y tiempo real. Sin Supabase la app funciona en modo local (datos en el móvil). |
-| Acceso | Código de un solo uso por email (OTP), no enlace mágico, porque en iPhone el enlace abre Safari y no la app instalada. |
+| Acceso | Email y contraseña con 'Confirm email' desactivado. Supabase ya no deja editar sus plantillas de email sin SMTP propio, y el enlace mágico en iPhone abre Safari y no la app instalada. |
 | Precios | Catálogo público de Mercadona descargado una vez por semana por una GitHub Action (la API no permite llamadas desde el navegador). Precios de la zona según la variable `MERCADONA_CP`. |
 | Historial de precios | `public/data/history.json`, solo se añade un punto cuando cambia el precio. |
 | Nutrición | Ingredientes y alérgenos de Mercadona (`public/data/details.json`, incremental, 1.500 fichas por semana). Nutri-Score y valores por 100 g de Open Food Facts en vivo desde la app por código de barras. |

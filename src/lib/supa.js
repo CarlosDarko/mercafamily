@@ -36,6 +36,13 @@ export function createSupabaseBackend({ url, key }) {
     onAuth(cb) {
       sb.auth.onAuthStateChange((event) => cb(event))
     },
+    async signIn(email, password) {
+      ok(await sb.auth.signInWithPassword({ email, password }))
+    },
+    async signUp(email, password) {
+      const data = ok(await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } }))
+      if (!data.session) throw new Error('needs-confirm')
+    },
     async sendCode(email) {
       ok(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }))
     },

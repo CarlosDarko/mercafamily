@@ -114,6 +114,34 @@ async function enterHousehold() {
   app.screen = 'ready'
 }
 
+const AUTH_ERRORS = [
+  [/invalid login credentials/i, 'El email o la contraseña no son correctos.'],
+  [/already registered|already exists/i, 'Ya hay una cuenta con ese email. Entra con tu contraseña.'],
+  [/password should be at least|weak password/i, 'La contraseña tiene que tener al menos 6 caracteres.'],
+  [/email not confirmed|needs-confirm/i, 'La cuenta está creada pero Supabase pide confirmar el email. Desactiva Confirm email en Supabase (Authentication, Sign In / Providers, Email) o abre el enlace del correo y vuelve a entrar.'],
+  [/invalid.*email|unable to validate email/i, 'Ese email no parece válido.'],
+  [/rate limit|too many/i, 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.'],
+  [/failed to fetch|network/i, 'Sin conexión con la base de datos. Revisa la conexión a internet.']
+]
+const authError = (e) => new Error(AUTH_ERRORS.find(([re]) => re.test(e?.message || ''))?.[1] || e?.message || 'No se ha podido entrar.')
+
+export async function signIn(email, password) {
+  try {
+    await be.signIn(email.trim(), password)
+  } catch (e) {
+    throw authError(e)
+  }
+  await enterHousehold()
+}
+export async function signUp(email, password) {
+  try {
+    await be.signUp(email.trim(), password)
+  } catch (e) {
+    throw authError(e)
+  }
+  await enterHousehold()
+}
+
 export async function sendCode(email) {
   await be.sendCode(email)
   app.email = email

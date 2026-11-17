@@ -19,21 +19,14 @@ Se hace una sola vez y lleva unos 10 minutos.
 1. Menú de la izquierda: 'SQL Editor', luego 'New query'.
 2. Copia entero el archivo [`supabase/schema.sql`](../supabase/schema.sql), pégalo y pulsa 'Run'. Tiene que decir 'Success'.
 
-## 3. Que el email de acceso lleve un código
+## 3. Entrar con email y contraseña, sin correos
 
-La app entra con un código de 6 cifras que llega por email (así funciona bien en iPhone con la app instalada).
+Supabase ya no deja editar sus emails sin un servidor de correo propio, así que la app entra con email y contraseña.
 
-1. 'Authentication', luego 'Emails' (o 'Email Templates'), plantilla 'Magic Link'.
-2. Asunto: `Tu código para MercaFamily`
-3. Cuerpo:
-
-   ```html
-   <h2>Tu código para entrar en MercaFamily</h2>
-   <p style='font-size:28px;font-weight:bold;letter-spacing:4px'>{{ .Token }}</p>
-   <p>Escríbelo en la app. Caduca en una hora.</p>
-   ```
-
-4. Guarda.
+1. 'Authentication', luego 'Sign In / Providers' (o 'Providers'), luego 'Email'.
+2. Comprueba que 'Enable Email provider' está activado.
+3. Desactiva 'Confirm email', para entrar al crear la cuenta sin esperar ningún correo.
+4. 'Save'.
 
 ## 4. Decirle a Supabase dónde está la app
 
@@ -64,14 +57,13 @@ Después ve a la pestaña 'Actions', elige 'Actualizar y publicar' y pulsa 'Run 
 
 ## 7. Entrar
 
-1. Abre la app, escribe tu email y el código que te llegue.
+1. Abre la app, pulsa 'Crear cuenta' y escribe tu email y una contraseña.
 2. La primera persona elige 'Sí, crear la lista de casa'.
-3. En 'Ajustes', 'Familia' aparece el código para unirse. Los demás entran con su email y eligen 'No, alguien ya la ha creado' con ese código.
+3. En 'Ajustes', 'Familia' aparece el código para unirse. Los demás crean su cuenta y eligen 'No, alguien ya la ha creado' con ese código.
 
 Si ya tenías cosas en modo local: antes de todo, en 'Ajustes', 'Copia de seguridad', pulsa 'Exportar copia'. Al entrar con Supabase, 'Importar copia'.
 
 ## Bueno saber
 
 - El plan gratuito pausa el proyecto tras 7 días sin uso. La tarea de GitHub lo llama cada lunes para evitarlo, y si aun así se pausa se reactiva con un clic en el panel sin perder datos.
-- El servidor de email gratuito de Supabase manda pocos correos por hora. Para tres personas que entran una vez y se quedan con la sesión iniciada sobra.
 - Alternativa: si prefieres no hacerlo tú, crea un 'Access token' en Supabase ('Account', 'Access Tokens') y pásaselo a Claude desde el formulario seguro de la sesión, nunca en el chat. Con eso puede hacer los pasos 2 a 6.
