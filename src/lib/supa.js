@@ -41,7 +41,10 @@ export function createSupabaseBackend({ url, key }) {
     },
     async signUp(email, password) {
       const data = ok(await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } }))
-      if (!data.session) throw new Error('needs-confirm')
+      if (data.session) return
+      // Sin sesión: o Supabase pide confirmar el email, o ese email ya existía. Probamos a entrar directamente.
+      const { error } = await sb.auth.signInWithPassword({ email, password })
+      if (error) throw new Error(/not confirmed/i.test(error.message) ? 'needs-confirm' : error.message)
     },
     async sendCode(email) {
       ok(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } }))

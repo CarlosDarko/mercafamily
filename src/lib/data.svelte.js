@@ -118,7 +118,7 @@ const AUTH_ERRORS = [
   [/invalid login credentials/i, 'El email o la contraseña no son correctos.'],
   [/already registered|already exists/i, 'Ya hay una cuenta con ese email. Entra con tu contraseña.'],
   [/password should be at least|weak password/i, 'La contraseña tiene que tener al menos 6 caracteres.'],
-  [/email not confirmed|needs-confirm/i, 'La cuenta está creada pero Supabase pide confirmar el email. Desactiva Confirm email en Supabase (Authentication, Sign In / Providers, Email) o abre el enlace del correo y vuelve a entrar.'],
+  [/email not confirmed|needs-confirm/i, 'Este email quedó pendiente de confirmar en Supabase. En Supabase, Authentication, Users, borra ese usuario (o confírmalo), comprueba que Confirm email está desactivado y vuelve a crear la cuenta.'],
   [/invalid.*email|unable to validate email/i, 'Ese email no parece válido.'],
   [/rate limit|too many/i, 'Demasiados intentos seguidos. Espera un minuto y vuelve a probar.'],
   [/failed to fetch|network/i, 'Sin conexión con la base de datos. Revisa la conexión a internet.']
