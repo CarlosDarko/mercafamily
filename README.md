@@ -18,7 +18,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
   <img src='docs/capturas/peticiones.png' width='190' alt='Petición de un peque pendiente de aceptar en la lista'>
   <img src='docs/capturas/ticket.png' width='190' alt='Ticket que se imprime al terminar la compra con el sello Por debajo del presupuesto'>
   <img src='docs/capturas/bienvenida.png' width='190' alt='Primer paso de la guía de bienvenida'>
-  <img src='docs/capturas/voz.png' width='190' alt='Cuatro productos apuntados de una sola frase con el micrófono'>
+  <img src='docs/capturas/voz.png' width='190' alt='Lo dicho por voz para revisar: cada cosa con su cantidad y los formatos para elegir'>
   <img src='docs/capturas/ticket-foto.png' width='190' alt='Terminar compra con el total y los precios leídos de la foto del ticket'>
   <img src='docs/capturas/avisos.png' width='190' alt='Ajustes de avisos con aviso al salir del trabajo, hora y días'>
   <img src='docs/capturas/comparar.png' width='190' alt='Comparación de lo que más compráis con Dia y Consum por kilo o litro'>
@@ -59,7 +59,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Historial de cada producto** en su ficha: cuántas veces lo compráis y cómo ha ido su precio.
 - **Ticket al terminar la compra**, que se imprime con el total y un sello si la semana va por debajo del presupuesto.
 - **Guía de bienvenida** de cuatro pasos (y en Ajustes, Ayuda, para verla otra vez).
-- **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y apunta cada cosa con su producto.
+- **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y abre una revisión con cada cosa, su cantidad, el producto propuesto y los demás formatos y tamaños para elegir. No se apunta nada hasta confirmar.
 - **Ticket con foto**: al terminar la compra, una foto del ticket de papel rellena el total y guarda los precios reales de cada producto (el lector se descarga solo la primera vez).
 - **Avisos en el móvil** ([docs/avisos.md](docs/avisos.md)): cuando alguien apunta algo o termina la compra, si os pasáis del presupuesto, el resumen del domingo y un aviso al salir del trabajo si la lista tiene algo. Cada persona elige los suyos.
 - **Formatos**: si otro tamaño del mismo producto sale más barato por kilo o litro ('en garrafa sale un 7 % más barato'), lo dice en la lista y en la ficha, con un botón para cambiar.

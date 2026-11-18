@@ -2,6 +2,7 @@
   import { Search, Plus, Heart, ScanBarcode, Mic, MicOff } from '@lucide/svelte'
   import { voiceSupported, listen, parseSpoken } from '../lib/voice.js'
   import Scanner from './Scanner.svelte'
+  import VoiceReview from './VoiceReview.svelte'
   import { app, searchCatalog, addProduct, addText, rememberAlias, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { inSeason } from '../lib/home.js'
@@ -12,6 +13,7 @@
   let listening = $state(false)
   let heard = $state('')
   let stopVoice = null
+  let review = $state(null)
   const canVoice = voiceSupported()
 
   function toggleVoice() {
@@ -27,15 +29,12 @@
       },
       onEnd: async (final) => {
         listening = false
-        const things = parseSpoken(final || heard)
+        const said = final || heard
+        const things = parseSpoken(said)
         heard = ''
         if (!things.length) return
-        const names = []
-        for (const t of things) {
-          const it = await addText(t)
-          if (it?.name) names.push(it.name.replace(/ Hacendado$/, ''))
-        }
-        toast(`Apuntado: ${names.join(', ')}`, null, 5000)
+        // No se apunta nada sin mirar: se abre la revisión con formatos y tamaños para elegir
+        review = { phrases: things, heard: said }
       }
     })
   }
@@ -185,6 +184,9 @@
 
 {#if scanning}
   <Scanner onclose={() => (scanning = false)} />
+{/if}
+{#if review}
+  <VoiceReview phrases={review.phrases} heard={review.heard} onclose={() => (review = null)} />
 {/if}
 
 <style>
