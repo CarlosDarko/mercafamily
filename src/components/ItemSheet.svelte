@@ -18,7 +18,8 @@
   let manualPrice = $state(app.items.find((i) => i.id === id)?.price ?? '')
   let changing = $state(false)
   let q = $state('')
-  const alternatives = $derived(changing && q.trim().length >= 2 ? searchCatalog(q, 8) : [])
+  // Otros productos: sin el que ya está puesto
+  const alternatives = $derived(changing && q.trim().length >= 2 ? searchCatalog(q, 13).filter((r) => r.p.id !== p?.id).slice(0, 12) : [])
 
   let info = $state(null)
   let nutri = $state(null)
@@ -67,7 +68,8 @@
   }
   function startChange() {
     changing = true
-    q = item.name
+    // Se busca por lo que es, sin la marca, para que salgan otros formatos y marcas
+    q = item.name.replace(/\s+(Hacendado|Deliplus|Bosque Verde|Compy)\b/gi, '').trim()
   }
 
   const fmt = $derived(p && app.catalog ? cheaperFormat(p, app.catalog.products) : null)
