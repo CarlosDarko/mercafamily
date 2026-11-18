@@ -24,6 +24,9 @@
 
   const comparable = (p, x) => x && x.unit && (p.rf === 'L' || p.rf === 'kg') && x.rf === p.rf
   const diff = (p, x) => (comparable(p, x) && p.r ? (x.unit - p.r) / p.r : null)
+  // Para la ficha: por kilo o litro si se puede y, si no, por envase (avisándolo)
+  const diffAny = (p, x) => (!x ? null : comparable(p, x) && p.r ? { d: (x.unit - p.r) / p.r, by: '' } : p.p && x.price ? { d: (x.price - p.p) / p.p, by: ' por envase' } : null)
+  const pct = (o) => (o.d < -0.005 ? `${Math.round(-o.d * 100)} % más barato` : o.d > 0.005 ? `${Math.round(o.d * 100)} % más caro` : 'Igual')
   const rows = $derived(
     results
       ? products.map((p) => {
@@ -55,9 +58,10 @@
               <StoreBadge {store} />
               {#if x}
                 <a class="nm" href={x.url} target="_blank" rel="noopener">{x.name}</a>
+                {@const o = diffAny(r.p, x)}
                 <span class="pr num">
-                  {eur(x.price)}{#if comparable(r.p, x)}<small>{fmtUnit(x.unit, x.rf)}</small>{/if}
-                  {#if d != null}<span class="d" class:cheap={d < -0.03} class:dear={d > 0.03}>{d < -0.03 ? `${Math.round(-d * 100)} % menos` : d > 0.03 ? `${Math.round(d * 100)} % más` : 'Igual'}</span>{/if}
+                  <span class="pline">{eur(x.price)}{#if o}<span class="d" class:cheap={o.d < -0.005} class:dear={o.d > 0.005}>{pct(o)}{o.by}</span>{/if}</span>
+                  {#if comparable(r.p, x)}<small>{fmtUnit(x.unit, x.rf)}</small>{/if}
                 </span>
               {:else}
                 <span class="muted nm">No hay uno equivalente</span>
@@ -87,9 +91,10 @@
                 <tr>
                   <th scope="row">{r.p.n.replace(/ Hacendado$/, '')}</th>
                   <td class="num">{fmtUnit(r.p.r, r.p.rf) || eur(r.p.p)}</td>
-                  {#each [[r.dia, r.dDia], [r.consum, r.dConsum]] as [x, d]}
-                    <td class="num" class:cheap={d != null && d < -0.05} class:dear={d != null && d > 0.05}>
-                      {#if x}{comparable(r.p, x) ? fmtUnit(x.unit, x.rf) : eur(x.price)}{#if d != null && Math.abs(d) >= 0.05}<small>{d < 0 ? '−' : '+'}{Math.round(Math.abs(d) * 100)} %</small>{/if}{:else}—{/if}
+                  {#each [r.dia, r.consum] as x}
+                    {@const o = diffAny(r.p, x)}
+                    <td class="num" class:cheap={o && o.d < -0.005} class:dear={o && o.d > 0.005}>
+                      {#if x}{comparable(r.p, x) ? fmtUnit(x.unit, x.rf) : eur(x.price)}{#if o}<small>{Math.abs(o.d) < 0.005 ? 'igual' : `${o.d < 0 ? '−' : '+'}${Math.round(Math.abs(o.d) * 100)} %`}</small>{/if}{:else}—{/if}
                     </td>
                   {/each}
                 </tr>
@@ -157,8 +162,14 @@
     font-weight: 500;
     color: var(--ink-2);
   }
+  .pline {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
   .d {
-    margin-top: 2px;
     padding: 1px 8px;
     border-radius: 999px;
     background: var(--surface-2);
