@@ -1,7 +1,7 @@
 // Estado de la app y acciones. La interfaz no sabe si los datos están en el móvil o en Supabase.
 import { createLocalBackend } from './local.js'
 import { loadCatalog, search, parsePrefs, loadHistory } from './catalog.js'
-import { dietConflicts } from './home.js'
+import { dietConflicts, keyOf as pantryKey } from './home.js'
 import { loadDetails, detailsSync } from './nutrition.js'
 import { withQueue, saveSnapshot, loadSnapshot, isNetworkError, pendingCount } from './offline.js'
 import { uid, isoDate, tokens, norm } from './format.js'
@@ -842,8 +842,15 @@ export async function rateRecipe(name, v) {
 
 // ---------- Despensa (correcciones a mano) ----------
 
+/** 'Sí, lo tenemos': apunta como que hay en casa varias cosas a la vez (sin tocar la lista) */
+export async function pantryHave(entries) {
+  const overrides = { ...(settings().pantry || {}) }
+  for (const e of entries) overrides[pantryKey(e)] = { state: 'ok', at: isoDate(), name: e.name, merc_id: e.merc_id || null }
+  await updateSettings({ pantry: overrides })
+}
+
 export async function pantrySet(entry, state) {
-  const overrides = { ...(settings().pantry || {}), [entry.key]: { state, at: isoDate() } }
+  const overrides = { ...(settings().pantry || {}), [entry.key]: { state, at: isoDate(), name: entry.name, merc_id: entry.merc_id || null } }
   await updateSettings({ pantry: overrides })
   if (state === 'out' && !onAnyList(entry)) {
     await addMany([{ merc_id: entry.merc_id, name: entry.name, qty: 1 }])

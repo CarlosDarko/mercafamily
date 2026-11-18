@@ -1,7 +1,7 @@
 // Lo que pasa en casa: despensa estimada, recetas de partida, alérgenos y dietas
 import { parseDate, daysBetween, norm, isoDate } from './format.js'
 
-const keyOf = (x) => x.merc_id || `t:${String(x.name).toLowerCase()}`
+export const keyOf = (x) => x.merc_id || `t:${String(x.name).toLowerCase()}`
 
 /**
  * Despensa estimada sin rellenar nada: cada producto comprado en los últimos 90 días,
@@ -35,7 +35,20 @@ export function pantry(tripItems, overrides = {}, today = new Date(), days = 90)
     const left = Math.max(0, Math.min(1, 1 - since / span))
     out.push({ ...e, every, since, left, state: left <= 0 ? 'out' : left < 0.34 ? 'low' : 'ok' })
   }
+  // Lo que la familia ha dicho que tiene sin haberlo comprado con la app ('Sí, lo tenemos' en una receta)
+  for (const [key, o] of Object.entries(overrides)) {
+    if (by.has(key) || o.state !== 'ok' || !o.name || o.at < from) continue
+    const since = daysBetween(parseDate(o.at), today)
+    const left = Math.max(0, Math.min(1, 1 - since / 14))
+    out.push({ key, merc_id: o.merc_id || null, name: o.name, every: null, since, left, state: left <= 0 ? 'out' : left < 0.34 ? 'low' : 'ok', told: true })
+  }
   return out.sort((a, b) => a.left - b.left || a.name.localeCompare(b.name, 'es'))
+}
+
+/** Lo que conviene preguntar ('¿os queda?'): se acaba o se ha acabado según la cuenta y nadie lo ha confirmado esta semana. */
+export function pantryDoubts(stock, overrides = {}, today = new Date(), n = 3) {
+  const week = isoDate(new Date(today.getTime() - 7 * 86400000))
+  return stock.filter((s) => s.state !== 'ok' && !(overrides[s.key]?.at >= week)).slice(0, n)
 }
 
 // ¿Cuánto de una receta hay ya en casa? have: nombres de lo que hay (de pantry con state ok o low).

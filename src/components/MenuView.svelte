@@ -161,7 +161,7 @@
               <span class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(s.left * 100)} aria-label={`Queda aproximadamente un ${Math.round(s.left * 100)} %`}>
                 <span class={s.state} style={`width:${Math.max(4, s.left * 100)}%`}></span>
               </span>
-              <span class="s-meta">{s.state === 'out' ? 'Se ha acabado' : s.state === 'low' ? 'Se acaba pronto' : 'Queda'} · comprado hace {s.since} {s.since === 1 ? 'día' : 'días'}</span>
+              <span class="s-meta">{s.state === 'out' ? 'Se ha acabado' : s.state === 'low' ? 'Se acaba pronto' : 'Queda'} · {s.told ? (s.since ? `lo dijisteis hace ${s.since} ${s.since === 1 ? 'día' : 'días'}` : 'lo dijisteis hoy') : `comprado hace ${s.since} ${s.since === 1 ? 'día' : 'días'}`}</span>
             </span>
             {#if s.state === 'ok'}
               <button class="btn mini" onclick={() => pantrySet(s, 'out')}>Se acabó</button>

@@ -1,7 +1,7 @@
 <script>
   // Ficha de una receta: ingredientes para marcar, pasos, añadir a la lista y ponerla en el menú
   import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown, Clock3 } from '@lucide/svelte'
-  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, rateRecipe, snoozedUntil, SNOOZE_DAYS } from '../lib/data.svelte.js'
+  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, pantryHave, rateRecipe, snoozedUntil, SNOOZE_DAYS } from '../lib/data.svelte.js'
   import { pantry, inSeason } from '../lib/home.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur, isoDate } from '../lib/format.js'
@@ -29,7 +29,11 @@
   async function addToList() {
     const entries = [...chosen].sort().map((n) => ings[n])
     const k = await addMany(entries)
-    toast(`${k} ingredientes de '${recipe.name}' apuntados en ${listName}`)
+    // Lo que se ha dejado sin marcar y la app no sabía que estaba: probablemente ya lo tenéis
+    const left = ings.filter((i, n) => !chosen.has(n) && !why(i))
+    if (left.length)
+      toast(`${k} apuntados. ¿Lo que no habéis marcado (${left.map((i) => i.q || i.name).slice(0, 3).join(', ')}${left.length > 3 ? '…' : ''}) lo tenéis en casa?`, { label: 'Sí, lo tenemos', run: () => pantryHave(left) }, 9000)
+    else toast(`${k} ingredientes de '${recipe.name}' apuntados en ${listName}`)
   }
 
   // Ponerla en el menú: próximos 7 días, comida o cena

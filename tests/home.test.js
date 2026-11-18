@@ -97,3 +97,17 @@ test('el recetario tiene más de 250 recetas sin ids repetidos y las meriendas n
   const plan = suggestWeek([{ day: '2026-11-17', slot: 'cena' }, { day: '2026-11-18', slot: 'comida' }], KB.filter((r) => r.slot === 'merienda'))
   assert.equal(plan.length, 0)
 })
+
+test('lo que la familia dice que tiene entra en la despensa y las dudas salen una vez por semana', async () => {
+  const { pantry, pantryDoubts } = await import('../src/lib/home.js')
+  const today = new Date('2026-11-18T12:00:00')
+  const overrides = { 't:garbanzos': { state: 'ok', at: '2026-11-17', name: 'Garbanzos' } }
+  const st = pantry([], overrides, today)
+  assert.equal(st.length, 1)
+  assert.equal(st[0].state, 'ok')
+  assert.equal(st[0].told, true)
+  const trips = ti('leche', ['2026-10-20', '2026-10-27', '2026-11-03'])
+  const st2 = pantry(trips, {}, today)
+  assert.equal(pantryDoubts(st2, {}, today).length, 1)
+  assert.equal(pantryDoubts(st2, { leche: { state: 'ok', at: '2026-11-15' } }, today).length, 0)
+})

@@ -17,6 +17,7 @@
   import PrepareSheet from './PrepareSheet.svelte'
   import HealthySwaps from './HealthySwaps.svelte'
   import TodayCard from './TodayCard.svelte'
+  import PantryCheck from './PantryCheck.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
@@ -135,6 +136,8 @@
   <AddBar />
 
   <TodayCard />
+
+  {#if !app.prefs.kid}<PantryCheck />{/if}
 
   {#if requests.length}
     <section class="section reqs" aria-labelledby="h-reqs">

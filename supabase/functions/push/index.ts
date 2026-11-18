@@ -167,7 +167,7 @@ async function tick() {
       const spent = await weekSpent(s.household_id, now.date)
       const names = await pendingIn(s.household_id, null)
       const budget = h?.weekly_budget ? ` de ${eur(Number(h.weekly_budget))}` : ''
-      if (await send(s, { title: 'Resumen de la semana', body: `${eur(spent)} gastados${budget}. ${names.length ? `En la lista quedan ${names.length} cosas.` : 'La lista está vacía.'}`, tag: `summary-${s.id}`, url: `${APP}#gastos` })) sent++
+      if (await send(s, { title: 'Resumen de la semana', body: `${eur(spent)} gastados${budget}. ${names.length ? `En la lista quedan ${names.length} cosas.` : 'La lista está vacía.'} Toca y decid qué queda en casa para la semana.`, tag: `summary-${s.id}`, url: `${APP}#lista` })) sent++
     }
   }
   return { sent, at: now }
