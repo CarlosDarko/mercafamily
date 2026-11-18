@@ -96,44 +96,42 @@
 
 <div class="page">
   <div class="page-head">
-    <h1>Lista de la compra</h1>
     <ListSwitcher />
-    {#if current.length}
-      <p class="muted status-line">
-        <strong class="num">{pending.length}</strong> por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}{missing.length ? `, ${missing.length} no había` : ''}
-      </p>
-    {/if}
-    {#if !app.prefs.kid}
-      <div class="tiles">
-        <button class="tile" style="--tc: var(--c-uva)" onclick={() => (preparing = true)}>
-          <span class="t-ic"><Sparkles size={22} aria-hidden="true" /></span>
-          <span class="t-tx">Prepárame la lista</span>
-        </button>
-        {#if pending.length}
-          <button class="tile" style="--tc: var(--c-limon)" onclick={() => (store = true)}>
-            <span class="t-ic"><Store size={22} aria-hidden="true" /></span>
-            <span class="t-tx">Modo tienda</span>
-          </button>
-        {/if}
-        {#if going()?.name === app.me}
-          <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(false)} aria-pressed="true">
-            <span class="t-ic"><Footprints size={22} aria-hidden="true" /></span>
-            <span class="t-tx">Ya no voy</span>
-          </button>
-        {:else if !going()}
-          <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(true)}>
-            <span class="t-ic"><Footprints size={22} aria-hidden="true" /></span>
-            <span class="t-tx">Voy yo al súper</span>
-          </button>
-        {/if}
-      </div>
-    {/if}
+    <p class="muted status-line">
+      {#if current.length}
+        <strong class="num">{pending.length}</strong> por coger{inCart.length ? ` · ${inCart.length} en el carro` : ''}{missing.length ? ` · ${missing.length} no había` : ''}{estimate ? ` · ${eur(estimate)} previsto` : ''}
+      {:else}
+        Lista vacía
+      {/if}
+    </p>
     {#if going() && going().name !== app.me}
       <p class="going" role="status"><span class="dot" style={`background:${colorOf(going().name)}`} aria-hidden="true"></span><strong>{going().name} va al súper.</strong> Si falta algo, apúntalo ahora.</p>
     {/if}
   </div>
 
   <AddBar />
+
+  {#if !app.prefs.kid}
+    <div class="tiles" role="group" aria-label="Acciones rápidas">
+      <button class="tile" style="--tc: var(--c-uva)" onclick={() => (preparing = true)}>
+        <Sparkles size={18} aria-hidden="true" /> Prepárame la lista
+      </button>
+      {#if pending.length}
+        <button class="tile" style="--tc: var(--c-limon)" onclick={() => (store = true)}>
+          <Store size={18} aria-hidden="true" /> Modo tienda
+        </button>
+      {/if}
+      {#if going()?.name === app.me}
+        <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(false)} aria-pressed="true">
+          <Footprints size={18} aria-hidden="true" /> Ya no voy
+        </button>
+      {:else if !going()}
+        <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(true)}>
+          <Footprints size={18} aria-hidden="true" /> Voy yo al súper
+        </button>
+      {/if}
+    </div>
+  {/if}
 
   <TodayCard />
 
@@ -311,8 +309,8 @@
   .tiles {
     display: flex;
     gap: 8px;
-    margin: 10px calc(var(--gutter) * -1) 0;
-    padding: 2px var(--gutter) 8px;
+    margin: 2px calc(var(--gutter) * -1) 0;
+    padding: 2px var(--gutter) 6px;
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -320,44 +318,35 @@
     display: none;
   }
   .tile {
-    flex: 1 0 auto;
-    white-space: nowrap;
-    display: flex;
+    flex: none;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    min-height: 56px;
-    padding: 8px 12px 8px 8px;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px 0 12px;
     border: 0;
-    border-radius: 16px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tc) 13%, var(--surface));
     color: var(--ink);
     font: inherit;
     font-weight: 650;
     font-size: 0.95rem;
-    line-height: 1.2;
-    text-align: left;
+    white-space: nowrap;
     cursor: pointer;
-    transition: transform 0.2s var(--ease-spring);
+    transition: transform 0.2s var(--ease-out), background-color 0.2s;
+  }
+  .tile :global(svg) {
+    color: var(--tc);
   }
   .tile:active {
     transform: scale(0.96);
   }
   .tile[aria-pressed='true'] {
-    outline: 2px solid var(--tc);
+    background: var(--tc);
+    color: var(--surface);
   }
-  .t-ic {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--tc) 16%, var(--surface));
-    color: var(--tc);
-  }
-  .t-tx {
-    min-width: 0;
+  .tile[aria-pressed='true'] :global(svg) {
+    color: inherit;
   }
   .gcat {
     display: flex;

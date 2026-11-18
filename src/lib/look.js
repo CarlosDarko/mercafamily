@@ -1,6 +1,7 @@
 // Aspecto de cada familia de Mercadona: icono y color propio, para que la lista no sea todo verde.
 // Los colores son tonos de mercado (tomate, limón, berenjena, mar…) y se usan con color-mix para el fondo suave.
 import {
+  Bean, Carrot, Egg, CookingPot, ChefHat,
   Apple, Beef, Fish, Milk, Ham, Croissant, Snowflake, Soup, Droplets, Wheat, Candy, Baby, Wine, Coffee, Cookie,
   CupSoda, Popcorn, ShowerHead, Sparkles, Pill, SprayCan, Brush, PawPrint, Pizza, IceCreamCone, Citrus, ShoppingBag
 } from '@lucide/svelte'
@@ -38,4 +39,22 @@ const LOOK = {
 export function catLook(id) {
   const [icon, color] = LOOK[id] || [ShoppingBag, '--c-otros']
   return { icon, color: `var(${color})` }
+}
+
+// Recetas: icono y color de su ingrediente principal (el mismo color que esa familia en la lista)
+const TAGLOOK = [
+  ['merienda', IceCreamCone, '--c-dulce'],
+  ['legumbre', Bean, '--c-aceite'],
+  ['pescado', Fish, '--c-mar'],
+  ['carne', Beef, '--c-carne'],
+  ['huevo', Egg, '--c-limon'],
+  ['arroz', CookingPot, '--c-horno'],
+  ['pasta', Wheat, '--c-horno'],
+  ['verdura', Carrot, '--c-huerta']
+]
+export function recipeLook(r) {
+  const t = r.tags || r.meta?.tags || []
+  const slot = r.slot || r.meta?.slot
+  const f = TAGLOOK.find(([k]) => t.includes(k) || (k === 'merienda' && slot === 'merienda')) || [null, ChefHat, '--c-otros']
+  return { icon: f[1], color: `var(${f[2]})` }
 }

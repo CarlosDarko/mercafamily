@@ -1,5 +1,7 @@
 <script>
   // Estado de la app: conexión, datos, actualización automática, avisos y errores
+  import Group from './Group.svelte'
+  import { Activity } from '@lucide/svelte'
   import { RefreshCw } from '@lucide/svelte'
   import { app, syncNow, catalogInfo, recentErrors, pushStatus } from '../lib/data.svelte.js'
   import { fmtLong } from '../lib/format.js'
@@ -42,8 +44,7 @@
   setInterval(() => tick++, 60000)
 </script>
 
-<section class="section" aria-labelledby="h-status">
-  <h2 id="h-status">Estado de la app</h2>
+<Group id="status" title="Estado de la app" icon={Activity} color="--c-mar" summary={app.online ? (app.pending ? `${app.pending} cambios pendientes` : 'Todo al día') : 'Sin conexión'}>
   <div class="panel pad">
     <dl>
       <dt>Conexión</dt>
@@ -99,7 +100,7 @@
       <p class="hint">Sin errores recientes.</p>
     {/if}
   </div>
-</section>
+</Group>
 
 <style>
   .pad {

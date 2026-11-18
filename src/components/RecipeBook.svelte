@@ -1,28 +1,14 @@
 <script>
   // Recetario: buscar y filtrar recetas sencillas y saludables, y las guardadas de casa
-  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Clock3, ThumbsDown, Bean, Fish, Beef, Carrot, Egg, Wheat, CookingPot, IceCreamCone, ChefHat } from '@lucide/svelte'
+  import { Search, Clock, Baby, Leaf, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Clock3, ThumbsDown } from '@lucide/svelte'
   import { app, settings, activeSnoozed } from '../lib/data.svelte.js'
   import { KB, QUICK_MIN } from '../lib/recipes-kb.js'
   import { tagsOf, atHome, pantry } from '../lib/home.js'
   import { norm } from '../lib/format.js'
+  import { recipeLook } from '../lib/look.js'
   import RecipeSheet from './RecipeSheet.svelte'
 
-  // Cada receta lleva el icono y el color de su ingrediente principal
-  const TAGLOOK = [
-    ['merienda', IceCreamCone, '--c-dulce'],
-    ['legumbre', Bean, '--c-aceite'],
-    ['pescado', Fish, '--c-mar'],
-    ['carne', Beef, '--c-carne'],
-    ['huevo', Egg, '--c-limon'],
-    ['arroz', CookingPot, '--c-horno'],
-    ['pasta', Wheat, '--c-horno'],
-    ['verdura', Carrot, '--c-huerta']
-  ]
-  const lookOf = (r) => {
-    const t = r.tags || []
-    const f = TAGLOOK.find(([k]) => t.includes(k)) || [null, ChefHat, '--c-otros']
-    return { icon: f[1], color: `var(${f[2]})` }
-  }
+  const lookOf = recipeLook
   let q = $state('')
   let filter = $state('todas')
   let open = $state(null)
@@ -110,8 +96,8 @@
   const shown = $derived(showAll || q || filter !== 'todas' ? list : list.slice(0, 8))
 </script>
 
-<section class="section" aria-labelledby="h-book">
-  <h2 id="h-book"><BookOpen size={20} aria-hidden="true" /> Recetario</h2>
+<section class="section first-r" aria-labelledby="h-book">
+  <h2 id="h-book" class="visually-hidden">Recetario</h2>
   <p class="hint">{KB.length} recetas sanas para 3: exprés, divertidas, de temporada y de toda la vida.</p>
   <div class="search">
     <Search size={18} aria-hidden="true" />
@@ -152,13 +138,12 @@
               {#if (r.season || r.meta?.season || []).includes(month)}<span class="season"><Leaf size={14} aria-hidden="true" /> Temporada</span>{/if}
               {#if r.own}<span>De casa</span>{/if}
             </span>
-            <span class="tags">{(r.tags || []).join(' · ')}</span>
           </button>
         </li>
       {/each}
     </ul>
     {#if shown.length < list.length}
-      <button class="btn btn-ghost" onclick={() => (showAll = true)}>Ver las {list.length} recetas</button>
+      <button class="btn btn-block more" onclick={() => (showAll = true)}>Ver las {list.length} recetas</button>
     {/if}
   {/if}
 </section>
@@ -168,9 +153,6 @@
 {/if}
 
 <style>
-  h2 :global(svg) {
-    vertical-align: -3px;
-  }
   .search {
     position: relative;
   }
@@ -247,7 +229,7 @@
     }
   }
   .r-ic {
-    grid-row: span 3;
+    grid-row: span 2;
     display: grid;
     place-items: center;
     width: 44px;
@@ -282,8 +264,7 @@
   .f {
     color: var(--tomato);
   }
-  .tags {
-    font-size: 0.8rem;
-    color: var(--ink-2);
+  .first-r {
+    margin-top: 14px;
   }
 </style>

@@ -15,7 +15,8 @@
   $effect(() => {
     dlg.showModal()
   })
-  const close = () => (app.lastTrip = null)
+  // Al cerrar, el foco vuelve al contenido (no al enlace 'Saltar al contenido')
+  const close = () => ((app.lastTrip = null), requestAnimationFrame(() => document.getElementById('main')?.focus({ preventScroll: true })))
 </script>
 
 <dialog bind:this={dlg} class="tk" aria-labelledby="tk-title" oncancel={(e) => (e.preventDefault(), close())} onclick={(e) => e.target === dlg && close()}>

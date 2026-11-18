@@ -254,7 +254,7 @@
   }
   .go {
     background: var(--c-huerta);
-    color: #fff;
+    color: var(--surface);
     animation: go-in 0.35s var(--ease-spring);
   }
   @keyframes go-in {

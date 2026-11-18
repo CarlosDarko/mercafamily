@@ -172,24 +172,21 @@
     width: 36px;
     height: 36px;
     border-radius: 11px;
-    background: var(--c-tomate);
+    background: #c23d22;
     color: #fff;
-    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.14), 0 4px 12px -4px var(--c-tomate);
+    box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.14), 0 4px 12px -4px #c23d22;
     transform: rotate(-6deg);
   }
   .fam {
     color: var(--c-tomate);
   }
   .sync {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
+    padding: 6px 2px;
     color: var(--ink-2);
     white-space: nowrap;
     min-width: 0;

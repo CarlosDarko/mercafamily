@@ -252,11 +252,18 @@
     width: 100%;
     min-height: 2px;
     border-radius: 6px 6px 2px 2px;
-    background: var(--market-soft);
-    transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    background: color-mix(in srgb, var(--c-mar) 30%, var(--surface));
+    transition: height 0.5s var(--ease-out);
+    transform-origin: bottom;
+    animation: rise-bar 0.7s var(--ease-out) both;
+  }
+  @keyframes rise-bar {
+    from {
+      transform: scaleY(0);
+    }
   }
   .bar.current {
-    background: var(--market-2);
+    background: var(--c-mar);
   }
   .bar.over {
     background: var(--tomato);
@@ -297,49 +304,7 @@
   .data th:not(:first-child) {
     text-align: right;
   }
-  .hbars {
-    list-style: none;
-    margin: 0;
-    display: grid;
-    gap: 10px;
-  }
-  .hbars li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: 'label val' 'track track';
-    align-items: center;
-    gap: 4px 10px;
-    font-size: 0.95rem;
-  }
-  .hb-label {
-    grid-area: label;
-  }
-  .hb-val {
-    grid-area: val;
-  }
-  .hb-track {
-    grid-area: track;
-  }
   @media (min-width: 560px) {
-    .hbars li {
-      grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) auto;
-      grid-template-areas: 'label track val';
-    }
-  }
-  .hb-track {
-    height: 12px;
-    border-radius: 6px;
-    background: var(--surface-2);
-    overflow: hidden;
-  }
-  .hb-fill {
-    display: block;
-    height: 100%;
-    border-radius: 6px;
-    background: var(--market-2);
-  }
-  .hb-val {
-    font-weight: 700;
   }
   .changes {
     list-style: none;

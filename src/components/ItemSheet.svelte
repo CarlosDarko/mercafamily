@@ -77,23 +77,25 @@
 
 {#if item}
   <Sheet {onclose} labelledby="sheet-title">
-    <div class="sheet-head">
-      {#if p && imgUrl(p)}
-        <img class="hero" src={imgUrl(p, 240)} alt={p.n} width="88" height="88" />
-      {/if}
-      <div class="head-text">
-        <h2 id="sheet-title">{item.name}</h2>
-        {#if p}
-          <p class="muted">{unitLabel(p)}</p>
-          <p class="price num">{eur(p.p)}{#if p.pp}<span class="was"> antes {eur(p.pp)}</span>{/if}</p>
-        {/if}
-      </div>
+    <div class="top-bar">
       {#if p}
         <button class="icon-btn fav" class:on={isFavorite(p.id)} onclick={() => toggleFavorite(p.id)} aria-pressed={isFavorite(p.id)} aria-label="Favorito">
           <Star size={24} aria-hidden="true" fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
         </button>
       {/if}
       <button class="icon-btn" onclick={onclose} aria-label="Cerrar"><X size={24} aria-hidden="true" /></button>
+    </div>
+    <div class="prod">
+      {#if p && imgUrl(p)}
+        <img class="hero" src={imgUrl(p, 240)} alt={p.n} width="112" height="112" />
+      {/if}
+      <div class="head-text">
+        <h2 id="sheet-title">{item.name}</h2>
+        {#if p}
+          <p class="muted unit">{unitLabel(p)}</p>
+          <p class="price num">{eur(p.p)}{#if p.pp}<s class="was">{eur(p.pp)}</s><span class="visually-hidden"> (antes {eur(p.pp)})</span>{/if}</p>
+        {/if}
+      </div>
     </div>
 
     {#if fmt}
@@ -235,13 +237,28 @@
     justify-self: start;
     min-height: 44px;
   }
+  .top-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    margin: -8px -6px -14px 0;
+  }
+  .prod {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
   .hero {
-    width: 88px;
-    height: 88px;
-    border-radius: 12px;
+    width: 112px;
+    height: 112px;
+    border-radius: 18px;
     background: #fff;
     object-fit: contain;
     flex: none;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .unit {
+    font-size: 0.9rem;
   }
   .head-text {
     flex: 1;
@@ -250,15 +267,22 @@
     gap: 2px;
   }
   .head-text h2 {
-    padding-top: 4px;
+    font-size: 1.25rem;
+    line-height: 1.2;
   }
   .price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    margin-top: 4px;
     font-weight: 800;
-    font-size: 1.15rem;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
   }
   .was {
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--ink-2);
   }
   .stepper {

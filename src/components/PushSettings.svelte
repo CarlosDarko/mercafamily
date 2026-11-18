@@ -1,5 +1,6 @@
 <script>
   // Avisos en este móvil: activar, elegir cuáles y probar
+  import Group from './Group.svelte'
   import { Bell, BellOff } from '@lucide/svelte'
   import { app, pushStatus, enablePush, savePushPrefs, disablePush, testPush, toast } from '../lib/data.svelte.js'
   import { DEFAULT_PUSH_PREFS, pushSupported, isIOS, isStandalone } from '../lib/push.js'
@@ -62,8 +63,7 @@
   }
 </script>
 
-<section class="section" aria-labelledby="h-push">
-  <h2 id="h-push">Avisos</h2>
+<Group id="push" title="Avisos" icon={Bell} color="--c-limon" summary={({ activo: 'Activados en este móvil', inactivo: 'Desactivados', local: 'Necesitan sincronizar', ios: 'Instalad la app primero', denegado: 'Bloqueados en el navegador', 'no-soportado': 'Este navegador no puede' })[state] || ''}>
   <div class="panel pad stack">
     {#if state === 'local'}
       <p class="muted">Los avisos funcionan cuando la lista está sincronizada con Supabase.</p>
@@ -120,7 +120,7 @@
       <p class="muted">Comprobando…</p>
     {/if}
   </div>
-</section>
+</Group>
 
 <style>
   .pad {

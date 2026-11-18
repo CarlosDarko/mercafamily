@@ -1,6 +1,7 @@
 <script>
   // Este mes: por categoría con objetivos, por persona y ahorro conseguido con alternativas
   import { Target, PiggyBank, X } from '@lucide/svelte'
+  import { catLook } from '../lib/look.js'
   import { app, settings, setGoal, colorOf } from '../lib/data.svelte.js'
   import { eur, parseNum } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
@@ -60,10 +61,11 @@
     <ul class="cats panel" role="list">
       {#each rows as r (r.k)}
         {@const over = r.goal && r.v > r.goal}
-        <li>
+        {@const lk = catLook(r.k)}
+        <li style={`--cc:${lk.color}`}>
           <button class="cat" onclick={() => edit(r)} aria-label={`${r.name}: ${eur(r.v)} este mes${r.goal ? `, objetivo ${eur(r.goal)}` : ''}. Cambiar objetivo`}>
             <span class="top">
-              <span class="name">{r.name}</span>
+              <span class="name"><span class="c-ic" aria-hidden="true"><lk.icon size={16} /></span>{r.name}</span>
               <span class="num val" class:over>{eur(r.v)}{#if r.goal}<small>&nbsp;/&nbsp;{eur(r.goal)}</small>{/if}</span>
             </span>
             <span class="track">
@@ -171,10 +173,28 @@
     position: absolute;
     inset: 0 auto 0 0;
     border-radius: 5px;
-    background: var(--market-2);
+    background: var(--cc);
+    transform-origin: left;
+    animation: grow 0.8s var(--ease-out) both;
+  }
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
   }
   .fill.over {
-    background: var(--tomato);
+    background: var(--c-tomate);
+  }
+  .c-ic {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--cc) 15%, var(--surface));
+    color: var(--cc);
   }
   .goal {
     position: absolute;

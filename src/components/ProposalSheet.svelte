@@ -5,6 +5,7 @@
   import { suggestWeek, pantry, STARTER_RECIPES } from '../lib/home.js'
   import { ShoppingBasket } from '@lucide/svelte'
   import { eur, isoDate } from '../lib/format.js'
+  import { recipeLook } from '../lib/look.js'
   import Sheet from './Sheet.svelte'
 
   let { days, onclose } = $props()
@@ -68,12 +69,16 @@
   {#if !free.length}
     <p>Todos los huecos de lo que queda de semana ya tienen plato. Quitad alguno o mirad la semana siguiente.</p>
   {:else}
-    <p class="muted">Para los {free.length} huecos libres: sin repetir, con legumbre y pescado, de temporada, cenas ligeras y rápidas entre semana, lo que os gusta y aprovechando lo que hay en casa.</p>
+    <p class="muted">{free.length} huecos libres. Sin repetir, con legumbre y pescado, de temporada y con lo que hay en casa.</p>
     <ul class="plan" role="list">
       {#each plan as e (e.day + e.slot)}
+        {@const lk = recipeLook(e.recipe)}
         <li>
-          <span class="when"><span class="d">{e.label}</span><small>{e.slot === 'comida' ? 'Comida' : 'Cena'}</small></span>
-          <span class="what">{e.recipe.name}</span>
+          <span class="p-ic" style={`--rc:${lk.color}`} aria-hidden="true"><lk.icon size={18} /></span>
+          <span class="txt">
+            <span class="when">{e.label} · {e.slot === 'comida' ? 'comida' : 'cena'}</span>
+            <span class="what">{e.recipe.name}</span>
+          </span>
         </li>
       {/each}
     </ul>
@@ -96,30 +101,40 @@
     gap: 4px;
   }
   .plan li {
-    display: grid;
-    grid-template-columns: 7rem minmax(0, 1fr);
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 4px;
   }
-  .when {
+  .plan li + li {
+    border-top: 1px solid var(--line);
+  }
+  .p-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--rc) 15%, var(--surface));
+    color: var(--rc);
+  }
+  .txt {
+    flex: 1;
+    min-width: 0;
     display: grid;
     line-height: 1.25;
   }
-  .d {
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-  .d::first-letter {
-    text-transform: uppercase;
-  }
-  .when small {
+  .when {
+    font-size: 0.82rem;
+    font-weight: 650;
     color: var(--ink-2);
   }
+  .when::first-letter {
+    text-transform: uppercase;
+  }
   .what {
-    font-weight: 600;
-    align-self: center;
+    font-weight: 650;
   }
   .cost {
     padding: 10px 14px;

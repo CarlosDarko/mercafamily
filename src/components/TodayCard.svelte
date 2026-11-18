@@ -1,7 +1,7 @@
 <script>
   // 'Hoy coméis…': lo que toca hoy (o lo próximo), con propuesta de un toque si el hueco está vacío,
   // lo que falta para hacerlo, qué sacar del congelador y, el fin de semana, preparar el menú de la siguiente.
-  import { UtensilsCrossed, Shuffle, Check, Snowflake, ShoppingBasket, CalendarRange, ChevronRight } from '@lucide/svelte'
+  import { Sun, Moon, Shuffle, Check, Snowflake, ShoppingBasket, CalendarRange, ChevronRight } from '@lucide/svelte'
   import { app, setMeal, adoptKbRecipe, resolveKbIngredient, addMany, settings, toast, activeSnoozed } from '../lib/data.svelte.js'
   import { suggestWeek, pantry, atHome, STARTER_RECIPES } from '../lib/home.js'
   import { isoDate } from '../lib/format.js'
@@ -76,30 +76,34 @@
   const planNext = $derived((dow === 0 || dow >= 5) && app.meals.filter((m) => m.day >= nextMonday && m.day <= nextSunday).length < 6)
 </script>
 
-<section class="today" aria-labelledby="h-today">
-  <h2 id="h-today" class="visually-hidden">Qué coméis</h2>
-  <ul class="cards" role="list">
+<section class="today rise" aria-labelledby="h-today">
+  <h2 id="h-today" class="today-h">Qué coméis</h2>
+  <ul class="rows" role="list">
     {#each cards as c, n (c.day + c.slot)}
-      <li class="card rise" class:empty={!c.meal} style={`--d:${n + 1}`}>
-        <span class="lbl"><UtensilsCrossed size={16} aria-hidden="true" /> {c.label}</span>
-        {#if c.meal}
-          {#if c.recipe}
-            <button class="dish link" onclick={() => (open = c.recipe)}>{c.meal.name} <ChevronRight size={18} aria-hidden="true" /></button>
-          {:else}
-            <p class="dish">{c.meal.name}</p>
+      <li class="row-t" class:empty={!c.meal}>
+        <span class="ic" class:night={c.slot === 'cena'} aria-hidden="true">{#if c.slot === 'cena'}<Moon size={20} />{:else}<Sun size={20} />{/if}</span>
+        <div class="body">
+          <span class="lbl">{c.label}{#if !c.meal && c.recipe}&nbsp;· propuesta{/if}</span>
+          {#if c.meal}
+            {#if c.recipe}
+              <button class="dish link" onclick={() => (open = c.recipe)}>{c.meal.name}<ChevronRight size={18} aria-hidden="true" /></button>
+            {:else}
+              <span class="dish">{c.meal.name}</span>
+            {/if}
+            {#if c.home?.missing.length}
+              <button class="miss" onclick={() => addMissing(c)}><ShoppingBasket size={15} aria-hidden="true" /> Falta {c.home.missing.length === 1 ? c.home.missing[0] : `${c.home.missing.length} cosas`}: apuntar</button>
+            {:else if c.home}
+              <span class="ok"><Check size={15} aria-hidden="true" /> Tenéis todo</span>
+            {/if}
+          {:else if c.recipe}
+            <button class="dish link sugg" onclick={() => (open = c.recipe)}>¿{c.recipe.name}?</button>
+            <span class="meta">{c.recipe.time || c.recipe.meta?.time || '?'} min{#if c.home?.have} · tenéis {c.home.have} de {c.home.total}{/if}</span>
           {/if}
-          {#if c.home?.missing.length}
-            <p class="miss">Falta: {c.home.missing.slice(0, 3).join(', ')}{c.home.missing.length > 3 ? '…' : ''}</p>
-            <button class="btn btn-small" onclick={() => addMissing(c)}><ShoppingBasket size={16} aria-hidden="true" /> Apuntar lo que falta</button>
-          {:else if c.home}
-            <p class="ok">Tenéis todo en casa</p>
-          {/if}
-        {:else if c.recipe}
-          <p class="sugg">¿Qué tal <button class="link inline" onclick={() => (open = c.recipe)}>{c.recipe.name}</button>?</p>
-          <p class="meta">{c.recipe.time || c.recipe.meta?.time || '?'} min{#if c.home?.total} · tenéis {c.home.have} de {c.home.total}{/if}</p>
-          <div class="row">
-            <button class="btn btn-primary btn-small" onclick={() => accept(c)} disabled={busy}><Check size={16} aria-hidden="true" /> Vale</button>
-            <button class="btn btn-small" onclick={() => another(n, c.recipe.name)}><Shuffle size={16} aria-hidden="true" /> Otra</button>
+        </div>
+        {#if !c.meal && c.recipe}
+          <div class="acts">
+            <button class="round other" onclick={() => another(n, c.recipe.name)} aria-label={`Otra propuesta para ${c.label.toLowerCase()}`}><Shuffle size={18} aria-hidden="true" /></button>
+            <button class="round yes" onclick={() => accept(c)} disabled={busy} aria-label={`Vale, ${c.recipe.name}`}><Check size={20} strokeWidth={2.6} aria-hidden="true" /></button>
           </div>
         {/if}
       </li>
@@ -109,7 +113,7 @@
     <p class="note"><Snowflake size={16} aria-hidden="true" /> Para mañana, sacad del congelador: {defrost.join(', ')}.</p>
   {/if}
   {#if planNext}
-    <a class="btn btn-block plan" href="#menu-proponer"><CalendarRange size={18} aria-hidden="true" /> Preparar el menú de la semana que viene</a>
+    <a class="plan" href="#menu-proponer"><CalendarRange size={18} aria-hidden="true" /> Preparar el menú de la semana que viene <ChevronRight size={18} aria-hidden="true" /></a>
   {/if}
 </section>
 
@@ -119,52 +123,66 @@
 
 <style>
   .today {
-    display: grid;
-    gap: 8px;
-    margin-top: 14px;
+    margin-top: 12px;
+    padding: 6px 6px 6px;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
   }
-  .cards {
+  .today-h {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .rows {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-    gap: 8px;
   }
-  .card {
-    display: grid;
-    align-content: start;
-    gap: 6px;
-    padding: 12px 14px;
-    border-radius: var(--r);
-    background: var(--surface);
-    box-shadow: var(--shadow);
+  .row-t {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 10px 8px;
     min-width: 0;
   }
-  .card.empty {
-    background: var(--lemon-soft);
-    color: var(--lemon-ink);
+  .row-t + .row-t {
+    border-top: 1px solid var(--line);
+  }
+  .ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--c-horno) 15%, var(--surface));
+    color: var(--c-horno);
+  }
+  .ic.night {
+    background: color-mix(in srgb, var(--c-uva) 15%, var(--surface));
+    color: var(--c-uva);
+  }
+  .body {
+    flex: 1 1 9rem;
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+    justify-items: start;
   }
   .lbl {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--ink-2);
   }
-  .empty .lbl,
-  .empty .meta {
-    color: inherit;
-    opacity: 0.85;
-  }
   .dish {
-    margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.25;
   }
   .link {
     display: inline-flex;
@@ -175,52 +193,101 @@
     background: none;
     color: inherit;
     font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
     text-align: left;
     cursor: pointer;
   }
-  .link.inline {
-    display: inline;
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
   .sugg {
-    margin: 0;
-    font-size: 1.05rem;
-    line-height: 1.35;
+    color: var(--ink);
   }
   .meta,
-  .miss,
   .ok {
-    margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: var(--ink-2);
   }
   .ok {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: var(--accent-text);
     font-weight: 600;
   }
-  .row {
+  .miss {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 2px;
+    padding: 3px 10px;
+    min-height: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--lemon-soft);
+    color: var(--lemon-ink);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .acts {
+    flex: none;
+    margin-left: auto;
     display: flex;
     gap: 6px;
-    flex-wrap: wrap;
   }
-  .btn-small {
-    min-height: 44px;
-    padding: 0 14px;
-    font-size: 0.9rem;
+  .round {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-out);
+  }
+  .round:active {
+    transform: scale(0.92);
+  }
+  .other {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .yes {
+    background: var(--c-huerta);
+    color: var(--surface);
   }
   .note {
     display: flex;
     gap: 8px;
     align-items: center;
-    margin: 0;
-    padding: 10px 14px;
+    margin: 4px 8px 6px;
+    padding: 10px 12px;
     border-radius: 12px;
-    background: var(--surface-2);
+    background: color-mix(in srgb, var(--c-hielo) 12%, var(--surface));
     font-size: 0.9rem;
   }
+  .note :global(svg) {
+    flex: none;
+    color: var(--c-hielo);
+  }
   .plan {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 8px 6px;
+    padding: 12px;
+    min-height: 48px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--c-tomate) 10%, var(--surface));
+    color: var(--ink);
+    font-weight: 650;
     text-decoration: none;
+  }
+  .plan :global(svg) {
+    flex: none;
+    color: var(--c-tomate);
+  }
+  .plan :global(svg:last-child) {
+    margin-left: auto;
   }
 </style>

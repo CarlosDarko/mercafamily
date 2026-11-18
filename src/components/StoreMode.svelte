@@ -222,7 +222,8 @@
   .name {
     font-weight: 700;
     overflow-wrap: anywhere;
-    hyphens: auto;
+    hyphens: manual;
+    overflow-wrap: anywhere;
   }
   .qty {
     color: var(--accent-text);

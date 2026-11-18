@@ -74,17 +74,6 @@
     {#if seasonal}<span class="season"><Leaf size={16} aria-hidden="true" /> De temporada</span>{/if}
   </p>
 
-  <div class="rate" role="group" aria-label="¿Os gusta?">
-    <button class="pill" aria-pressed={rating === 1} onclick={() => rate(1)}><ThumbsUp size={18} aria-hidden="true" /> Nos gusta</button>
-    <button class="pill" aria-pressed={!!snoozed} onclick={() => rate('snooze')}><Clock3 size={18} aria-hidden="true" /> Ahora no</button>
-    <button class="pill" aria-pressed={rating === -1} onclick={() => rate(-1)}><ThumbsDown size={18} aria-hidden="true" /> No nos gusta</button>
-  </div>
-  <p class="hint">
-    {#if snoozed}Apartada de las propuestas hasta el {SHORT.format(new Date(snoozed + 'T12:00'))}. Tocad 'Ahora no' otra vez para recuperarla ya.
-    {:else if rating === -1}Saldrá mucho menos en las propuestas, pero sigue en el recetario. Tocad otra vez para quitarlo.
-    {:else}'Ahora no' la aparta {SNOOZE_DAYS / 7} semanas y vuelve sola. 'No nos gusta' hace que salga mucho menos, sin borrarla.{/if}
-  </p>
-
   <section aria-labelledby="h-ings">
     <h3 id="h-ings">Ingredientes</h3>
     <ul class="ings" role="list">
@@ -129,6 +118,19 @@
     {#if taken}<p class="hint">Ese hueco ya tiene '{taken.name}': se cambiará.</p>{/if}
     <button class="btn btn-block" onclick={toMenu}><CalendarPlus size={18} aria-hidden="true" /> Ponerla en el menú</button>
   </section>
+  <section class="opinion" aria-labelledby="h-op">
+    <h3 id="h-op">¿Qué os parece?</h3>
+  <div class="rate" role="group" aria-label="¿Os gusta?">
+      <button class="pill" aria-pressed={rating === 1} onclick={() => rate(1)}><ThumbsUp size={18} aria-hidden="true" /> Nos gusta</button>
+      <button class="pill" aria-pressed={!!snoozed} onclick={() => rate('snooze')}><Clock3 size={18} aria-hidden="true" /> Ahora no</button>
+      <button class="pill" aria-pressed={rating === -1} onclick={() => rate(-1)}><ThumbsDown size={18} aria-hidden="true" /> No nos gusta</button>
+    </div>
+    <p class="hint">
+      {#if snoozed}Apartada de las propuestas hasta el {SHORT.format(new Date(snoozed + 'T12:00'))}. Tocad 'Ahora no' otra vez para recuperarla ya.
+      {:else if rating === -1}Saldrá mucho menos en las propuestas, pero sigue en el recetario. Tocad otra vez para quitarlo.
+      {:else}'Ahora no' la aparta {SNOOZE_DAYS / 7} semanas. 'No nos gusta' hace que salga mucho menos.{/if}
+    </p>
+  </section>
 </Sheet>
 
 <style>
@@ -169,7 +171,11 @@
     cursor: pointer;
   }
   .ings label:has(input:checked) {
-    background: var(--market-soft);
+    background: color-mix(in srgb, var(--c-huerta) 9%, var(--surface));
+  }
+  .opinion {
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
   }
   .ings input {
     width: 22px;

@@ -155,7 +155,7 @@
     width: 36px;
     height: 36px;
     border-radius: 11px;
-    background: var(--c-tomate);
+    background: #c23d22;
     color: #fff;
     transform: rotate(-6deg);
   }

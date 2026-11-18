@@ -27,6 +27,8 @@
   const b = $derived(balance(app.tripItems, app.catalog))
   const max = $derived(Math.max(0.01, ...b.groups.map((g) => g.share)))
   const tips = $derived(b.groups.filter((g) => g.tip))
+  // Color de cada grupo, el mismo que su familia en la lista
+  const GC = { fruta: '--c-huerta', verdura: '--c-huerta', legumbre: '--c-aceite', pescado: '--c-mar', carne: '--c-carne', procesado: '--c-tomate', dulce: '--c-dulce', lacteo: '--c-leche', huevo: '--c-limon', cereal: '--c-horno', otros: '--c-otros' }
 </script>
 
 {#if fresh.length}
@@ -56,7 +58,7 @@
       {#each b.groups as g (g.key)}
         <li>
           <span class="top"><span>{g.label}</span><span class="num">{Math.round(g.share * 100)} %{#if g.target}<small>&nbsp;·&nbsp;recomendado {g.target}</small>{/if}</span></span>
-          <span class="track"><span class="fill {g.status}" style={`width:${(g.share / max) * 100}%`}></span></span>
+          <span class="track"><span class="fill {g.status}" style={`width:${(g.share / max) * 100}%;--fc:var(${GC[g.key] || '--c-otros'})`}></span></span>
         </li>
       {/each}
     </ul>
@@ -113,6 +115,7 @@
   }
   .top {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 10px;
     font-size: 0.92rem;
@@ -133,12 +136,13 @@
     display: block;
     height: 100%;
     border-radius: 5px;
-    background: var(--market-2);
+    background: var(--fc);
+    transform-origin: left;
+    animation: grow 0.8s var(--ease-out) both;
   }
-  .fill.low {
-    background: #a77f00;
-  }
-  .fill.high {
-    background: var(--tomato);
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
   }
 </style>

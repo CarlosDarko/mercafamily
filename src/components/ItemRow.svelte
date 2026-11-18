@@ -41,7 +41,7 @@
       <span class="name">{#if item.qty > 1}<span class="qty num">{item.qty}</span>{/if}{item.name}</span>
       <span class="line2">
         <span class="meta">{meta}</span>
-        <span class="price num">{total == null ? 'Sin precio' : eur(total)}</span>
+        <span class="price num" class:none={total == null}>{total == null ? 'Sin precio' : eur(total)}</span>
       </span>
       {#if item.note}<span class="note">{item.note}</span>{/if}
       {#if takenOther}
@@ -55,7 +55,7 @@
       {#if fmt}<span class="tag soft">En {fmt.p.z.split(' · ')[0].toLowerCase()} sale un {Math.round(fmt.saving * 100)} % más barato</span>{/if}
       {#if diet.length}<span class="tag">Ojo: {diet.map((d) => `${d.person}, ${d.label.toLowerCase()}`).join(' · ')}</span>{/if}
     </span>
-    <ChevronRight size={20} aria-hidden="true" class="chev" />
+    <ChevronRight size={18} aria-hidden="true" class="chev" />
     <span id={`hint-${item.id}`} class="visually-hidden">Abre la ficha: cantidad, nota, alternativas e ingredientes</span>
   </button>
 </li>
@@ -121,7 +121,7 @@
     transition: background-color 0.15s, border-color 0.15s;
   }
   .box :global(svg) {
-    color: #fff;
+    color: var(--surface);
     transform: scale(0);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -173,6 +173,10 @@
   .name {
     font-weight: 600;
     overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .qty {
     display: inline-block;
@@ -226,15 +230,21 @@
   .line2 {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 10px;
   }
   .line2 .meta {
     flex: 1;
     min-width: 0;
   }
   .price {
+    flex: none;
     font-weight: 750;
     white-space: nowrap;
+  }
+  .price.none {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink-2);
   }
   .done .name {
     text-decoration: line-through;

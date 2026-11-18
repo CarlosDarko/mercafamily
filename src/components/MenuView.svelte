@@ -6,6 +6,7 @@
   import RecipeSheet from './RecipeSheet.svelte'
   import { norm } from '../lib/format.js'
   import { pantry, STARTER_RECIPES } from '../lib/home.js'
+  import { recipeLook } from '../lib/look.js'
   import ProposalSheet from './ProposalSheet.svelte'
   import SeasonAndBalance from './SeasonAndBalance.svelte'
   import { imgUrl } from '../lib/catalog.js'
@@ -32,6 +33,17 @@
     ['cena', 'Cena']
   ]
   let proposing = $state(fromToday)
+  // Tres vistas para no tener una página infinita: semana, recetas y despensa
+  const VIEWS = [
+    ['semana', 'Semana'],
+    ['recetas', 'Recetas'],
+    ['despensa', 'Despensa']
+  ]
+  let view = $state(location.hash === '#menu-recetas' ? 'recetas' : location.hash === '#menu-despensa' ? 'despensa' : 'semana')
+  function setView(v) {
+    view = v
+    history.replaceState(null, '', v === 'semana' ? '#menu' : `#menu-${v}`)
+  }
 
   const stock = $derived(pantry(app.tripItems, settings().pantry || {}))
   const low = $derived(stock.filter((p) => p.state !== 'ok'))
@@ -103,11 +115,20 @@
 
 <div class="page">
   <div class="page-head">
-    <h1>Menú y despensa</h1>
-    <p class="muted">Comidas y cenas de la semana, recetas y lo que hay en casa.</p>
+    <h1>Menú</h1>
   </div>
 
-  <section class="section" aria-labelledby="h-week">
+  <div class="seg" role="tablist" aria-label="Qué ver">
+    {#each VIEWS as [k, label] (k)}
+      <button role="tab" id={`tab-${k}`} aria-selected={view === k} aria-controls={`panel-${k}`} onclick={() => setView(k)}>{label}</button>
+    {/each}
+    <span class="seg-ind" style={`--i:${VIEWS.findIndex(([k]) => k === view)}`} aria-hidden="true"></span>
+  </div>
+
+  {#if view === 'semana'}
+  <div role="tabpanel" id="panel-semana" aria-labelledby="tab-semana" class="rise">
+
+  <section class="section first" aria-labelledby="h-week">
     <button class="hero" onclick={() => (proposing = true)}>
       <span class="h-ic" aria-hidden="true"><Wand2 size={26} /></span>
       <span class="h-tx">
@@ -123,15 +144,16 @@
     <ul class="week panel" role="list">
       {#each days as d (d.iso)}
         <li class:today={d.today}>
-          <p class="dname">{d.label}</p>
-          {#each SLOTS as [slot, label] (slot)}
-            {@const m = mealOf(d.iso, slot)}
-            <button class="day" onclick={() => pick(d, slot)} aria-label={`${label} del ${d.label}: ${m ? m.name : 'sin elegir'}`}>
-              <span class="slot" class:cena={slot === 'cena'}>{#if slot === 'comida'}<Sun size={16} aria-hidden="true" />{:else}<Moon size={16} aria-hidden="true" />{/if}{label}</span>
-              <span class="meal" class:empty={!m}>{m ? m.name : 'Elegir'}</span>
-              {#if m}<Pencil size={18} aria-hidden="true" />{:else}<Plus size={18} aria-hidden="true" />{/if}
-            </button>
-          {/each}
+          <p class="dname">{d.label}{#if d.today}<span class="hoy">Hoy</span>{/if}</p>
+          <div class="pair">
+            {#each SLOTS as [slot, label] (slot)}
+              {@const m = mealOf(d.iso, slot)}
+              <button class="day" class:set={!!m} class:cena={slot === 'cena'} onclick={() => pick(d, slot)} aria-label={`${label} del ${d.label}: ${m ? m.name : 'sin elegir'}`}>
+                <span class="slot">{#if slot === 'comida'}<Sun size={14} aria-hidden="true" />{:else}<Moon size={14} aria-hidden="true" />{/if}{label}</span>
+                <span class="meal" class:empty={!m}>{#if m}{m.name}{:else}<Plus size={16} aria-hidden="true" /> Elegir{/if}</span>
+              </button>
+            {/each}
+          </div>
         </li>
       {/each}
     </ul>
@@ -145,8 +167,13 @@
     {/if}
   </section>
 
-  <section class="section" aria-labelledby="h-pantry">
-    <h2 id="h-pantry">Despensa</h2>
+  </div>
+  {/if}
+
+  {#if view === 'despensa'}
+  <div role="tabpanel" id="panel-despensa" aria-labelledby="tab-despensa" class="rise">
+  <section class="section first" aria-labelledby="h-pantry">
+    <h2 id="h-pantry">Lo que hay en casa</h2>
     {#if !stock.length}
       <p class="muted">Aparece cuando terminéis alguna compra: la app calcula qué tenéis y cuánto le queda a cada cosa según cada cuánto lo compráis.</p>
     {:else}
@@ -157,16 +184,16 @@
           <li>
             {#if p && imgUrl(p)}<img src={imgUrl(p, 96)} alt="" width="40" height="40" loading="lazy" />{/if}
             <span class="s-text">
-              <span class="s-name">{s.name}</span>
+              <span class="s-name">{s.name.replace(/ Hacendado$/, '')}</span>
               <span class="meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(s.left * 100)} aria-label={`Queda aproximadamente un ${Math.round(s.left * 100)} %`}>
                 <span class={s.state} style={`width:${Math.max(4, s.left * 100)}%`}></span>
               </span>
-              <span class="s-meta">{s.state === 'out' ? 'Se ha acabado' : s.state === 'low' ? 'Se acaba pronto' : 'Queda'} · {s.told ? (s.since ? `lo dijisteis hace ${s.since} ${s.since === 1 ? 'día' : 'días'}` : 'lo dijisteis hoy') : `comprado hace ${s.since} ${s.since === 1 ? 'día' : 'días'}`}</span>
+              <span class="s-meta">{s.state === 'out' ? 'Se ha acabado' : s.state === 'low' ? 'Se acaba pronto' : 'Queda'} · {s.since ? `hace ${s.since} ${s.since === 1 ? 'día' : 'días'}` : 'hoy'}</span>
             </span>
             {#if s.state === 'ok'}
-              <button class="btn mini" onclick={() => pantrySet(s, 'out')}>Se acabó</button>
+              <button class="btn mini s-btn" onclick={() => pantrySet(s, 'out')}>Se acabó</button>
             {:else}
-              <button class="btn mini" onclick={() => pantrySet(s, 'ok')}>Aún queda</button>
+              <button class="btn mini s-btn" onclick={() => pantrySet(s, 'ok')}>Aún queda</button>
             {/if}
           </li>
         {/each}
@@ -177,16 +204,22 @@
     {/if}
   </section>
 
-  <RecipeBook />
-
   <SeasonAndBalance />
+  </div>
+  {/if}
+
+  {#if view === 'recetas'}
+  <div role="tabpanel" id="panel-recetas" aria-labelledby="tab-recetas" class="rise">
+  <RecipeBook />
 
   <section class="section" aria-labelledby="h-recipes">
     <div class="row">
-      <h2 id="h-recipes" class="spacer">Recetas guardadas</h2>
+      <h2 id="h-recipes" class="spacer">Vuestras recetas</h2>
       <button class="btn mini" onclick={newRecipe}><Plus size={18} aria-hidden="true" /> Nueva</button>
     </div>
-    {#if app.recipes.length}
+    {#if !app.recipes.length}
+      <p class="hint">Las del recetario que uséis se guardan aquí. También podéis apuntar las de casa: los macarrones de la abuela, vuestra tortilla…</p>
+    {:else}
       <ul class="recipes" role="list">
         {#each app.recipes as r (r.id)}
           <li class="panel">
@@ -198,6 +231,8 @@
       </ul>
     {/if}
   </section>
+  </div>
+  {/if}
 </div>
 
 {#if picking}
@@ -209,7 +244,7 @@
     {#if app.recipes.length}
       <ul class="choose" role="list">
         {#each app.recipes as r (r.id)}
-          <li><button class="choice" onclick={() => chooseRecipe(r)}><ChefHat size={18} aria-hidden="true" /> {r.name}</button></li>
+          {@const lk = recipeLook(r)}<li><button class="choice" style={`--rc:${lk.color}`} onclick={() => chooseRecipe(r)}><span class="c-ic" aria-hidden="true"><lk.icon size={18} /></span><span class="c-nm">{r.name}</span></button></li>
         {/each}
       </ul>
     {/if}
@@ -224,7 +259,7 @@
     </div>
     <ul class="choose" role="list">
       {#each pickList as x (x.id)}
-        <li><button class="choice" onclick={() => useStarter(x)}><ChefHat size={18} aria-hidden="true" /> {x.name}<small class="mins">{x.time} min</small></button></li>
+        {@const lk = recipeLook(x)}<li><button class="choice" style={`--rc:${lk.color}`} onclick={() => useStarter(x)}><span class="c-ic" aria-hidden="true"><lk.icon size={18} /></span><span class="c-nm">{x.name}</span><small class="mins">{x.time} min</small></button></li>
       {/each}
     </ul>
     {#if mealOf(picking.iso, picking.slot)}
@@ -291,37 +326,54 @@
     padding: 0 14px;
     font-size: 0.95rem;
   }
-  .week {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+  /* Selector de vista con indicador que se desliza */
+  .seg {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 4px calc(var(--gutter) * -1) 0;
+    padding: 8px var(--gutter);
+    background: var(--paper);
   }
-  .week li + li {
-    border-top: 1px solid var(--line);
-  }
-  .week li.today {
-    background: var(--lemon-soft);
-  }
-  .week li {
-    padding: 8px 0 4px;
-  }
-  .week .dname {
-    padding: 0 16px;
-  }
-  .slot {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.85rem;
-    font-weight: 650;
+  .seg button {
+    position: relative;
+    z-index: 1;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
     color: var(--ink-2);
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: color 0.25s;
   }
-  .slot :global(svg) {
-    color: var(--c-horno);
+  .seg button[aria-selected='true'] {
+    color: var(--ink);
   }
-  .slot.cena :global(svg) {
-    color: var(--c-uva);
+  .seg::before {
+    content: '';
+    position: absolute;
+    inset: 8px var(--gutter);
+    border-radius: 999px;
+    background: var(--surface-2);
+  }
+  .seg-ind {
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    left: calc(var(--gutter) + 4px);
+    width: calc((100% - 2 * var(--gutter) - 8px) / 3);
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transform: translateX(calc(var(--i) * 100%));
+    transition: transform 0.4s var(--ease-out);
+  }
+  .first {
+    margin-top: 14px;
   }
   .hero {
     position: relative;
@@ -339,7 +391,7 @@
     text-align: left;
     cursor: pointer;
     box-shadow: 0 10px 24px -12px #c23d22;
-    transition: transform 0.25s var(--ease-spring);
+    transition: transform 0.25s var(--ease-out);
   }
   .hero:active {
     transform: scale(0.98);
@@ -349,7 +401,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+    background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.3) 50%, transparent 65%);
     transform: translateX(-100%);
     animation: shine 1.6s 0.4s var(--ease-out) both;
   }
@@ -386,34 +438,98 @@
     opacity: 0.35;
     cursor: default;
   }
-  .day {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  .week {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    overflow: hidden;
+  }
+  .week li {
+    padding: 8px 12px;
+  }
+  .week li + li {
+    border-top: 1px solid var(--line);
+  }
+  .week li.today {
+    background: color-mix(in srgb, var(--lemon) 18%, var(--surface));
+  }
+  .dname {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 56px;
-    padding: 8px 16px;
-    border: 0;
+    gap: 8px;
+    margin: 0 0 6px 4px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .dname::first-letter {
+    text-transform: uppercase;
+  }
+  .hoy {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--lemon);
+    color: #2b2300;
+    font-size: 0.75rem;
+  }
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .day {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1.5px dashed var(--line);
+    border-radius: 14px;
     background: transparent;
     color: var(--ink);
     font: inherit;
     text-align: left;
     cursor: pointer;
+    transition: transform 0.2s var(--ease-out);
   }
-  .dname {
+  .day:active {
+    transform: scale(0.97);
+  }
+  .day.set {
+    border: 0;
+    background: color-mix(in srgb, var(--c-horno) 11%, var(--surface));
+  }
+  .day.cena.set {
+    background: color-mix(in srgb, var(--c-uva) 10%, var(--surface));
+  }
+  .slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
     font-weight: 700;
-    font-size: 0.95rem;
+    color: var(--ink-2);
   }
-  .dname::first-letter {
-    text-transform: uppercase;
+  .slot :global(svg) {
+    color: var(--c-horno);
+  }
+  .cena .slot :global(svg) {
+    color: var(--c-uva);
   }
   .meal {
-    font-weight: 600;
+    font-weight: 650;
+    font-size: 0.92rem;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .meal.empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     color: var(--ink-2);
-    font-weight: 500;
+    font-weight: 600;
   }
   .needs {
     display: grid;
@@ -451,6 +567,10 @@
   .s-name {
     font-weight: 600;
     line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .s-meta {
     font-size: 0.85rem;
@@ -466,13 +586,23 @@
     display: block;
     height: 100%;
     border-radius: 4px;
-    background: var(--market-2);
+    background: var(--c-huerta);
   }
   .meter .low {
-    background: #a77f00;
+    background: var(--lemon);
   }
   .meter .out {
-    background: var(--tomato);
+    background: var(--c-tomate);
+  }
+  .meter {
+    height: 6px;
+    max-width: 12rem;
+  }
+  .s-btn {
+    flex: none;
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.85rem;
   }
   .recipes {
     list-style: none;
@@ -506,9 +636,25 @@
     padding: 0;
   }
   .mins {
+    flex: none;
     margin-left: auto;
     color: var(--ink-2);
     font-weight: 500;
+    white-space: nowrap;
+  }
+  .c-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--rc, var(--c-otros)) 15%, var(--surface));
+    color: var(--rc, var(--c-otros));
+  }
+  .c-nm {
+    flex: 1;
+    min-width: 0;
   }
   .ideas {
     display: flex;
@@ -529,12 +675,13 @@
     gap: 10px;
     min-height: 48px;
     padding: 6px 14px;
-    border: 0;
-    border-radius: 12px;
-    background: var(--surface-2);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
     color: var(--ink);
     font: inherit;
     font-weight: 600;
+    line-height: 1.25;
     text-align: left;
     cursor: pointer;
   }

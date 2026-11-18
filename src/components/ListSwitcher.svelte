@@ -1,13 +1,13 @@
 <script>
   // Selector de listas: cada una con lo que queda por coger. Crear, renombrar y borrar en una hoja.
-  import { Plus, Pencil, X, Trash2, ShoppingBasket, Briefcase, House, PartyPopper, UtensilsCrossed, Baby, PawPrint, Heart, Sun, Gift } from '@lucide/svelte'
+  import { Plus, Pencil, X, Trash2, ChevronDown, Check, ShoppingBasket, Briefcase, House, PartyPopper, UtensilsCrossed, Baby, PawPrint, Heart, Sun, Gift } from '@lucide/svelte'
   import { app, setList, createList, renameList, deleteList, itemsOfList, toast, PERSON_COLORS } from '../lib/data.svelte.js'
 
   const ICONS = { cesta: ShoppingBasket, trabajo: Briefcase, casa: House, fiesta: PartyPopper, cena: UtensilsCrossed, bebe: Baby, mascota: PawPrint, salud: Heart, verano: Sun, regalo: Gift }
   const ICON_LABELS = { cesta: 'Cesta', trabajo: 'Trabajo', casa: 'Casa', fiesta: 'Fiesta', cena: 'Cena', bebe: 'Bebé', mascota: 'Mascota', salud: 'Salud', verano: 'Verano', regalo: 'Regalo' }
   import Sheet from './Sheet.svelte'
 
-  let sheet = $state(null) // null | 'new' | 'edit'
+  let sheet = $state(null) // null | 'pick' | 'new' | 'edit'
   let name = $state('')
   let icon = $state('cesta')
   let color = $state(PERSON_COLORS[0])
@@ -47,26 +47,47 @@
   }
 </script>
 
-{#if app.lists.length}
-  <div class="switcher">
-    <div class="lists" role="group" aria-label="Listas de la compra">
+<!-- El título de la pantalla es la lista actual: al tocarlo se cambia, se crea o se edita -->
+<h1 class="title">
+  <span class="visually-hidden">Lista de la compra: </span>
+  {#if app.lists.length}
+    {@const Icon = ICONS[current?.icon] || ShoppingBasket}
+    <button class="title-btn" onclick={() => (sheet = 'pick')} aria-haspopup="dialog" style={`--lc:${current?.color || 'var(--c-huerta)'}`}>
+      <span class="t-ic" aria-hidden="true"><Icon size={22} /></span>
+      <span class="t-name">{current?.name || 'Lista de la compra'}</span>
+      <ChevronDown size={24} aria-hidden="true" class="chev" />
+    </button>
+  {:else}
+    Lista de la compra
+  {/if}
+</h1>
+
+{#if sheet === 'pick'}
+  <Sheet onclose={() => (sheet = null)} labelledby="pick-list-title">
+    <div class="sheet-head">
+      <h2 id="pick-list-title">Vuestras listas</h2>
+      <button class="icon-btn" onclick={() => (sheet = null)} aria-label="Cerrar"><X size={24} aria-hidden="true" /></button>
+    </div>
+    <ul class="lrows" role="list">
       {#each app.lists as l (l.id)}
         {@const Icon = ICONS[l.icon] || ShoppingBasket}
-        <button class="pill" aria-pressed={l.id === app.listId} onclick={() => setList(l.id)} style={`--lc:${l.color || 'var(--c-huerta)'}`}>
-          <Icon size={18} aria-hidden="true" />
-          <span>{l.name}</span>
-          {#if pendingOf(l.id)}<span class="count num" aria-label={`${pendingOf(l.id)} por coger`}>{pendingOf(l.id)}</span>{/if}
-        </button>
+        <li>
+          <button class="lrow" aria-current={l.id === app.listId ? 'true' : undefined} onclick={() => (setList(l.id), (sheet = null))} style={`--lc:${l.color || 'var(--c-huerta)'}`}>
+            <span class="t-ic" aria-hidden="true"><Icon size={22} /></span>
+            <span class="l-text"><strong>{l.name}</strong><small>{pendingOf(l.id) ? `${pendingOf(l.id)} por coger` : 'Nada pendiente'}</small></span>
+            {#if l.id === app.listId}<Check size={22} aria-hidden="true" class="l-check" />{/if}
+          </button>
+        </li>
       {/each}
+    </ul>
+    <div class="l-actions">
+      <button class="btn" onclick={openNew}><Plus size={18} aria-hidden="true" /> Nueva lista</button>
+      <button class="btn" onclick={openEdit}><Pencil size={18} aria-hidden="true" /> Editar '{current?.name}'</button>
     </div>
-    <button class="icon-btn round" onclick={openNew} aria-label="Nueva lista"><Plus size={20} aria-hidden="true" /></button>
-    <button class="icon-btn edit" onclick={openEdit} aria-label={`Cambiar el nombre o borrar la lista ${current?.name ?? ''}`}>
-      <Pencil size={18} aria-hidden="true" />
-    </button>
-  </div>
+  </Sheet>
 {/if}
 
-{#if sheet}
+{#if sheet === 'new' || sheet === 'edit'}
   <Sheet onclose={() => (sheet = null)} labelledby="list-title">
     <form class="stack" onsubmit={save}>
       <div class="sheet-head">
@@ -121,62 +142,97 @@
 {/if}
 
 <style>
-  .switcher {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin: 6px calc(var(--gutter) * -1) 2px;
-    padding: 0 calc(var(--gutter) - 4px) 0 var(--gutter);
+  .title {
+    margin: 0;
   }
-  .lists {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 4px 2px;
-    scrollbar-width: none;
-    /* se difumina el borde derecho para que se note que hay más listas */
-    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
-  }
-  .round {
-    width: 44px;
-    height: 44px;
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    color: var(--c-huerta);
-  }
-  .lists::-webkit-scrollbar {
-    display: none;
-  }
-  .pill {
-    flex: none;
+  .title-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 44px;
-    padding: 0 16px;
-    border-radius: 999px;
+    gap: 10px;
+    max-width: 100%;
+    margin-left: -6px;
+    padding: 4px 8px 4px 6px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.75rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  @media (hover: hover) {
+    .title-btn:hover {
+      background: var(--surface);
+    }
+  }
+  .title-btn :global(.chev) {
+    flex: none;
+    color: var(--ink-2);
+  }
+  .t-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .t-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--lc) 16%, var(--surface));
+    color: var(--lc);
+  }
+  .lrows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .lrow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 14px 10px 10px;
     border: 1.5px solid var(--line);
+    border-radius: 16px;
     background: var(--surface);
     color: var(--ink);
     font: inherit;
-    font-weight: 650;
-    font-size: 0.95rem;
+    text-align: left;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.25s, transform 0.2s var(--ease-spring);
   }
-  .pill:active {
-    transform: scale(0.95);
+  .lrow[aria-current='true'] {
+    border-color: var(--lc);
+    background: color-mix(in srgb, var(--lc) 8%, var(--surface));
   }
-  .pill :global(svg) {
+  .l-text {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+  }
+  .l-text small {
+    color: var(--ink-2);
+  }
+  .lrow :global(.l-check) {
     color: var(--lc);
   }
-  .pill[aria-pressed='true'] {
-    background: color-mix(in srgb, var(--lc) 18%, var(--surface));
-    border-color: var(--lc);
-    border-width: 2px;
+  .l-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .l-actions .btn {
+    flex: 1 1 auto;
   }
   .pick {
     border: 0;
@@ -224,18 +280,6 @@
   .sw:has(input:focus-visible) {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
-  }
-  .count {
-    min-width: 1.6em;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: var(--lemon);
-    color: #2b2300;
-    font-size: 0.85rem;
-    text-align: center;
-  }
-  .edit {
-    color: var(--ink-2);
   }
   .ideas {
     display: flex;
