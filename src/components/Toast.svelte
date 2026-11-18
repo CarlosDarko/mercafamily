@@ -1,9 +1,12 @@
 <script>
   import { app } from '../lib/data.svelte.js'
+  // inside: el de dentro de una hoja abierta. El de fuera se calla mientras haya hojas abiertas.
+  let { inside = false } = $props()
+  const show = $derived(app.toast && (inside || !app.sheets.length))
 </script>
 
-<div class="toast-zone" role="status" aria-live="polite">
-  {#if app.toast}
+<div class="toast-zone" class:inside role="status" aria-live="polite">
+  {#if show}
     <div class="toast">
       <span>{app.toast.msg}</span>
       {#if app.toast.action}
@@ -24,6 +27,9 @@
     pointer-events: none;
     z-index: 50;
     padding: 0 var(--gutter);
+  }
+  .inside {
+    bottom: calc(24px + env(safe-area-inset-bottom));
   }
   .toast {
     pointer-events: auto;

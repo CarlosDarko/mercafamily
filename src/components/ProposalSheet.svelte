@@ -1,7 +1,7 @@
 <script>
   // Propuesta de menú para los huecos libres: variada, con legumbre y pescado, aprovechando la despensa
   import { X, Shuffle, Check } from '@lucide/svelte'
-  import { app, saveRecipe, setMeal, resolveIngredient, resolveKbIngredient, adoptKbRecipe, settings, toast, addMany } from '../lib/data.svelte.js'
+  import { app, saveRecipe, setMeal, resolveIngredient, resolveKbIngredient, adoptKbRecipe, settings, toast, activeSnoozed, addMany } from '../lib/data.svelte.js'
   import { suggestWeek, pantry, STARTER_RECIPES } from '../lib/home.js'
   import { ShoppingBasket } from '@lucide/svelte'
   import { eur, isoDate } from '../lib/format.js'
@@ -25,7 +25,7 @@
   const pool = [...app.recipes, ...STARTER_RECIPES.filter((s) => !app.recipes.some((r) => r.name === s.name))]
   const since = isoDate(new Date(Date.now() - 14 * 86400000))
   const used = app.meals.filter((m) => m.day >= since && m.day < today).map((m) => m.name)
-  const plan = $derived(suggestWeek(free, pool, pantryOk, used, seed, { ratings: settings().ratings || {}, have }))
+  const plan = $derived(suggestWeek(free, pool, pantryOk, used, seed, { ratings: settings().ratings || {}, snoozed: activeSnoozed(), have }))
 
   // Ingredientes de cada receta como productos del catálogo (las de partida se resuelven con vuestras preferencias)
   const resolved = new Map()

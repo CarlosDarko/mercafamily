@@ -1,7 +1,7 @@
 <script>
   // Ficha de una receta: ingredientes para marcar, pasos, añadir a la lista y ponerla en el menú
-  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown } from '@lucide/svelte'
-  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, rateRecipe } from '../lib/data.svelte.js'
+  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown, Clock3 } from '@lucide/svelte'
+  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, rateRecipe, snoozedUntil, SNOOZE_DAYS } from '../lib/data.svelte.js'
   import { pantry, inSeason } from '../lib/home.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur, isoDate } from '../lib/format.js'
@@ -41,10 +41,9 @@
   let day = $state(next[0].iso)
   let slot = $state(meta.slot === 'cena' || meta.slot === 'merienda' ? 'cena' : 'comida')
   const rating = $derived((settings().ratings || {})[recipe.name] || 0)
-  async function rate(v) {
-    await rateRecipe(recipe.name, v)
-    toast(rating === v ? (v === 1 ? 'Apuntado: os gusta. Saldrá más en las propuestas.' : 'Apuntado: no la propondremos más.') : 'Valoración quitada')
-  }
+  const snoozed = $derived(snoozedUntil(recipe.name))
+  const SHORT = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long' })
+  const rate = (v) => rateRecipe(recipe.name, v)
   const taken = $derived(app.meals.find((m) => m.day === day && m.slot === slot))
   async function toMenu() {
     const r = recipe.created_at ? recipe : await adoptKbRecipe(recipe)
@@ -73,8 +72,14 @@
 
   <div class="rate" role="group" aria-label="¿Os gusta?">
     <button class="pill" aria-pressed={rating === 1} onclick={() => rate(1)}><ThumbsUp size={18} aria-hidden="true" /> Nos gusta</button>
+    <button class="pill" aria-pressed={!!snoozed} onclick={() => rate('snooze')}><Clock3 size={18} aria-hidden="true" /> Ahora no</button>
     <button class="pill" aria-pressed={rating === -1} onclick={() => rate(-1)}><ThumbsDown size={18} aria-hidden="true" /> No nos gusta</button>
   </div>
+  <p class="hint">
+    {#if snoozed}Apartada de las propuestas hasta el {SHORT.format(new Date(snoozed + 'T12:00'))}. Tocad 'Ahora no' otra vez para recuperarla ya.
+    {:else if rating === -1}Saldrá mucho menos en las propuestas, pero sigue en el recetario. Tocad otra vez para quitarlo.
+    {:else}'Ahora no' la aparta {SNOOZE_DAYS / 7} semanas y vuelve sola. 'No nos gusta' hace que salga mucho menos, sin borrarla.{/if}
+  </p>
 
   <section aria-labelledby="h-ings">
     <h3 id="h-ings">Ingredientes</h3>
@@ -214,6 +219,7 @@
   }
   .rate {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .rate .pill {

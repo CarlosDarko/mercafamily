@@ -71,17 +71,22 @@ test('atHome cuenta lo que hay en casa sin los básicos', async () => {
   assert.deepEqual(h.missing, ['cebolla'])
 })
 
-test('suggestWeek quita lo que no gusta y evita lo que no es de temporada', async () => {
+test('suggestWeek: lo que no gusta baja sin desaparecer, lo apartado no sale y lo de fuera de temporada casi nunca', async () => {
   const { suggestWeek } = await import('../src/lib/home.js')
   const recipes = [
     { name: 'Gazpacho', slot: 'cena', tags: ['verdura'], season: [7, 8] },
     { name: 'Crema', slot: 'cena', tags: ['verdura'] },
-    { name: 'Tortilla', slot: 'cena', tags: ['huevo'] }
+    { name: 'Tortilla', slot: 'cena', tags: ['huevo'] },
+    { name: 'Sopa', slot: 'cena', tags: ['verdura'] }
   ]
+  const opts = { ratings: { Tortilla: -1 }, snoozed: { Sopa: '2026-12-31' }, month: 11 }
   for (let seed = 1; seed < 30; seed++) {
-    const [p] = suggestWeek([{ day: '2026-11-17', slot: 'cena' }], recipes, new Set(), [], seed, { ratings: { Tortilla: -1 }, month: 11 })
+    const [p] = suggestWeek([{ day: '2026-11-17', slot: 'cena' }], recipes, new Set(), [], seed, opts)
     assert.equal(p.recipe.name, 'Crema')
   }
+  // Si solo queda la que no gusta, se puede proponer
+  const [only] = suggestWeek([{ day: '2026-11-17', slot: 'cena' }], [recipes[2]], new Set(), [], 1, opts)
+  assert.equal(only.recipe.name, 'Tortilla')
 })
 
 test('el recetario tiene más de 250 recetas sin ids repetidos y las meriendas no entran en el menú', async () => {

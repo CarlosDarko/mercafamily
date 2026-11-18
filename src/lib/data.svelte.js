@@ -12,6 +12,7 @@ const DEFAULT_LIST_NAME = 'Compra semanal'
 const ME_KEY = 'mf:me'
 
 export const app = $state({
+  sheets: [], // hojas abiertas, la última es la de arriba
   screen: 'loading', // loading | welcome | login | household | ready
   kind: 'local',
   live: false,
@@ -496,7 +497,7 @@ export async function updateItem(id, patch) {
   }
 }
 
-// Lo que hacen los demás, en directo: 'Laura ha cogido la leche'
+// Lo que hacen los demás, en directo: 'Ana ha cogido la leche'
 let seenOnce = false
 function notifyOthers(next) {
   if (!seenOnce || app.kind !== 'supabase') {
@@ -800,14 +801,43 @@ export async function addMany(entries) {
   return n
 }
 
-// ---------- Me gusta / no me gusta de las recetas (por hogar) ----------
+// ---------- Me gusta, no me gusta y 'ahora no' de las recetas (por hogar) ----------
+// 'No nos gusta' no borra la receta: solo sale mucho menos en las propuestas.
+// 'Ahora no' la aparta de las propuestas unas semanas y vuelve sola. Todo se puede deshacer.
 
+export const SNOOZE_DAYS = 21
 export const ratingOf = (name) => (settings().ratings || {})[name] || 0
+export const snoozedUntil = (name) => {
+  const u = (settings().snoozed || {})[name]
+  return u && u >= isoDate() ? u : null
+}
+export function activeSnoozed() {
+  const today = isoDate()
+  return Object.fromEntries(Object.entries(settings().snoozed || {}).filter(([, u]) => u >= today))
+}
 export async function rateRecipe(name, v) {
-  const r = { ...(settings().ratings || {}) }
-  if (!v || r[name] === v) delete r[name]
-  else r[name] = v
-  await updateSettings({ ratings: r })
+  const before = { ratings: { ...(settings().ratings || {}) }, snoozed: { ...activeSnoozed() } }
+  const ratings = { ...before.ratings }
+  const snoozed = { ...before.snoozed }
+  let msg
+  if (v === 'snooze') {
+    if (snoozed[name]) {
+      delete snoozed[name]
+      msg = `'${name}' vuelve a las propuestas`
+    } else {
+      snoozed[name] = isoDate(new Date(Date.now() + SNOOZE_DAYS * 86400000))
+      msg = `Apartada ${SNOOZE_DAYS / 7} semanas. Luego vuelve sola.`
+    }
+  } else if (ratings[name] === v) {
+    delete ratings[name]
+    msg = 'Valoración quitada'
+  } else {
+    ratings[name] = v
+    delete snoozed[name]
+    msg = v === 1 ? 'Os gusta: saldrá más en las propuestas' : 'No os gusta: saldrá mucho menos, pero no desaparece'
+  }
+  await updateSettings({ ratings, snoozed })
+  toast(msg, { label: 'Deshacer', run: () => updateSettings(before) }, 6000)
 }
 
 // ---------- Despensa (correcciones a mano) ----------

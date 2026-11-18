@@ -1,7 +1,7 @@
 <script>
   // Recetario: buscar y filtrar recetas sencillas y saludables, y las guardadas de casa
-  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Bean, Fish, Beef, Carrot, Egg, Wheat, CookingPot, IceCreamCone, ChefHat } from '@lucide/svelte'
-  import { app, settings } from '../lib/data.svelte.js'
+  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Clock3, ThumbsDown, Bean, Fish, Beef, Carrot, Egg, Wheat, CookingPot, IceCreamCone, ChefHat } from '@lucide/svelte'
+  import { app, settings, activeSnoozed } from '../lib/data.svelte.js'
   import { KB, QUICK_MIN } from '../lib/recipes-kb.js'
   import { tagsOf, atHome, pantry } from '../lib/home.js'
   import { norm } from '../lib/format.js'
@@ -42,6 +42,7 @@
     ['peques', 'Para peques'],
     ['sincocinar', 'Sin cocinar'],
     ['merienda', 'Meriendas'],
+    ['apartadas', 'Apartadas'],
     ['legumbre', 'Legumbre'],
     ['pescado', 'Pescado'],
     ['verdura', 'Verdura'],
@@ -55,6 +56,7 @@
   const own = $derived(app.recipes.filter((r) => !r.kb_id).map((r) => ({ ...r, tags: tagsOf(r), own: true })))
   const all = $derived([...KB, ...own])
   const ratings = $derived(settings().ratings || {})
+  const snoozed = $derived(activeSnoozed())
   // Lo que hay en casa según las últimas compras (sin lo que se ha terminado)
   const stock = $derived(pantry(app.tripItems, settings().pantry || {}).filter((p) => p.state !== 'out'))
   const have = $derived(stock.map((p) => p.name))
@@ -64,7 +66,7 @@
     if (filter === 'hay')
       return all
         .map((r) => ({ r, h: atHome(r, have, haveIds) }))
-        .filter((x) => x.h.have > 0 && x.h.ratio >= 0.5 && ratings[x.r.name] !== -1)
+        .filter((x) => x.h.have > 0 && x.h.ratio >= 0.5 && !snoozed[x.r.name])
         .sort((a, b) => b.h.ratio - a.h.ratio || a.h.total - b.h.total)
         .map((x) => ({ ...x.r, home: x.h }))
         .filter((r) => !words.length || words.every((w) => norm(r.name).includes(w)))
@@ -94,6 +96,8 @@
           return slot === 'merienda'
         case 'gustan':
           return ratings[r.name] === 1
+        case 'apartadas':
+          return ratings[r.name] === -1 || !!snoozed[r.name]
         case 'casa':
           return r.own || app.recipes.some((x) => x.kb_id === r.id)
         case 'todas':
@@ -119,6 +123,9 @@
       <button class="pill" aria-pressed={filter === k} onclick={() => (filter = k)}>{label}</button>
     {/each}
   </div>
+  {#if filter === 'apartadas'}
+    <p class="hint">Las que habéis marcado con 'Ahora no' (vuelven solas a las 3 semanas) o 'No nos gusta' (salen mucho menos). Abrid una para cambiarlo.</p>
+  {/if}
   {#if filter === 'hay'}
     <p class="hint">{stock.length ? `Recetas para las que ya tenéis al menos la mitad de los ingredientes, según lo que habéis comprado últimamente.` : 'Cuando terminéis alguna compra, aquí saldrán las recetas que podéis hacer con lo que hay en casa.'}</p>
   {/if}
@@ -139,6 +146,8 @@
               {#if r.nocook}<span><Snowflake size={14} aria-hidden="true" /> Sin cocinar</span>{/if}
               {#if r.kids || r.meta?.kids}<span><Baby size={14} aria-hidden="true" /> Peques</span>{/if}
               {#if ratings[r.name] === 1}<span class="f"><Heart size={14} aria-hidden="true" /> Os gusta</span>{/if}
+              {#if snoozed[r.name]}<span><Clock3 size={14} aria-hidden="true" /> Ahora no</span>{/if}
+              {#if ratings[r.name] === -1}<span><ThumbsDown size={14} aria-hidden="true" /> No os gusta</span>{/if}
               {#if r.home}<span class="season"><Refrigerator size={14} aria-hidden="true" /> Tenéis {r.home.have} de {r.home.total}</span>{/if}
               {#if (r.season || r.meta?.season || []).includes(month)}<span class="season"><Leaf size={14} aria-hidden="true" /> Temporada</span>{/if}
               {#if r.own}<span>De casa</span>{/if}

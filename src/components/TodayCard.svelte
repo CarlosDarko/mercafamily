@@ -2,7 +2,7 @@
   // 'Hoy coméis…': lo que toca hoy (o lo próximo), con propuesta de un toque si el hueco está vacío,
   // lo que falta para hacerlo, qué sacar del congelador y, el fin de semana, preparar el menú de la siguiente.
   import { UtensilsCrossed, Shuffle, Check, Snowflake, ShoppingBasket, CalendarRange, ChevronRight } from '@lucide/svelte'
-  import { app, setMeal, adoptKbRecipe, resolveKbIngredient, addMany, settings, toast } from '../lib/data.svelte.js'
+  import { app, setMeal, adoptKbRecipe, resolveKbIngredient, addMany, settings, toast, activeSnoozed } from '../lib/data.svelte.js'
   import { suggestWeek, pantry, atHome, STARTER_RECIPES } from '../lib/home.js'
   import { isoDate } from '../lib/format.js'
   import RecipeSheet from './RecipeSheet.svelte'
@@ -34,7 +34,7 @@
         return { ...s, meal, recipe, home: recipe ? atHome(recipe, have, haveIds) : null }
       }
       const taken = slots.map((x) => app.meals.find((m) => m.day === x.day && m.slot === x.slot)?.name).filter(Boolean)
-      const [pick] = suggestWeek([s], pool.filter((r) => !skipped[n].includes(r.name)), haveIds, [...recent, ...taken], seeds[n], { ratings: settings().ratings || {}, have })
+      const [pick] = suggestWeek([s], pool.filter((r) => !skipped[n].includes(r.name)), haveIds, [...recent, ...taken], seeds[n], { ratings: settings().ratings || {}, snoozed: activeSnoozed(), have })
       return { ...s, meal: null, recipe: pick?.recipe || null, home: pick ? atHome(pick.recipe, have, haveIds) : null }
     })
   )

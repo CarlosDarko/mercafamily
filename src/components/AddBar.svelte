@@ -5,7 +5,7 @@
   import { app, searchCatalog, addProduct, addText, rememberAlias, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { inSeason } from '../lib/home.js'
-  import { eur } from '../lib/format.js'
+  import { eur, norm } from '../lib/format.js'
 
   let text = $state('')
   let scanning = $state(false)
@@ -47,9 +47,29 @@
     const m = text.trim().match(/^(\d+)\s*(x\s*)?(.+)$/i)
     return m ? { qty: Math.min(Number(m[1]), 99) || 1, q: m[3] } : { qty: 1, q: text.trim() }
   })
-  const results = $derived(parsed.q.length >= 2 && app.catalog ? searchCatalog(parsed.q, 8) : [])
+  // Todo lo que encaja (hasta 300). Se enseñan los 8 mejores y el resto con 'Ver los N'.
+  // Si hay bastantes que llevan lo buscado en el nombre, fuera los que solo comparten familia (muesli al buscar 'galleta')
+  const all = $derived.by(() => {
+    if (parsed.q.length < 2 || !app.catalog) return []
+    const found = searchCatalog(parsed.q, 300)
+    const qs = norm(parsed.q).split(' ').filter((w) => w.length > 2)
+    if (!qs.length) return found
+    // palabra corta ('pan'): la palabra o su plural, para no traer panceta. Larga: por la raíz (galleta, galletas)
+    const has = (words, w) => (w.length <= 4 ? words.some((x) => x === w || x === w + 's' || x === w + 'es') : words.some((x) => x.startsWith(w.slice(0, w.length - 2))))
+    const named = found.filter((r) => {
+      const words = norm(r.p.n).split(' ')
+      return qs.every((w) => has(words, w))
+    })
+    return named.length >= 8 ? named : found
+  })
+  let more = $state(false)
+  const results = $derived(more ? all : all.slice(0, 8))
   const open = $derived(results.length > 0)
 
+  $effect(() => {
+    parsed.q
+    more = false
+  })
   $effect(() => {
     results
     active = -1
@@ -132,7 +152,9 @@
   {/if}
   <p id="add-help" class="visually-hidden">Al pulsar Añadir se elige el producto más probable según vuestras preferencias e historial. También puedes elegir uno de la lista.</p>
 
-  <ul id="add-results" class="results panel" role="listbox" aria-label="Productos de Mercadona" hidden={!open}>
+  <div class="results panel" hidden={!open}>
+  <p class="r-count" role="status">{all.length === 1 ? '1 producto' : `${all.length}${all.length >= 300 ? ' o más' : ''} productos`} en Mercadona{more || all.length <= 8 ? '' : `, los 8 que mejor encajan`}</p>
+  <ul id="add-results" class="r-list" role="listbox" aria-label="Productos de Mercadona">
     {#each results as r, i (r.p.id)}
       <li
         id={`opt-${r.p.id}`}
@@ -159,6 +181,10 @@
       </li>
     {/each}
   </ul>
+  {#if !more && all.length > 8}
+    <button type="button" class="btn btn-block see-all" onclick={() => (more = true)}>Ver los {all.length}{all.length >= 300 ? ' primeros' : ''}</button>
+  {/if}
+  </div>
   {#if parsed.q.length >= 2 && app.catalog && !results.length}
     <p class="noresults muted" role="status">No está en el catálogo de Mercadona. Pulsa Añadir y se apunta tal cual, sin precio.</p>
   {/if}
@@ -261,12 +287,26 @@
     font-weight: 600;
   }
   .results {
-    list-style: none;
     margin: 8px 0 0;
     animation: rise 0.25s var(--ease-out);
     padding: 6px;
-    max-height: min(60dvh, 460px);
+    max-height: min(62dvh, 520px);
     overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .r-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .r-count {
+    padding: 6px 10px 4px;
+    font-size: 0.85rem;
+    font-weight: 650;
+    color: var(--ink-2);
+  }
+  .see-all {
+    margin-top: 4px;
   }
   .results[hidden] {
     display: none;

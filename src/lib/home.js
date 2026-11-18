@@ -83,15 +83,17 @@ export function tagsOf(recipe) {
  * slots: [{ day, slot }] libres. recipes: [{ id?, name, slot, ingredients, tags? }]. pantryOk: Set de merc_id que hay en casa.
  * Reglas: no repetir en la semana si hay recetas de sobra, al menos 2 de legumbre y 2 de pescado si hay huecos,
  * las cenas más ligeras (verdura, huevo, pescado) y se prefiere lo que aprovecha la despensa. 'seed' cambia la propuesta.
- * opts.ratings quita lo que no gusta y sube lo que gusta, y se prefiere lo de temporada (opts.month) y cenas rápidas entre semana.
+ * opts.ratings sube lo que gusta y baja mucho lo que no (sin quitarlo), opts.snoozed aparta recetas un tiempo, y se prefiere lo de temporada (opts.month) y cenas rápidas entre semana.
  */
 export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], seed = 1, opts = {}) {
   let r = seed >>> 0 || 1
   const rand = () => ((r = (r * 1103515245 + 12345) >>> 0) / 4294967296)
-  // ratings: { [nombre]: 1 | -1 } (me gusta / no me gusta). month: para preferir lo de temporada.
+  // ratings: { [nombre]: 1 | -1 } (me gusta / no me gusta, que solo resta). snoozed: { [nombre]: hasta } apartadas un tiempo.
+  // month: para preferir lo de temporada.
   const ratings = opts.ratings || {}
+  const snoozed = opts.snoozed || {}
   const month = opts.month || new Date().getMonth() + 1
-  const pool = recipes.filter((x) => ratings[x.name] !== -1).map((x) => ({ ...x, tags: tagsOf(x), uses: used.filter((u) => u === x.name).length }))
+  const pool = recipes.filter((x) => !snoozed[x.name]).map((x) => ({ ...x, tags: tagsOf(x), uses: used.filter((u) => u === x.name).length }))
   const slotOf = (x) => x.slot || x.meta?.slot
   const fits = (x, slot) => !slotOf(x) || slotOf(x) === 'ambas' || slotOf(x) === slot
   const out = []
@@ -108,6 +110,7 @@ export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], see
       if (s.slot === 'cena' && x.tags.includes('legumbre')) score -= 3
       score += opts.have ? atHome(x, opts.have, pantryOk).ratio * 3 : (x.ingredients || []).filter((i) => i.merc_id && pantryOk.has(i.merc_id)).length * 0.8
       if (ratings[x.name] === 1) score += 2.5
+      if (ratings[x.name] === -1) score -= 6
       const season = x.season || x.meta?.season
       if (season?.length) score += season.includes(month) ? 1 : -5
       // Entre semana, cenas rápidas
