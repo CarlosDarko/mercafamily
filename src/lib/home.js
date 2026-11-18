@@ -96,6 +96,7 @@ export function tagsOf(recipe) {
  * slots: [{ day, slot }] libres. recipes: [{ id?, name, slot, ingredients, tags? }]. pantryOk: Set de merc_id que hay en casa.
  * Reglas: no repetir en la semana si hay recetas de sobra, al menos 2 de legumbre y 2 de pescado si hay huecos,
  * las cenas más ligeras (verdura, huevo, pescado) y se prefiere lo que aprovecha la despensa. 'seed' cambia la propuesta.
+ * opts.need descuenta lo que ya hay en el menú, opts.avoid baja los tipos descartados con 'Otra'.
  * opts.ratings sube lo que gusta y baja mucho lo que no (sin quitarlo), opts.snoozed aparta recetas un tiempo, y se prefiere lo de temporada (opts.month) y cenas rápidas entre semana.
  */
 export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], seed = 1, opts = {}) {
@@ -110,7 +111,10 @@ export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], see
   const slotOf = (x) => x.slot || x.meta?.slot
   const fits = (x, slot) => !slotOf(x) || slotOf(x) === 'ambas' || slotOf(x) === slot
   const out = []
-  const need = { legumbre: 2, pescado: 2 }
+  // need: cuántos platos de legumbre y pescado faltan esta semana (se puede pasar ya descontado lo que hay en el menú)
+  const need = { legumbre: 2, pescado: 2, ...(opts.need || {}) }
+  // avoid: tipos de plato descartados con 'Otra' ({ pescado: 2 }), cada vez pesan menos
+  const avoid = opts.avoid || {}
   for (const s of slots) {
     const cands = pool.filter((x) => fits(x, s.slot))
     if (!cands.length) continue
@@ -122,6 +126,7 @@ export function suggestWeek(slots, recipes, pantryOk = new Set(), used = [], see
       if (s.slot === 'cena' && x.tags.some((t) => ['verdura', 'huevo', 'pescado'].includes(t))) score += 1.5
       if (s.slot === 'cena' && x.tags.includes('legumbre')) score -= 3
       score += opts.have ? atHome(x, opts.have, pantryOk).ratio * 3 : (x.ingredients || []).filter((i) => i.merc_id && pantryOk.has(i.merc_id)).length * 0.8
+      for (const t of x.tags) if (avoid[t] && t !== 'verdura') score -= 2.5 * avoid[t]
       if (ratings[x.name] === 1) score += 2.5
       if (ratings[x.name] === -1) score -= 6
       const season = x.season || x.meta?.season

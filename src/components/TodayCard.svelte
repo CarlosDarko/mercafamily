@@ -3,7 +3,7 @@
   // lo que falta para hacerlo, qué sacar del congelador y, el fin de semana, preparar el menú de la siguiente.
   import { Sun, Moon, Shuffle, Check, Snowflake, ShoppingBasket, CalendarRange, ChevronRight } from '@lucide/svelte'
   import { app, setMeal, adoptKbRecipe, resolveKbIngredient, addMany, settings, toast, activeSnoozed } from '../lib/data.svelte.js'
-  import { suggestWeek, pantry, atHome, STARTER_RECIPES } from '../lib/home.js'
+  import { suggestWeek, pantry, atHome, tagsOf, STARTER_RECIPES } from '../lib/home.js'
   import { isoDate } from '../lib/format.js'
   import RecipeSheet from './RecipeSheet.svelte'
 
@@ -24,6 +24,28 @@
   const haveIds = $derived(new Set(stock.filter((p) => p.merc_id).map((p) => p.merc_id)))
   const have = $derived([...stock.map((p) => p.name), ...app.items.filter((i) => !i.checked).map((i) => i.name)])
   const recent = $derived(app.meals.filter((m) => m.day >= isoDate(new Date(now.getTime() - 14 * 86400000))).map((m) => m.name))
+  // Lo que ya hay esta semana en el menú: si ya hay dos de pescado, no hace falta empujar más pescado
+  const weekNeed = $derived.by(() => {
+    const d = new Date(now)
+    const monday = isoDate(new Date(d.getTime() - ((d.getDay() + 6) % 7) * 86400000))
+    const sunday = isoDate(new Date(new Date(monday + 'T12:00').getTime() + 6 * 86400000))
+    const count = { legumbre: 0, pescado: 0 }
+    for (const m of app.meals.filter((x) => x.day >= monday && x.day <= sunday)) {
+      const r = app.recipes.find((x) => x.id === m.recipe_id)
+      const t = r ? tagsOf(r) : []
+      for (const k of Object.keys(count)) if (t.includes(k)) count[k]++
+    }
+    return { legumbre: Math.max(0, 2 - count.legumbre), pescado: Math.max(0, 2 - count.pescado) }
+  })
+  // Tipos de plato descartados con 'Otra' en cada hueco
+  const avoidOf = (n) => {
+    const a = {}
+    for (const name of skipped[n]) {
+      const r = pool.find((x) => x.name === name)
+      for (const t of r ? tagsOf(r) : []) a[t] = (a[t] || 0) + 1
+    }
+    return a
+  }
   const pool = $derived([...app.recipes, ...STARTER_RECIPES.filter((s) => !app.recipes.some((r) => r.name === s.name))])
 
   const cards = $derived(
@@ -34,7 +56,7 @@
         return { ...s, meal, recipe, home: recipe ? atHome(recipe, have, haveIds) : null }
       }
       const taken = slots.map((x) => app.meals.find((m) => m.day === x.day && m.slot === x.slot)?.name).filter(Boolean)
-      const [pick] = suggestWeek([s], pool.filter((r) => !skipped[n].includes(r.name)), haveIds, [...recent, ...taken], seeds[n], { ratings: settings().ratings || {}, snoozed: activeSnoozed(), have })
+      const [pick] = suggestWeek([s], pool.filter((r) => !skipped[n].includes(r.name)), haveIds, [...recent, ...taken], seeds[n], { ratings: settings().ratings || {}, snoozed: activeSnoozed(), have, need: weekNeed, avoid: avoidOf(n) })
       return { ...s, meal: null, recipe: pick?.recipe || null, home: pick ? atHome(pick.recipe, have, haveIds) : null }
     })
   )

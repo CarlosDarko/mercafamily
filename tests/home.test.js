@@ -111,3 +111,17 @@ test('lo que la familia dice que tiene entra en la despensa y las dudas salen un
   assert.equal(pantryDoubts(st2, {}, today).length, 1)
   assert.equal(pantryDoubts(st2, { leche: { state: 'ok', at: '2026-11-15' } }, today).length, 0)
 })
+
+test("'Otra' en una cena no repite siempre pescado", async () => {
+  const { suggestWeek, STARTER_RECIPES, tagsOf } = await import('../src/lib/home.js')
+  const skipped = []
+  const avoid = {}
+  let fish = 0
+  for (let i = 0; i < 15; i++) {
+    const [p] = suggestWeek([{ day: '2026-11-18', slot: 'cena' }], STARTER_RECIPES.filter((r) => !skipped.includes(r.name)), new Set(), [], 7, { month: 11, avoid })
+    if (tagsOf(p.recipe).includes('pescado')) fish++
+    skipped.push(p.recipe.name)
+    for (const t of tagsOf(p.recipe)) avoid[t] = (avoid[t] || 0) + 1
+  }
+  assert.ok(fish <= 6, `pescado ${fish} de 15`)
+})
