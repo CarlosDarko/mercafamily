@@ -62,14 +62,10 @@
     })
     return named.length >= 8 ? named : found
   })
-  let more = $state(false)
-  const results = $derived(more ? all : all.slice(0, 8))
+  // Todos los resultados en una lista que se desliza (antes solo 8 y un botón que con el teclado abierto no se veía)
+  const results = $derived(all)
   const open = $derived(results.length > 0)
 
-  $effect(() => {
-    parsed.q
-    more = false
-  })
   $effect(() => {
     results
     active = -1
@@ -153,7 +149,7 @@
   <p id="add-help" class="visually-hidden">Al pulsar Añadir se elige el producto más probable según vuestras preferencias e historial. También puedes elegir uno de la lista.</p>
 
   <div class="results panel" hidden={!open}>
-  <p class="r-count" role="status">{all.length === 1 ? '1 producto' : `${all.length}${all.length >= 300 ? ' o más' : ''} productos`} en Mercadona{more || all.length <= 8 ? '' : `, los 8 que mejor encajan`}</p>
+  <p class="r-count" role="status">{all.length === 1 ? '1 producto' : `${all.length}${all.length >= 300 ? ' o más' : ''} productos`} en Mercadona{all.length > 5 ? ', desliza para ver todos' : ''}</p>
   <ul id="add-results" class="r-list" role="listbox" aria-label="Productos de Mercadona">
     {#each results as r, i (r.p.id)}
       <li
@@ -181,9 +177,6 @@
       </li>
     {/each}
   </ul>
-  {#if !more && all.length > 8}
-    <button type="button" class="btn btn-block see-all" onclick={() => (more = true)}>Ver los {all.length}{all.length >= 300 ? ' primeros' : ''}</button>
-  {/if}
   </div>
   {#if parsed.q.length >= 2 && app.catalog && !results.length}
     <p class="noresults muted" role="status">No está en el catálogo de Mercadona. Pulsa Añadir y se apunta tal cual, sin precio.</p>
@@ -300,13 +293,15 @@
     padding: 0;
   }
   .r-count {
-    padding: 6px 10px 4px;
+    position: sticky;
+    top: -6px;
+    z-index: 1;
+    margin: -6px -6px 0;
+    padding: 10px 16px 6px;
+    background: var(--surface);
     font-size: 0.85rem;
     font-weight: 650;
     color: var(--ink-2);
-  }
-  .see-all {
-    margin-top: 4px;
   }
   .results[hidden] {
     display: none;

@@ -36,3 +36,11 @@ for (const [q, esperado] of Object.entries(CASOS)) {
     assert.ok(r.some((n) => n.includes(esperado)), `${q}: ${r.join(' | ')}`)
   })
 }
+
+test("palabras juntas mientras se escribe: 'cocaco', 'cocacola', 'papelhig'", () => {
+  for (const q of ['cocaco', 'cocacola', 'papelhig', 'colacao', 'fantanar']) {
+    const r = search(cat, q, { limit: 5 })
+    assert.ok(r.length > 0, `${q} sin resultados`)
+  }
+  assert.match(search(cat, 'cocacola', { limit: 1 })[0].p.n, /Coca-Cola/)
+})

@@ -231,14 +231,25 @@ function expandTerm(idx, w, isLast) {
 }
 
 // Palabras juntas: 'minihelados', 'papelhigienico'
-function splitCompound(idx, w) {
-  if (w.length < 7 || idx.vocabSet.has(stem(w))) return null
-  const pre = PREFIXES.find((p) => w.startsWith(p) && w.length - p.length >= 3)
-  if (pre) return [pre, w.slice(pre.length)]
-  for (let i = 3; i <= w.length - 3; i++) {
-    const a = w.slice(0, i)
-    const b = w.slice(i)
-    if (idx.vocabSet.has(stem(a)) && idx.vocabSet.has(stem(b))) return [a, b]
+function splitCompound(idx, w, isLast = false) {
+  if (w.length < 5 || idx.vocabSet.has(stem(w))) return null
+  if (w.length >= 7) {
+    const pre = PREFIXES.find((p) => w.startsWith(p) && w.length - p.length >= 3)
+    if (pre) return [pre, w.slice(pre.length)]
+    for (let i = 3; i <= w.length - 3; i++) {
+      const a = w.slice(0, i)
+      const b = w.slice(i)
+      if (idx.vocabSet.has(stem(a)) && idx.vocabSet.has(stem(b))) return [a, b]
+    }
+  }
+  // Mientras se escribe 'cocaco' (de 'cocacola'): una palabra entera y el principio de la siguiente,
+  // solo si lo escrito no es ya el principio de alguna palabra del catálogo
+  if (isLast && !idx.vocab.some((t) => t.startsWith(w))) {
+    for (let i = w.length - 2; i >= 3; i--) {
+      const a = w.slice(0, i)
+      const b = w.slice(i)
+      if (idx.vocabSet.has(stem(a)) && idx.vocab.some((t) => t.startsWith(b))) return [a, b]
+    }
   }
   return null
 }
@@ -254,7 +265,7 @@ export function queryTerms(idx, query) {
   }
   const out = []
   raw.forEach((w, i) => {
-    const parts = splitCompound(idx, w) || [w]
+    const parts = splitCompound(idx, w, i === raw.length - 1) || [w]
     for (const p of parts) out.push({ w: p, last: i === raw.length - 1 })
   })
   return out

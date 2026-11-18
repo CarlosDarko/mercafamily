@@ -34,7 +34,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 
 ## Qué hace
 
-- **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes: los 8 que mejor encajan y 'Ver los N' para recorrer todos (64 galletas, por ejemplo). Al pulsar '+' elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
+- **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes: todos los que encajan en una lista que se desliza (64 galletas, 62 aguas…), aunque escribáis las palabras juntas ('cocacola'). Al pulsar '+' elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
 - **Varias listas compartidas** ('Compra semanal', 'Al volver del trabajo', 'Cumpleaños'), cada una con icono, color, sus pendientes, su total y su carro. Lo que apunta uno aparece al momento en el móvil de los demás.
 - **Modo tienda**: pantalla que no se apaga, letra grande, productos en el orden de los pasillos de vuestro Mercadona (se aprende del orden en que vais marcando), 'No había' con un toque y barra de progreso.
 - **En directo entre los dos**: 'Ana ha cogido la leche', 'Luis ha apuntado pan', con el color de cada persona.
