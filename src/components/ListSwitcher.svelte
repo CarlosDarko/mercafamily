@@ -52,14 +52,14 @@
     <div class="lists" role="group" aria-label="Listas de la compra">
       {#each app.lists as l (l.id)}
         {@const Icon = ICONS[l.icon] || ShoppingBasket}
-        <button class="pill" aria-pressed={l.id === app.listId} onclick={() => setList(l.id)} style={`--lc:${l.color || 'var(--primary-bg)'}`}>
+        <button class="pill" aria-pressed={l.id === app.listId} onclick={() => setList(l.id)} style={`--lc:${l.color || 'var(--c-huerta)'}`}>
           <Icon size={18} aria-hidden="true" />
           <span>{l.name}</span>
           {#if pendingOf(l.id)}<span class="count num" aria-label={`${pendingOf(l.id)} por coger`}>{pendingOf(l.id)}</span>{/if}
         </button>
       {/each}
-      <button class="pill add" onclick={openNew}><Plus size={18} aria-hidden="true" /> Nueva lista</button>
     </div>
+    <button class="icon-btn round" onclick={openNew} aria-label="Nueva lista"><Plus size={20} aria-hidden="true" /></button>
     <button class="icon-btn edit" onclick={openEdit} aria-label={`Cambiar el nombre o borrar la lista ${current?.name ?? ''}`}>
       <Pencil size={18} aria-hidden="true" />
     </button>
@@ -126,7 +126,7 @@
     align-items: center;
     gap: 4px;
     margin: 6px calc(var(--gutter) * -1) 2px;
-    padding-left: var(--gutter);
+    padding: 0 calc(var(--gutter) - 4px) 0 var(--gutter);
   }
   .lists {
     flex: 1;
@@ -136,6 +136,15 @@
     overflow-x: auto;
     padding: 4px 2px;
     scrollbar-width: none;
+    /* se difumina el borde derecho para que se note que hay más listas */
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  .round {
+    width: 44px;
+    height: 44px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    color: var(--c-huerta);
   }
   .lists::-webkit-scrollbar {
     display: none;
@@ -156,17 +165,18 @@
     font-size: 0.95rem;
     cursor: pointer;
     white-space: nowrap;
+    transition: background-color 0.25s, transform 0.2s var(--ease-spring);
+  }
+  .pill:active {
+    transform: scale(0.95);
   }
   .pill :global(svg) {
     color: var(--lc);
   }
   .pill[aria-pressed='true'] {
-    background: var(--lc);
+    background: color-mix(in srgb, var(--lc) 18%, var(--surface));
     border-color: var(--lc);
-    color: #fff;
-  }
-  .pill[aria-pressed='true'] :global(svg) {
-    color: #fff;
+    border-width: 2px;
   }
   .pick {
     border: 0;
@@ -224,12 +234,7 @@
     font-size: 0.85rem;
     text-align: center;
   }
-  .add {
-    border-style: dashed;
-    color: var(--ink-2);
-  }
   .edit {
-    margin-right: 8px;
     color: var(--ink-2);
   }
   .ideas {

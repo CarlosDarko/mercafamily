@@ -88,7 +88,7 @@
 
 <form class="add" role="search" aria-label="Añadir a la lista" onsubmit={submit}>
   <label for="add-input" class="visually-hidden">Producto que hace falta</label>
-  <div class="add-field">
+  <div class="add-field" style={`--btns:${text.trim() ? 1 : (canVoice ? 1 : 0) + (canScan ? 1 : 0)}`}>
     <Search size={20} aria-hidden="true" class="add-icon" />
     <input
       bind:this={input}
@@ -102,7 +102,7 @@
       autocomplete="off"
       autocapitalize="sentences"
       spellcheck="false"
-      placeholder="Añadir: leche, 2 tomates…"
+      placeholder="¿Qué hace falta?"
       role="combobox"
       aria-expanded={open}
       aria-controls="add-results"
@@ -110,20 +110,22 @@
       aria-activedescendant={active >= 0 ? `opt-${results[active]?.p.id}` : undefined}
       aria-describedby="add-help"
     />
-    {#if canVoice}
-      <button class="btn add-btn scan" class:live={listening} type="button" onclick={toggleVoice} aria-pressed={listening} aria-label={listening ? 'Dejar de escuchar' : 'Apuntar hablando'}>
-        {#if listening}<MicOff size={22} aria-hidden="true" />{:else}<Mic size={22} aria-hidden="true" />{/if}
-      </button>
-    {/if}
-    {#if canScan}
-      <button class="btn add-btn scan" type="button" onclick={() => (scanning = true)} aria-label="Escanear código de barras">
-        <ScanBarcode size={22} aria-hidden="true" />
-      </button>
-    {/if}
-    <button class="btn btn-primary add-btn" type="submit" disabled={!text.trim()}>
-      <Plus size={20} aria-hidden="true" />
-      <span>Añadir</span>
-    </button>
+    <div class="in-btns">
+      {#if text.trim()}
+        <button class="go" type="submit" aria-label="Añadir a la lista"><Plus size={24} strokeWidth={2.6} aria-hidden="true" /></button>
+      {:else}
+        {#if canVoice}
+          <button class="ib" class:live={listening} type="button" onclick={toggleVoice} aria-pressed={listening} aria-label={listening ? 'Dejar de escuchar' : 'Apuntar hablando'}>
+            {#if listening}<MicOff size={22} aria-hidden="true" />{:else}<Mic size={22} aria-hidden="true" />{/if}
+          </button>
+        {/if}
+        {#if canScan}
+          <button class="ib" type="button" onclick={() => (scanning = true)} aria-label="Escanear código de barras">
+            <ScanBarcode size={22} aria-hidden="true" />
+          </button>
+        {/if}
+      {/if}
+    </div>
   </div>
   {#if listening}
     <p class="heard" role="status">{heard ? `'${heard}'` : "Te escucho… di por ejemplo 'leche, dos de tomate y pan de molde'"}</p>
@@ -178,69 +180,90 @@
   }
   .add-field {
     position: relative;
-    display: flex;
-    gap: 8px;
   }
   .add-field :global(.add-icon) {
     position: absolute;
-    left: 14px;
+    left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--ink-2);
+    color: var(--c-huerta);
     pointer-events: none;
   }
   .add-field .input {
-    padding-left: 44px;
-    min-height: 52px;
-    font-size: 1.05rem;
-    border-radius: 14px;
+    padding-left: 48px;
+    padding-right: calc(var(--btns) * 46px + 10px);
+    min-height: 58px;
+    font-size: 1.1rem;
+    font-weight: 550;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.25s, border-color 0.25s;
   }
-  .add-btn {
-    min-height: 52px;
-    border-radius: 14px;
-    padding: 0 16px;
+  .add-field .input:focus-visible {
+    outline: none;
+    border-color: var(--c-huerta);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--c-huerta) 20%, transparent), var(--shadow);
   }
-  @media (max-width: 380px) {
-    .add-btn span {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
+  .in-btns {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+  }
+  .ib,
+  .go {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .go {
+    background: var(--c-huerta);
+    color: #fff;
+    animation: go-in 0.35s var(--ease-spring);
+  }
+  @keyframes go-in {
+    from {
+      transform: scale(0.4) rotate(-90deg);
     }
-    .add-btn {
-      width: 52px;
-      padding: 0;
+  }
+  @media (hover: hover) {
+    .ib:hover {
+      background: var(--surface-2);
+      color: var(--ink);
     }
   }
-  .scan.live {
-    background: var(--tomato);
-    border-color: var(--tomato);
+  .ib.live {
+    background: var(--c-tomate);
     color: #fff;
     animation: pulse 1.4s ease-in-out infinite;
   }
   @keyframes pulse {
     50% {
-      box-shadow: 0 0 0 8px rgb(185 58 36 / 0.18);
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--c-tomate) 22%, transparent);
     }
   }
   .heard {
     margin-top: 8px;
+    animation: rise 0.3s var(--ease-out);
     padding: 10px 14px;
     border-radius: 12px;
     background: var(--surface);
     font-weight: 600;
   }
-  .scan {
-    flex: none;
-    width: 52px;
-    padding: 0;
-    background: var(--surface);
-    border: 1.5px solid var(--line);
-  }
   .results {
     list-style: none;
     margin: 8px 0 0;
+    animation: rise 0.25s var(--ease-out);
     padding: 6px;
     max-height: min(60dvh, 460px);
     overflow: auto;

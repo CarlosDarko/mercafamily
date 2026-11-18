@@ -80,7 +80,7 @@
   <h2 id="h-today" class="visually-hidden">Qué coméis</h2>
   <ul class="cards" role="list">
     {#each cards as c, n (c.day + c.slot)}
-      <li class="card" class:empty={!c.meal}>
+      <li class="card rise" class:empty={!c.meal} style={`--d:${n + 1}`}>
         <span class="lbl"><UtensilsCrossed size={16} aria-hidden="true" /> {c.label}</span>
         {#if c.meal}
           {#if c.recipe}

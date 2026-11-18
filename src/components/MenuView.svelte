@@ -1,6 +1,6 @@
 <script>
   // Menú de la semana, despensa estimada y recetas de la familia
-  import { ChefHat, Plus, ShoppingBasket, Check, X, Trash2, Pencil, Wand2, Sun } from '@lucide/svelte'
+  import { ChefHat, Plus, ShoppingBasket, Check, X, Trash2, Pencil, Wand2, Sun, Moon, ChevronLeft, ChevronRight } from '@lucide/svelte'
   import { app, setMeal, removeMeal, saveRecipe, deleteRecipe, resolveIngredient, mealNeeds, addMany, pantrySet, settings, toast, searchCatalog, adoptKbRecipe } from '../lib/data.svelte.js'
   import RecipeBook from './RecipeBook.svelte'
   import RecipeSheet from './RecipeSheet.svelte'
@@ -104,15 +104,22 @@
 <div class="page">
   <div class="page-head">
     <h1>Menú y despensa</h1>
-    <p class="muted">Planificad comidas y cenas (o pedid una propuesta) y la app apunta lo que falta. La despensa se calcula sola con lo que compráis.</p>
+    <p class="muted">Comidas y cenas de la semana, recetas y lo que hay en casa.</p>
   </div>
 
   <section class="section" aria-labelledby="h-week">
-    <div class="row">
-      <h2 id="h-week" class="spacer">{offset === 0 ? 'Esta semana' : offset === 1 ? 'La semana que viene' : 'Semana'}</h2>
-      <button class="btn mini" onclick={() => (offset = offset === 0 ? 1 : 0)}>{offset === 0 ? 'Ver la siguiente' : 'Volver a esta'}</button>
+    <button class="hero" onclick={() => (proposing = true)}>
+      <span class="h-ic" aria-hidden="true"><Wand2 size={26} /></span>
+      <span class="h-tx">
+        <strong>Propón el menú {offset === 0 ? 'de la semana' : 'de la semana que viene'}</strong>
+        <small>Sin repetir, de temporada, con lo que os gusta y lo que hay en casa</small>
+      </span>
+    </button>
+    <div class="row weeknav">
+      <h2 id="h-week" class="spacer">{offset === 0 ? 'Esta semana' : 'La semana que viene'}</h2>
+      <button class="icon-btn nav" onclick={() => (offset = 0)} disabled={offset === 0} aria-label="Esta semana"><ChevronLeft size={22} aria-hidden="true" /></button>
+      <button class="icon-btn nav" onclick={() => (offset = 1)} disabled={offset === 1} aria-label="La semana que viene"><ChevronRight size={22} aria-hidden="true" /></button>
     </div>
-    <button class="btn btn-primary" onclick={() => (proposing = true)}><Wand2 size={18} aria-hidden="true" /> Propón el menú de la semana</button>
     <ul class="week panel" role="list">
       {#each days as d (d.iso)}
         <li class:today={d.today}>
@@ -120,7 +127,7 @@
           {#each SLOTS as [slot, label] (slot)}
             {@const m = mealOf(d.iso, slot)}
             <button class="day" onclick={() => pick(d, slot)} aria-label={`${label} del ${d.label}: ${m ? m.name : 'sin elegir'}`}>
-              <span class="slot">{label}</span>
+              <span class="slot" class:cena={slot === 'cena'}>{#if slot === 'comida'}<Sun size={16} aria-hidden="true" />{:else}<Moon size={16} aria-hidden="true" />{/if}{label}</span>
               <span class="meal" class:empty={!m}>{m ? m.name : 'Elegir'}</span>
               {#if m}<Pencil size={18} aria-hidden="true" />{:else}<Plus size={18} aria-hidden="true" />{/if}
             </button>
@@ -303,9 +310,81 @@
     padding: 0 16px;
   }
   .slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 0.85rem;
     font-weight: 650;
     color: var(--ink-2);
+  }
+  .slot :global(svg) {
+    color: var(--c-horno);
+  }
+  .slot.cena :global(svg) {
+    color: var(--c-uva);
+  }
+  .hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #c23d22, #9c560b);
+    color: #fff;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 10px 24px -12px #c23d22;
+    transition: transform 0.25s var(--ease-spring);
+  }
+  .hero:active {
+    transform: scale(0.98);
+  }
+  /* brillo que cruza el botón al entrar en la pantalla */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+    transform: translateX(-100%);
+    animation: shine 1.6s 0.4s var(--ease-out) both;
+  }
+  @keyframes shine {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  .h-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.2);
+  }
+  .h-tx {
+    display: grid;
+    gap: 2px;
+    line-height: 1.25;
+  }
+  .h-tx strong {
+    font-size: 1.1rem;
+  }
+  .h-tx small {
+    font-size: 0.88rem;
+    opacity: 0.92;
+  }
+  .weeknav {
+    gap: 4px;
+  }
+  .nav:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
   .day {
     width: 100%;

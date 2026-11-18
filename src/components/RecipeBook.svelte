@@ -1,12 +1,28 @@
 <script>
   // Recetario: buscar y filtrar recetas sencillas y saludables, y las guardadas de casa
-  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator } from '@lucide/svelte'
+  import { Search, Clock, Baby, Leaf, BookOpen, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Bean, Fish, Beef, Carrot, Egg, Wheat, CookingPot, IceCreamCone, ChefHat } from '@lucide/svelte'
   import { app, settings } from '../lib/data.svelte.js'
   import { KB, QUICK_MIN } from '../lib/recipes-kb.js'
   import { tagsOf, atHome, pantry } from '../lib/home.js'
   import { norm } from '../lib/format.js'
   import RecipeSheet from './RecipeSheet.svelte'
 
+  // Cada receta lleva el icono y el color de su ingrediente principal
+  const TAGLOOK = [
+    ['merienda', IceCreamCone, '--c-dulce'],
+    ['legumbre', Bean, '--c-aceite'],
+    ['pescado', Fish, '--c-mar'],
+    ['carne', Beef, '--c-carne'],
+    ['huevo', Egg, '--c-limon'],
+    ['arroz', CookingPot, '--c-horno'],
+    ['pasta', Wheat, '--c-horno'],
+    ['verdura', Carrot, '--c-huerta']
+  ]
+  const lookOf = (r) => {
+    const t = r.tags || []
+    const f = TAGLOOK.find(([k]) => t.includes(k)) || [null, ChefHat, '--c-otros']
+    return { icon: f[1], color: `var(${f[2]})` }
+  }
   let q = $state('')
   let filter = $state('todas')
   let open = $state(null)
@@ -92,7 +108,7 @@
 
 <section class="section" aria-labelledby="h-book">
   <h2 id="h-book"><BookOpen size={20} aria-hidden="true" /> Recetario</h2>
-  <p class="hint">{KB.length} recetas sencillas y saludables de cocina de casa, para 3: exprés de 5 o 10 minutos, divertidas para peques, de temporada y de toda la vida. Al abrir una podéis añadir lo que falta a la lista o ponerla en el menú.</p>
+  <p class="hint">{KB.length} recetas sanas para 3: exprés, divertidas, de temporada y de toda la vida.</p>
   <div class="search">
     <Search size={18} aria-hidden="true" />
     <label class="visually-hidden" for="book-q">Buscar receta o ingrediente</label>
@@ -110,9 +126,11 @@
     <p class="muted">No hay recetas con ese filtro.</p>
   {:else}
     <ul class="cards" role="list">
-      {#each shown as r (r.id || r.name)}
-        <li>
-          <button class="card" onclick={() => (open = r)}>
+      {#each shown as r, i (r.id || r.name)}
+        {@const lk = lookOf(r)}
+        <li class="rise" style={`--d:${Math.min(i, 8)}`}>
+          <button class="card" style={`--rc:${lk.color}`} onclick={() => (open = r)}>
+            <span class="r-ic" aria-hidden="true"><lk.icon size={22} /></span>
             <span class="name">{r.name}</span>
             <span class="meta">
               {#if r.time || r.meta?.time}<span><Clock size={14} aria-hidden="true" /> {r.time || r.meta?.time} min</span>{/if}
@@ -192,13 +210,17 @@
     gap: 8px;
   }
   .card {
+    position: relative;
     width: 100%;
     height: 100%;
     display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
     align-content: start;
     gap: 4px;
     padding: 12px 14px;
     border: 0;
+    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s;
     border-radius: var(--r);
     background: var(--surface);
     box-shadow: var(--shadow);
@@ -206,6 +228,24 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+  .card:active {
+    transform: scale(0.97);
+  }
+  @media (hover: hover) {
+    .card:hover {
+      transform: translateY(-2px);
+    }
+  }
+  .r-ic {
+    grid-row: span 3;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--rc) 15%, var(--surface));
+    color: var(--rc);
   }
   .name {
     font-weight: 700;

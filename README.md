@@ -6,12 +6,14 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 
 <p>
   <img src='docs/capturas/buscar.png' width='190' alt='Buscador con productos de Mercadona, foto y precio mientras se escribe aceite'>
-  <img src='docs/capturas/lista.png' width='190' alt='Lista de la compra agrupada por pasillos con el total previsto abajo'>
+  <img src='docs/capturas/hoy.png' width='190' alt='Lista vacía con la barra de añadir, las acciones rápidas de colores y Hoy coméis con dos propuestas'>
+  <img src='docs/capturas/lista.png' width='190' alt='Lista de la compra agrupada por familias, cada una con su icono y color, y el total previsto abajo'>
+  <img src='docs/capturas/lista-oscuro.png' width='190' alt='Lista en modo oscuro con la tarjeta Hoy coméis'>
   <img src='docs/capturas/ficha.png' width='190' alt='Ficha de un producto con cantidad, Nutri-Score y valores nutricionales'>
   <img src='docs/capturas/gastos.png' width='190' alt='Gastos con el resumen del mes y la gráfica de las últimas 12 semanas'>
   <img src='docs/capturas/modo-tienda.png' width='190' alt='Modo tienda con productos grandes, botón No había y el total del carro'>
   <img src='docs/capturas/listas.png' width='190' alt='Varias listas con icono y color, y favoritos con foto'>
-  <img src='docs/capturas/menu.png' width='190' alt='Menú de la semana con las cenas elegidas y los ingredientes que faltan'>
+  <img src='docs/capturas/menu.png' width='190' alt='Menú de la semana con el botón de propuesta y comida y cena de cada día'>
   <img src='docs/capturas/preparame.png' width='190' alt='Prepárame la lista con lo del menú y lo que se acaba en casa, todo marcado'>
   <img src='docs/capturas/peticiones.png' width='190' alt='Petición de un peque pendiente de aceptar en la lista'>
   <img src='docs/capturas/ticket.png' width='190' alt='Ticket que se imprime al terminar la compra con el sello Por debajo del presupuesto'>
@@ -113,15 +115,18 @@ node scripts/fetch-details.mjs     # fichas pendientes (MAX=1500 por defecto)
 
 ## Diseño, accesibilidad y auditoría
 
-- **Dirección:** modo 'Operate' de Impeccable (herramienta de uso diario). Mundo de mercado y ticket: cabecera verde mercado, suelo verde hoja pálido con tarjetas blancas, limón para lo que toca comprar y tomate solo para alertas. El total previsto vive en una tira de ticket con borde troquelado, fija sobre las pestañas. Tipografía Bricolage Grotesque autoalojada, cifras tabulares e iconos Lucide.
+- **Dirección:** modo 'Operate' de Impeccable (herramienta de uso diario). Mundo de mercado y ticket: suelo verde hoja pálido con tarjetas blancas y un color por familia de producto (huerta, mar, carne, horno, leche, dulce, limpieza…), con su icono, en la lista, las recetas y las pestañas, para que no todo sea verde. Marca con cesta tomate, limón para lo que toca comprar y 'Hoy coméis', tomate para alertas.
+- **Movimiento con criterio:** las pestañas entran deslizándose hacia el lado al que vas, el indicador de la barra de abajo se mueve con el color de cada pestaña, los productos nuevos entran desde arriba, la casilla rebota al marcar (con una vibración corta), el total cuenta hasta su valor, los grupos y recetas aparecen escalonados y sale confeti al coger lo último de la lista. Con 'reducir movimiento' en el móvil no se mueve nada.
+- **Letra grande:** probada con la letra del móvil al 135 %. La barra de añadir es una sola línea con micro y escáner dentro, las acciones rápidas van en una fila que se desliza y los huecos de abajo crecen con la letra para que el total y las pestañas no tapen nada. El total previsto vive en una tira de ticket con borde troquelado, fija sobre las pestañas. Tipografía Bricolage Grotesque autoalojada, cifras tabulares e iconos Lucide.
 - **Escena de uso:** el pasillo del súper con una mano libre. Botones de 48 px, buscador fijo arriba, lista por pasillos y fotos de producto en caché para cuando no hay cobertura. Tema oscuro automático.
 - **Accesibilidad (WCAG 2.2 AA):** enlace 'Saltar al contenido', un `h1` por pantalla y `h2` por sección, buscador con patrón combobox (flechas, Intro y Esc), casillas reales, hojas con `<dialog>` nativo (foco atrapado, Esc y foco devuelto), avisos con `aria-live`, gráfica con tabla de datos equivalente, contraste comprobado en claro y oscuro (mínimo 4,5:1) y `prefers-reduced-motion`.
 - **SEO y GEO:** `title` y `description` propios, `canonical`, Open Graph con imagen 1200 × 630, JSON-LD (`WebSite`, `WebApplication`, `WebPage`), contenido descriptivo en el HTML servido, `robots.txt`, `sitemap.xml`, `llms.txt`, 404 con `noindex` y manifest con iconos normales y *maskable*.
 
-### Impeccable (v4.9.2, 17 de noviembre de 2026)
+### Impeccable (v4.9.2, 17 y 18 de noviembre de 2026)
 
 | Pasada | Resultado |
 |---|---|
+| Rediseño de color y movimiento (18 de noviembre) | 1 hallazgo: borde lateral grueso de color en los grupos. Quitado, el color va en el icono de la familia. Quedan 4 avisos orientativos de easing con rebote: se mantienen a propósito en la casilla, el '+' y la pestaña activa (pequeños, de 0,4 s, y se apagan con 'reducir movimiento'), porque se pidió más sensación de 'wow'. Página renderizada sin hallazgos. Contraste revisado en claro y oscuro en las cuatro pestañas: corregida la lista activa en oscuro. |
 | Código fuente | 1 hallazgo (borde grueso en la casilla, era el trazo de la marca dibujada con CSS). Cambiado por el icono de Lucide. |
 | Renderizado a 390, 360 y 1280 px (Lista, Gastos, Ajustes, bienvenida) | Antes: fondo crema por reflejo, interlineado de 1,2 y preferencias sin relleno. Después de corregirlo, sin hallazgos. |
 

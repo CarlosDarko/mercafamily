@@ -1,5 +1,5 @@
 <script>
-  import { TrendingUp, TrendingDown, Trash2, ReceiptText, FileText } from '@lucide/svelte'
+  import { TrendingUp, TrendingDown, Trash2, ReceiptText, FileText, PiggyBank, ChartPie, Store } from '@lucide/svelte'
   import { app, deleteTrip, updateTrip } from '../lib/data.svelte.js'
   import { spendByWeek, monthTotal, byCategory, priceChanges } from '../lib/insights.js'
   import { loadHistory, imgUrl } from '../lib/catalog.js'
@@ -88,7 +88,15 @@
         {#if avgWeek}De media gastáis <span class="num">{eur(avgWeek)}</span> a la semana.{/if}
       </p>
     {:else}
-      <p class="lead muted">Aquí verás cuánto gastáis por semana, mes, tienda y categoría. Aparece en cuanto terminéis la primera compra desde la lista.</p>
+      <div class="empty-g rise">
+        <ul class="feats" role="list">
+          <li style="--fc: var(--c-mar)"><span class="f-ic"><ChartPie size={22} aria-hidden="true" /></span>En qué se va el dinero, por familia de producto</li>
+          <li style="--fc: var(--c-huerta)"><span class="f-ic"><PiggyBank size={22} aria-hidden="true" /></span>Presupuesto, objetivos y lo que ahorráis</li>
+          <li style="--fc: var(--c-tomate)"><span class="f-ic"><TrendingUp size={22} aria-hidden="true" /></span>Lo que sube de precio y vuestra cesta frente al IPC</li>
+          <li style="--fc: var(--c-uva)"><span class="f-ic"><Store size={22} aria-hidden="true" /></span>Cuánto os habría costado en Dia o Consum</li>
+        </ul>
+        <p class="muted">Todo aparece solo en cuanto terminéis la primera compra desde la lista.</p>
+      </div>
     {/if}
   </div>
 
@@ -434,5 +442,38 @@
   }
   .danger {
     color: var(--tomato);
+  }
+  .empty-g {
+    display: grid;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 18px;
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .feats {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .feats li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .f-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--fc) 15%, var(--surface));
+    color: var(--fc);
   }
 </style>

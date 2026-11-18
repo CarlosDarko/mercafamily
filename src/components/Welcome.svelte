@@ -1,5 +1,6 @@
 <script>
   // Entrada: nombre (modo local), acceso con email y contraseña y crear o unirse a un hogar (Supabase)
+  import { ShoppingBasket } from '@lucide/svelte'
   import { app, setMe, signIn, signUp, createHousehold, joinHousehold, saveSupabaseConfig } from '../lib/data.svelte.js'
 
   let name = $state(app.me)
@@ -40,7 +41,7 @@
 
 <main id="main" class="welcome" tabindex="-1">
   <div class="card">
-    <p class="brand" aria-hidden="true">MercaFamily</p>
+    <p class="brand" aria-hidden="true"><span class="mark"><ShoppingBasket size={20} strokeWidth={2.4} /></span><span>Merca<span class="fam">Family</span></span></p>
 
     {#if app.screen === 'welcome'}
       <h1>La compra de casa, entre todos</h1>
@@ -117,7 +118,11 @@
     display: grid;
     place-items: center;
     padding: 24px var(--gutter);
-    background: var(--market);
+    background:
+      radial-gradient(60% 40% at 15% 10%, color-mix(in srgb, var(--c-limon) 30%, transparent), transparent 70%),
+      radial-gradient(50% 40% at 90% 20%, color-mix(in srgb, var(--c-tomate) 24%, transparent), transparent 70%),
+      radial-gradient(60% 50% at 50% 100%, color-mix(in srgb, var(--c-huerta) 28%, transparent), transparent 70%),
+      var(--paper);
   }
   .welcome:focus {
     outline: none;
@@ -132,11 +137,30 @@
     display: grid;
     gap: 16px;
   }
+  .card {
+    animation: rise 0.6s var(--ease-out) both;
+  }
   .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
     font-weight: 800;
     letter-spacing: -0.03em;
-    color: var(--accent-text);
-    font-size: 1.1rem;
+    color: var(--ink);
+    font-size: 1.15rem;
+  }
+  .mark {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--c-tomate);
+    color: #fff;
+    transform: rotate(-6deg);
+  }
+  .fam {
+    color: var(--c-tomate);
   }
   h1 {
     font-size: 2rem;

@@ -1,5 +1,9 @@
 <script>
-  import { CalendarClock, Plus, Store, Star, Sparkles, Check, X, Footprints } from '@lucide/svelte'
+  import { Plus, Store, Star, Sparkles, Check, X, Footprints, PartyPopper, Apple, Milk, Croissant, Egg, Fish, Carrot } from '@lucide/svelte'
+  import { catLook } from '../lib/look.js'
+  import { confetti } from '../lib/fx.js'
+  import { Tween } from 'svelte/motion'
+  import { cubicOut } from 'svelte/easing'
   import { app, lineTotal, addProduct, addText, itemsOfList, aisleRank, settings, approveRequest, rejectRequest, colorOf, going, setGoing } from '../lib/data.svelte.js'
   import { imgUrl } from '../lib/catalog.js'
   import { dueSuggestions, weekTotal } from '../lib/insights.js'
@@ -57,6 +61,28 @@
 
   const sugg = $derived(dueSuggestions(app.tripItems, app.items, app.catalog))
 
+  // El total previsto cuenta hasta su valor en vez de saltar
+  const shown = new Tween(0, { duration: 500, easing: cubicOut })
+  $effect(() => {
+    shown.target = estimate
+  })
+  // Confeti cuando se coge lo último de la lista
+  let wasPending = pending.length
+  $effect(() => {
+    const n = pending.length
+    if (wasPending > 0 && n === 0 && inCart.length) confetti()
+    wasPending = n
+  })
+  // Lista vacía: lo de siempre, a un toque
+  const STAPLES = [
+    ['Leche', Milk, '--c-leche'],
+    ['Pan', Croissant, '--c-horno'],
+    ['Huevos', Egg, '--c-limon'],
+    ['Plátanos', Apple, '--c-huerta'],
+    ['Zanahorias', Carrot, '--c-tomate'],
+    ['Merluza', Fish, '--c-mar']
+  ]
+
   async function addSuggestion(s) {
     const p = s.merc_id ? app.catalog?.byId.get(s.merc_id) : null
     if (p) await addProduct(p, s.qtyAvg)
@@ -71,25 +97,33 @@
   <div class="page-head">
     <h1>Lista de la compra</h1>
     <ListSwitcher />
-    <div class="row status">
-      <p class="muted spacer">
-      {#if current.length}
-        {pending.length} por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}{missing.length ? `, ${missing.length} no había` : ''}.
-      {:else}
-        Escribe lo que hace falta y elige el producto de Mercadona.
-      {/if}
+    {#if current.length}
+      <p class="muted status-line">
+        <strong class="num">{pending.length}</strong> por coger{inCart.length ? `, ${inCart.length} en el carro` : ''}{missing.length ? `, ${missing.length} no había` : ''}
       </p>
-      {#if pending.length && !app.prefs.kid}
-        <button class="btn store-btn" onclick={() => (store = true)}><Store size={20} aria-hidden="true" /> Modo tienda</button>
-      {/if}
-    </div>
+    {/if}
     {#if !app.prefs.kid}
-      <div class="row wrap-actions">
-        <button class="btn prep" onclick={() => (preparing = true)}><Sparkles size={18} aria-hidden="true" /> Prepárame la lista</button>
+      <div class="tiles">
+        <button class="tile" style="--tc: var(--c-uva)" onclick={() => (preparing = true)}>
+          <span class="t-ic"><Sparkles size={22} aria-hidden="true" /></span>
+          <span class="t-tx">Prepárame la lista</span>
+        </button>
+        {#if pending.length}
+          <button class="tile" style="--tc: var(--c-limon)" onclick={() => (store = true)}>
+            <span class="t-ic"><Store size={22} aria-hidden="true" /></span>
+            <span class="t-tx">Modo tienda</span>
+          </button>
+        {/if}
         {#if going()?.name === app.me}
-          <button class="btn prep" onclick={() => setGoing(false)} aria-pressed="true"><Footprints size={18} aria-hidden="true" /> Ya no voy</button>
+          <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(false)} aria-pressed="true">
+            <span class="t-ic"><Footprints size={22} aria-hidden="true" /></span>
+            <span class="t-tx">Ya no voy</span>
+          </button>
         {:else if !going()}
-          <button class="btn prep" onclick={() => setGoing(true)}><Footprints size={18} aria-hidden="true" /> Voy yo al súper</button>
+          <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(true)}>
+            <span class="t-ic"><Footprints size={22} aria-hidden="true" /></span>
+            <span class="t-tx">Voy yo al súper</span>
+          </button>
         {/if}
       </div>
     {/if}
@@ -163,9 +197,10 @@
   {/if}
 
   {#if groups.length}
-    {#each groups as g (g.key)}
-      <section class="section" aria-labelledby={`h-${g.key}`}>
-        <h2 id={`h-${g.key}`} class="cat">{g.name}</h2>
+    {#each groups as g, gi (g.key)}
+      {@const look = catLook(g.key)}
+      <section class="section group rise" style={`--cc:${look.color};--d:${gi}`} aria-labelledby={`h-${g.key}`}>
+        <h2 id={`h-${g.key}`} class="cat gcat"><span class="g-ic" aria-hidden="true"><look.icon size={18} /></span>{g.name}<span class="g-n num">{g.items.length}</span></h2>
         <ul class="items panel" role="list">
           {#each g.items as it (it.id)}
             <ItemRow item={it} onedit={() => (editing = it.id)} />
@@ -175,9 +210,18 @@
     {/each}
   {:else if !inCart.length}
     <section class="section empty" aria-labelledby="h-empty">
-      <CalendarClock size={32} aria-hidden="true" />
+      <div class="basket" aria-hidden="true">
+        {#each STAPLES as [, Icon, c], i (c)}
+          <span class="float" style={`--fc: var(${c}); --k:${i}`}><Icon size={22} /></span>
+        {/each}
+      </div>
       <h2 id="h-empty">La lista está vacía</h2>
-      <p class="muted">Prueba a escribir 'leche' o '2 tomates'. Si guardáis vuestras preferencias en Ajustes, la app elige sola el producto que soléis comprar.</p>
+      <p class="muted">Escribid arriba o tocad lo de siempre. La app elige sola el producto que soléis comprar.</p>
+      <ul class="staples" role="list">
+        {#each STAPLES as [name, Icon, c] (name)}
+          <li><button class="staple" style={`--fc: var(${c})`} onclick={() => addText(name)}><Icon size={18} aria-hidden="true" /> {name}</button></li>
+        {/each}
+      </ul>
       {#if sugg.usual.length}
         <button class="btn" onclick={() => (showUsual = !showUsual)} aria-expanded={showUsual}>Ver lo que soléis comprar</button>
         {#if showUsual}
@@ -190,7 +234,7 @@
       {/if}
     </section>
   {:else}
-    <p class="section muted">Todo cogido. Cuando paguéis, pulsa 'Terminar compra' para guardarla en Gastos.</p>
+    <p class="section all-done rise"><PartyPopper size={22} aria-hidden="true" /> ¡Todo cogido! Cuando paguéis, pulsad 'Terminar compra' para guardarla en Gastos.</p>
   {/if}
 
   {#if missing.length}
@@ -222,7 +266,7 @@
     <div class="ticket-inner">
       <div class="ticket-sum">
         <p class="t-label">Previsto</p>
-        <p class="t-total num" aria-live="polite">{eur(estimate)}</p>
+        <p class="t-total num"><span aria-hidden="true">{eur(shown.current)}</span><span class="visually-hidden" aria-live="polite">{eur(estimate)}</span></p>
         <p class="t-meta">
           {#if inCart.length}En el carro <span class="num">{eur(cartTotal)}</span>{/if}
           {#if noPrice}{inCart.length ? ' · ' : ''}{noPrice} sin precio{/if}
@@ -254,9 +298,153 @@
 {/if}
 
 <style>
-  .wrap-actions {
+  .status-line {
+    font-size: 0.95rem;
+  }
+  .status-line strong {
+    color: var(--ink);
+  }
+  /* Acciones rápidas: baldosas del mismo tamaño, cada una con su color */
+  .tiles {
+    display: flex;
+    gap: 8px;
+    margin: 10px calc(var(--gutter) * -1) 0;
+    padding: 2px var(--gutter) 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tiles::-webkit-scrollbar {
+    display: none;
+  }
+  .tile {
+    flex: 1 0 auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 8px 12px 8px 8px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 650;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring);
+  }
+  .tile:active {
+    transform: scale(0.96);
+  }
+  .tile[aria-pressed='true'] {
+    outline: 2px solid var(--tc);
+  }
+  .t-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--tc) 16%, var(--surface));
+    color: var(--tc);
+  }
+  .t-tx {
+    min-width: 0;
+  }
+  .gcat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+  }
+  .g-ic {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--cc) 16%, var(--surface));
+    color: var(--cc);
+  }
+  .g-n {
+    margin-left: auto;
+    min-width: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+  .all-done {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-radius: var(--r);
+    background: color-mix(in srgb, var(--c-huerta) 14%, var(--surface));
+    font-weight: 650;
+  }
+  .all-done :global(svg) {
+    flex: none;
+    color: var(--c-tomate);
+  }
+  .basket {
+    position: relative;
+    width: 100%;
+    height: 72px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .float {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--fc) 16%, var(--surface));
+    color: var(--fc);
+    animation: bob 3.2s ease-in-out infinite;
+    animation-delay: calc(var(--k) * -0.5s);
+  }
+  .float:nth-child(odd) {
+    margin-top: 18px;
+  }
+  @keyframes bob {
+    50% {
+      transform: translateY(-8px) rotate(calc((var(--k) - 2.5) * 3deg));
+    }
+  }
+  .staples {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
+  }
+  .staple {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fc) 14%, var(--surface));
+    color: var(--ink);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .staple :global(svg) {
+    color: var(--fc);
   }
   .going {
     display: flex;
@@ -272,13 +460,6 @@
     height: 12px;
     border-radius: 50%;
     flex: none;
-  }
-  .prep {
-    justify-self: start;
-    min-height: 44px;
-    padding: 0 16px;
-    background: var(--market-soft);
-    color: var(--ink);
   }
   .req {
     display: flex;
@@ -310,16 +491,6 @@
   }
   .no {
     color: var(--tomato);
-  }
-  .status {
-    align-items: center;
-  }
-  .store-btn {
-    flex: none;
-    min-height: 44px;
-    padding: 0 14px;
-    background: var(--lemon);
-    color: #2b2300;
   }
   .favs {
     margin-top: 10px;
@@ -437,17 +608,22 @@
     font-size: 0.85rem;
   }
   .empty {
-    justify-items: start;
-    padding: 20px;
-    border: 1.5px dashed var(--line);
-    border-radius: var(--r);
+    justify-items: center;
+    text-align: center;
+    padding: 22px 18px;
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .empty .staples {
+    justify-content: center;
   }
 
   .ticket {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(60px + env(safe-area-inset-bottom));
+    bottom: calc(54px + 1.25rem + env(safe-area-inset-bottom));
     z-index: 15;
     padding: 0 8px;
     pointer-events: none;

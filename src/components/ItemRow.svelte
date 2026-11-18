@@ -4,6 +4,10 @@
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { cheaperFormat, inSeason } from '../lib/home.js'
   import { eur } from '../lib/format.js'
+  import { catLook } from '../lib/look.js'
+  import { tick } from '../lib/fx.js'
+  import { fly } from 'svelte/transition'
+  import { cubicOut } from 'svelte/easing'
 
   let { item, onedit } = $props()
   const p = $derived(product(item))
@@ -19,16 +23,19 @@
   const season = $derived(p && !item.checked && app.catalog ? inSeason(p, app.catalog.cats.get(p.c)?.n) : false)
   const fmt = $derived(p && !item.checked && app.catalog ? cheaperFormat(p, app.catalog.products) : null)
   const trend = $derived(item.merc_id && !item.checked ? priceTrend(item.merc_id) : null)
+  const look = $derived(catLook(item.category))
 </script>
 
-<li class="item" class:done={item.checked}>
+<li class="item" class:done={item.checked} style={`--cc:${look.color}`} in:fly={{ y: -12, duration: 320, easing: cubicOut }}>
   <label class="check">
-    <input type="checkbox" checked={item.checked} onchange={() => toggleItem(item)} aria-label={`${item.name}: ${item.checked ? 'en el carro' : 'marcar como cogido'}`} />
+    <input type="checkbox" checked={item.checked} onchange={() => (tick(), toggleItem(item))} aria-label={`${item.name}: ${item.checked ? 'en el carro' : 'marcar como cogido'}`} />
     <span class="box" aria-hidden="true"><Check size={18} strokeWidth={3.5} /></span>
   </label>
   <button class="tap" onclick={onedit} aria-describedby={`hint-${item.id}`}>
     {#if p && imgUrl(p)}
-      <img src={imgUrl(p, 96)} alt="" width="44" height="44" loading="lazy" />
+      <img src={imgUrl(p, 96)} alt="" width="48" height="48" loading="lazy" />
+    {:else}
+      <span class="noimg" aria-hidden="true"><look.icon size={22} /></span>
     {/if}
     <span class="text">
       <span class="name">{#if item.qty > 1}<span class="qty num">{item.qty}</span>{/if}{item.name}</span>
@@ -119,8 +126,21 @@
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   input:checked + .box {
-    background: var(--market-2);
-    border-color: var(--market-2);
+    background: var(--c-huerta);
+    border-color: var(--c-huerta);
+    animation: check-pop 0.4s var(--ease-spring);
+  }
+  @keyframes check-pop {
+    0% {
+      transform: scale(0.8);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-huerta) 50%, transparent);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      box-shadow: 0 0 0 12px transparent;
+    }
   }
   input:checked + .box :global(svg) {
     transform: scale(1);
@@ -129,13 +149,19 @@
     outline: 3px solid var(--focus);
     outline-offset: 2px;
   }
-  img {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
-    background: var(--surface-2);
+  img,
+  .noimg {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--cc) 10%, var(--surface));
     object-fit: contain;
     flex: none;
+  }
+  .noimg {
+    display: grid;
+    place-items: center;
+    color: var(--cc);
   }
   .text {
     flex: 1;
@@ -154,7 +180,8 @@
     margin-right: 6px;
     padding: 0 6px;
     border-radius: 6px;
-    background: var(--market-soft);
+    background: color-mix(in srgb, var(--cc) 16%, var(--surface));
+    color: var(--cc);
     text-align: center;
     font-weight: 800;
   }
@@ -214,7 +241,9 @@
     text-decoration-thickness: 2px;
     color: var(--ink-2);
   }
-  .done img {
+  .done img,
+  .done .noimg {
     opacity: 0.6;
+    filter: grayscale(0.6);
   }
 </style>
