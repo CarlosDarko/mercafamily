@@ -3,6 +3,7 @@
   import { Scale } from '@lucide/svelte'
   import { app, compareProducts, compareUrl } from '../lib/data.svelte.js'
   import { eur } from '../lib/format.js'
+  import StoreBadge from './StoreBadge.svelte'
 
   let { products, compact = false } = $props()
   let results = $state(null)
@@ -43,20 +44,28 @@
         <p class="muted">Mirando en Dia y Consum…</p>
       {:else if rows[0]}
         {@const r = rows[0]}
-        <ul role="list">
-          {#each [['Dia', r.dia, r.dDia], ['Consum', r.consum, r.dConsum]] as [store, x, d]}
+        <ul role="list" class="stores">
+          <li class="here">
+            <StoreBadge store="mercadona" />
+            <span class="nm">Este producto</span>
+            <span class="pr num">{eur(r.p.p)}{#if r.p.rf === 'L' || r.p.rf === 'kg'}<small>{fmtUnit(r.p.r, r.p.rf)}</small>{/if}</span>
+          </li>
+          {#each [['dia', r.dia, r.dDia], ['consum', r.consum, r.dConsum]] as [store, x, d] (store)}
             <li>
-              <strong>{store}</strong>
+              <StoreBadge {store} />
               {#if x}
-                <span class="nm"><a href={x.url} target="_blank" rel="noopener">{x.name}</a></span>
-                <span class="num pr">{eur(x.price)}{#if comparable(r.p, x)} · {fmtUnit(x.unit, x.rf)}{/if}</span>
-                {#if d != null}<span class="d num" class:cheap={d < -0.03} class:dear={d > 0.03}>{d < -0.03 ? `${Math.round(-d * 100)} % más barato` : d > 0.03 ? `${Math.round(d * 100)} % más caro` : 'Igual'}</span>{/if}
+                <a class="nm" href={x.url} target="_blank" rel="noopener">{x.name}</a>
+                <span class="pr num">
+                  {eur(x.price)}{#if comparable(r.p, x)}<small>{fmtUnit(x.unit, x.rf)}</small>{/if}
+                  {#if d != null}<span class="d" class:cheap={d < -0.03} class:dear={d > 0.03}>{d < -0.03 ? `${Math.round(-d * 100)} % menos` : d > 0.03 ? `${Math.round(d * 100)} % más` : 'Igual'}</span>{/if}
+                </span>
               {:else}
-                <span class="muted nm">No encuentro uno equivalente</span>
+                <span class="muted nm">No hay uno equivalente</span>
               {/if}
             </li>
           {/each}
         </ul>
+        <p class="hint">Comparado por {r.p.rf === 'L' ? 'litro' : r.p.rf === 'kg' ? 'kilo' : 'unidad'}.</p>
       {/if}
       {#if error}<p class="error-text">{error}</p>{/if}
     </section>
@@ -72,7 +81,7 @@
         </p>
         <div class="table panel">
           <table>
-            <thead><tr><th scope="col">Producto</th><th scope="col" class="num">Mercadona</th><th scope="col" class="num">Dia</th><th scope="col" class="num">Consum</th></tr></thead>
+            <thead><tr><th scope="col">Producto</th><th scope="col" class="num"><StoreBadge store="mercadona" size="sm" /></th><th scope="col" class="num"><StoreBadge store="dia" size="sm" /></th><th scope="col" class="num"><StoreBadge store="consum" size="sm" /></th></tr></thead>
             <tbody>
               {#each rows as r (r.p.id)}
                 <tr>
@@ -102,38 +111,67 @@
   .cmp {
     display: grid;
     gap: 8px;
-    padding-top: 6px;
-    border-top: 1px solid var(--line);
   }
-  .cmp ul {
+  .stores {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 8px;
   }
-  .cmp li {
-    display: grid;
-    gap: 2px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    background: var(--surface-2);
+  .stores li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .stores li + li {
+    border-top: 1px solid var(--line);
   }
   .nm {
-    font-size: 0.92rem;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    color: var(--ink-2);
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  a.nm {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 3px;
   }
   .pr {
-    font-weight: 700;
+    flex: none;
+    display: grid;
+    justify-items: end;
+    font-weight: 750;
+    line-height: 1.2;
+  }
+  .pr small {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-2);
   }
   .d {
-    font-size: 0.85rem;
+    margin-top: 2px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: 0.75rem;
     font-weight: 700;
   }
   .cheap {
+    background: color-mix(in srgb, var(--c-huerta) 16%, var(--surface));
     color: var(--accent-text);
   }
   .dear {
-    color: var(--ink-2);
+    background: color-mix(in srgb, var(--c-tomate) 12%, var(--surface));
+    color: var(--ink);
   }
   .table {
     overflow-x: auto;

@@ -1,6 +1,6 @@
 <script>
   // Alternativas para un producto: más baratas por kilo o litro, más sanas por Nutri-Score y lo que soléis comprar junto
-  import { Plus } from '@lucide/svelte'
+  import { Plus, Replace } from '@lucide/svelte'
   import { app, addProduct } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
@@ -73,17 +73,14 @@
     {#if imgUrl(x)}<img src={imgUrl(x, 96)} alt="" width="44" height="44" loading="lazy" />{/if}
     <span class="alt-text">
       <strong>{x.n}</strong>
-      <small>{unitLabel(x)}</small>
+      <small>{unitLabel(x)} · <b class="num">{eur(x.p)}</b></small>
       {#if extra}<small class="why">{extra}</small>{/if}
     </span>
-    <span class="alt-actions">
-      <span class="num price">{eur(x.p)}</span>
-      {#if onuse && canSwap}
-        <button class="btn mini" onclick={() => onuse(x)}>Cambiar</button>
-      {:else}
-        <button class="icon-btn" onclick={() => addProduct(x)} aria-label={`Añadir ${x.n}`}><Plus size={20} aria-hidden="true" /></button>
-      {/if}
-    </span>
+    {#if onuse && canSwap}
+      <button class="swap" onclick={() => onuse(x)} aria-label={`Cambiar por ${x.n}`}><Replace size={20} aria-hidden="true" /></button>
+    {:else}
+      <button class="swap" onclick={() => addProduct(x)} aria-label={`Añadir ${x.n}`}><Plus size={20} aria-hidden="true" /></button>
+    {/if}
   </li>
 {/snippet}
 
@@ -137,10 +134,29 @@
   .alt {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px;
-    border-radius: 12px;
-    background: var(--surface-2);
+    gap: 12px;
+    padding: 8px 8px 8px 10px;
+    border-radius: 14px;
+    background: var(--surface);
+  }
+  .alt-text strong {
+    font-size: 0.95rem;
+    line-height: 1.25;
+  }
+  .alt-text b {
+    color: var(--ink);
+  }
+  .swap {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--c-mar) 14%, var(--surface));
+    color: var(--c-mar);
+    cursor: pointer;
   }
   img {
     border-radius: 8px;
@@ -161,20 +177,6 @@
   .alt-text .why {
     color: var(--ink);
     font-weight: 600;
-  }
-  .alt-actions {
-    display: grid;
-    justify-items: end;
-    gap: 2px;
-  }
-  .price {
-    font-weight: 700;
-  }
-  .mini {
-    min-height: 44px;
-    padding: 0 14px;
-    font-size: 0.9rem;
-    background: var(--surface);
   }
   .small {
     font-size: 0.9rem;

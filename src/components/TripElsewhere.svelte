@@ -1,4 +1,5 @@
 <script>
+  import StoreBadge from './StoreBadge.svelte'
   // Lo que habría costado esta compra en Dia y en Consum
   import { tripElsewhere, compareUrl } from '../lib/data.svelte.js'
   import { eur } from '../lib/format.js'
@@ -27,7 +28,7 @@
     <ul role="list">
       {#each rows as [store, v], i (store)}
         <li class:best={i === 0}>
-          <span>{store}</span>
+          <StoreBadge store={store} size="sm" />
           <span class="num">{eur(v)}{#if store !== 'Mercadona'}<small> {v < r.merc ? `${eur(r.merc - v)} menos` : `${eur(v - r.merc)} más`}</small>{/if}</span>
         </li>
       {/each}

@@ -1,5 +1,5 @@
 <script>
-  import { X, Minus, Plus, Trash2, Replace, Star, PackageX } from '@lucide/svelte'
+  import { X, Minus, Plus, Trash2, Replace, Star, PackageX, ShoppingBasket, Tag, Leaf } from '@lucide/svelte'
   import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast, isFavorite, toggleFavorite, toggleMissing, recordSaving } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { productDetails, nutrition } from '../lib/nutrition.js'
@@ -107,86 +107,104 @@
       </div>
     {/if}
 
-    <div class="field">
-      <span id="qty-label" class="label">Cantidad</span>
-      <div class="stepper" role="group" aria-labelledby="qty-label">
-        <button class="icon-btn" onclick={() => setQty(item.qty - 1)} disabled={item.qty <= 1} aria-label="Una menos"><Minus size={22} aria-hidden="true" /></button>
-        <output class="num" aria-live="polite">{item.qty}</output>
-        <button class="icon-btn" onclick={() => setQty(item.qty + 1)} aria-label="Una más"><Plus size={22} aria-hidden="true" /></button>
-        {#if unitPrice(item) != null}<span class="muted num">= {eur(unitPrice(item) * item.qty)}</span>{/if}
+    <section class="blk" aria-labelledby="h-onlist">
+      <h3 id="h-onlist" class="bh"><ShoppingBasket size={18} aria-hidden="true" /> En la lista</h3>
+      <div class="qrow">
+        <div class="stepper" role="group" aria-label="Cantidad">
+          <button class="icon-btn" onclick={() => setQty(item.qty - 1)} disabled={item.qty <= 1} aria-label="Una menos"><Minus size={22} aria-hidden="true" /></button>
+          <output class="num" aria-live="polite">{item.qty}</output>
+          <button class="icon-btn" onclick={() => setQty(item.qty + 1)} aria-label="Una más"><Plus size={22} aria-hidden="true" /></button>
+        </div>
+        {#if unitPrice(item) != null}<span class="line-total num">{eur(unitPrice(item) * item.qty)}</span>{/if}
       </div>
-    </div>
-
-    <label class="field">
-      <span>Nota</span>
-      <input class="input" bind:value={note} onblur={saveNote} placeholder="Por ejemplo: que estén maduros" maxlength="120" />
-    </label>
-
-    {#if !p}
       <label class="field">
-        <span>Precio aproximado</span>
-        <input class="input num" bind:value={manualPrice} onblur={savePrice} inputmode="decimal" placeholder="0,00 €" />
-        <span class="hint">No está en el catálogo, así que el precio lo pones tú. Mejor aún: elige el producto de Mercadona.</span>
+        <span class="visually-hidden">Nota</span>
+        <input class="input" bind:value={note} onblur={saveNote} placeholder="Añadir una nota: que estén maduros…" maxlength="120" />
       </label>
-    {/if}
-
-    {#if changing}
-      <div class="field">
-        <label for="alt-q" class="label">Buscar otro producto</label>
-        <input id="alt-q" class="input" bind:value={q} autocomplete="off" />
-        <ul class="alts" role="list">
-          {#each alternatives as r (r.p.id)}
-            <li>
-              <button class="alt" onclick={() => useProduct(r.p)}>
-                {#if imgUrl(r.p)}<img src={imgUrl(r.p, 96)} alt="" width="40" height="40" loading="lazy" />{/if}
-                <span class="alt-text"><strong>{r.p.n}</strong><small>{unitLabel(r.p)}</small></span>
-                <span class="num">{eur(r.p.p)}</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
+      {#if !p}
+        <label class="field">
+          <span>Precio aproximado</span>
+          <input class="input num" bind:value={manualPrice} onblur={savePrice} inputmode="decimal" placeholder="0,00 €" />
+          <span class="hint">No está en el catálogo, así que el precio lo pones tú. Mejor aún: elige el producto de Mercadona.</span>
+        </label>
+      {/if}
+      {#if changing}
+        <div class="field change">
+          <label for="alt-q" class="label">Buscar otro producto</label>
+          <input id="alt-q" class="input" bind:value={q} autocomplete="off" />
+          <ul class="alts" role="list">
+            {#each alternatives as r (r.p.id)}
+              <li>
+                <button class="alt" onclick={() => useProduct(r.p)}>
+                  {#if imgUrl(r.p)}<img src={imgUrl(r.p, 96)} alt="" width="40" height="40" loading="lazy" />{/if}
+                  <span class="alt-text"><strong>{r.p.n}</strong><small>{unitLabel(r.p)}</small></span>
+                  <span class="num">{eur(r.p.p)}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+          <button class="btn btn-ghost" onclick={() => ((changing = false), (q = ''))}>Cancelar</button>
+        </div>
+      {/if}
+      <div class="acts">
+        {#if !changing}
+          <button class="act" style="--ac: var(--c-mar)" onclick={startChange}><Replace size={20} aria-hidden="true" />{p ? 'Cambiar' : 'Elegir producto'}</button>
+        {/if}
+        <button class="act" style="--ac: var(--c-limon)" onclick={() => (toggleMissing(item), onclose())}><PackageX size={20} aria-hidden="true" />{item.missing ? 'Sí había' : 'No había'}</button>
+        <button class="act" style="--ac: var(--c-tomate)" onclick={() => removeItem(id)}><Trash2 size={20} aria-hidden="true" />Quitar</button>
       </div>
-    {:else}
-      <button class="btn" onclick={startChange}>
-        <Replace size={20} aria-hidden="true" />
-        {p ? 'Cambiar por otro producto' : 'Elegir producto de Mercadona'}
-      </button>
-    {/if}
+      {#if app.lists.length > 1}
+        <label class="field move">
+          <span class="label">Está en la lista</span>
+          <select class="input" value={listOf(item)} onchange={(e) => (moveItem(id, e.currentTarget.value), toast(`Movido a ${app.lists.find((l) => l.id === e.currentTarget.value)?.name}`), onclose())}>
+            {#each app.lists as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
+          </select>
+        </label>
+      {/if}
+    </section>
 
     {#if p}
-      <section class="info" aria-labelledby="h-info">
-        <h3 id="h-info">Qué lleva</h3>
+      <section class="blk" aria-labelledby="h-price">
+        <h3 id="h-price" class="bh"><Tag size={18} aria-hidden="true" /> Precio</h3>
+        <ProductHistory {p} />
+        {#key p.id}<CompareStores products={[p]} compact />{/key}
+      </section>
+
+      <div class="blk-alt">
+        <Alternatives {p} grade={nutri?.grade ?? null} onuse={useProduct} />
+      </div>
+
+      <section class="blk" aria-labelledby="h-info">
+        <h3 id="h-info" class="bh"><Leaf size={18} aria-hidden="true" /> Qué lleva</h3>
         {#if loadingInfo}
           <p class="muted">Cargando la ficha…</p>
         {:else}
           {#if nutri && (nutri.grade || nutri.kcal != null)}
-            <div class="nutri">
-              {#if nutri.grade}
-                <p class="grade" style={`--g:${NUTRI_COLORS[nutri.grade]}`}>
-                  <span class="grade-letter" aria-hidden="true">{nutri.grade.toUpperCase()}</span>
-                  <span>Nutri-Score {nutri.grade.toUpperCase()}</span>
-                </p>
-              {/if}
-              <table>
-                <caption class="visually-hidden">Información nutricional por 100 g o 100 ml</caption>
-                <thead><tr><th scope="col">Por 100 g</th><th scope="col" class="num">Valor</th></tr></thead>
-                <tbody>
-                  <tr><th scope="row">Energía</th><td class="num">{n1(nutri.kcal)} kcal</td></tr>
-                  <tr><th scope="row">Grasas</th><td class="num">{n1(nutri.fat)} g</td></tr>
-                  <tr><th scope="row">De las cuales saturadas</th><td class="num">{n1(nutri.sat)} g</td></tr>
-                  <tr><th scope="row">Azúcares</th><td class="num">{n1(nutri.sugars)} g</td></tr>
-                  <tr><th scope="row">Proteínas</th><td class="num">{n1(nutri.protein)} g</td></tr>
-                  <tr><th scope="row">Sal</th><td class="num">{n1(nutri.salt)} g</td></tr>
-                </tbody>
-              </table>
-              <p class="source">Datos nutricionales de Open Food Facts.</p>
-            </div>
+            {#if nutri.grade}
+              <div class="ns" aria-label={`Nutri-Score ${nutri.grade.toUpperCase()}`}>
+                {#each ['a', 'b', 'c', 'd', 'e'] as g (g)}
+                  <span class="ns-l" class:on={g === nutri.grade} style={`--g:${NUTRI_COLORS[g]}`} aria-hidden="true">{g.toUpperCase()}</span>
+                {/each}
+                <span class="ns-t">Nutri-Score</span>
+              </div>
+            {/if}
+            {#if nutri.kcal != null}
+              <ul class="nut" role="list" aria-label="Por 100 g o 100 ml">
+                {#each [['Energía', nutri.kcal, 'kcal'], ['Grasas', nutri.fat, 'g'], ['Saturadas', nutri.sat, 'g'], ['Azúcares', nutri.sugars, 'g'], ['Proteínas', nutri.protein, 'g'], ['Sal', nutri.salt, 'g']] as [label, v, u] (label)}
+                  <li><strong class="num">{n1(v)}<small>&nbsp;{u}</small></strong><span>{label}</span></li>
+                {/each}
+              </ul>
+              <p class="source">Por 100 g o 100 ml. Datos de Open Food Facts.</p>
+            {/if}
           {/if}
           {#if info?.a}
-            <p><strong>Alérgenos:</strong> {info.a}</p>
+            <p class="alg"><strong>Alérgenos:</strong> {info.a}</p>
           {/if}
           {#if info?.g}
-            <p class="ingredients"><strong>Ingredientes:</strong> {info.g}</p>
+            <details class="ingr">
+              <summary>Ingredientes</summary>
+              <p>{info.g}</p>
+            </details>
           {/if}
           {#if !info?.g && !info?.a && !nutri}
             <p class="muted">Todavía no hay ficha de este producto. Se completa sola en las próximas actualizaciones semanales.</p>
@@ -194,32 +212,6 @@
         {/if}
       </section>
     {/if}
-
-    {#if p}
-      <ProductHistory {p} />
-      {#key p.id}<CompareStores products={[p]} compact />{/key}
-    {/if}
-
-    {#if p}
-      <Alternatives {p} grade={nutri?.grade ?? null} onuse={useProduct} />
-    {/if}
-
-    {#if app.lists.length > 1}
-      <label class="field">
-        <span>Lista</span>
-        <select class="input" value={listOf(item)} onchange={(e) => (moveItem(id, e.currentTarget.value), toast(`Movido a ${app.lists.find((l) => l.id === e.currentTarget.value)?.name}`), onclose())}>
-          {#each app.lists as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
-        </select>
-      </label>
-    {/if}
-
-    <button class="btn" onclick={() => (toggleMissing(item), onclose())}>
-      <PackageX size={20} aria-hidden="true" /> {item.missing ? 'Sí que había' : 'No había'}
-    </button>
-
-    <button class="btn btn-danger" onclick={() => removeItem(id)}>
-      <Trash2 size={20} aria-hidden="true" /> Quitar de la lista
-    </button>
   </Sheet>
 {/if}
 
@@ -338,57 +330,173 @@
   .alt-text small {
     color: var(--ink-2);
   }
-  .info {
+  .source {
+    font-size: 0.85rem;
+    color: var(--ink-2);
+  }
+  .blk {
     display: grid;
-    gap: 10px;
-    padding-top: 6px;
-    border-top: 1px solid var(--line);
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--paper);
   }
-  .ingredients {
-    font-size: 0.95rem;
-  }
-  .nutri {
-    display: grid;
-    gap: 8px;
-  }
-  .grade {
-    display: inline-flex;
+  .bh {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 700;
+    gap: 8px;
+    font-size: 1rem;
   }
-  .grade-letter {
-    display: inline-grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--g);
-    color: #fff;
+  .bh :global(svg) {
+    color: var(--c-huerta);
+  }
+  .blk :global(.hist),
+  .blk :global(.cmp) {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .blk :global(.hist h3),
+  .blk :global(.cmp h3) {
+    font-size: 0.85rem;
+    color: var(--ink-2);
+  }
+  .blk-alt :global(.block) {
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--paper);
+  }
+  .blk-alt {
+    display: grid;
+    gap: 18px;
+  }
+  .blk-alt:empty {
+    display: none;
+  }
+  .qrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .stepper {
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  .stepper output {
+    min-width: 2ch;
+    text-align: center;
     font-size: 1.2rem;
     font-weight: 800;
   }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 0.95rem;
+  .line-total {
+    font-size: 1.25rem;
+    font-weight: 800;
   }
-  th,
-  td {
-    text-align: left;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--line);
-    font-weight: 500;
+  .acts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
-  thead th {
+  .act {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    min-height: 64px;
+    padding: 10px 6px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .act :global(svg) {
+    color: var(--ac);
+  }
+  .act:active {
+    transform: scale(0.96);
+  }
+  .move select {
+    background: var(--surface);
+  }
+  .ns {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .ns-l {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 30px;
+    border-radius: 6px;
+    background: var(--g);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    opacity: 0.35;
+  }
+  .ns-l.on {
+    width: 38px;
+    height: 42px;
+    font-size: 1.15rem;
+    opacity: 1;
+    box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--g);
+    margin: 0 4px;
+  }
+  .ns-t {
+    margin-left: 8px;
     font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .nut {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .nut li {
+    display: grid;
+    gap: 2px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    background: var(--surface);
+    text-align: center;
+  }
+  .nut strong {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+  .nut small {
+    font-size: 0.75rem;
+    font-weight: 600;
     color: var(--ink-2);
   }
-  td {
-    text-align: right;
+  .nut span {
+    font-size: 0.78rem;
+    color: var(--ink-2);
+    font-weight: 600;
   }
-  .source {
-    font-size: 0.85rem;
+  .alg {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--c-tomate) 10%, var(--surface));
+    font-size: 0.92rem;
+  }
+  .ingr summary {
+    cursor: pointer;
+    font-weight: 700;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .ingr p {
+    font-size: 0.9rem;
     color: var(--ink-2);
   }
 </style>
