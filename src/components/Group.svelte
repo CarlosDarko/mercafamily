@@ -1,10 +1,19 @@
+<script module>
+  // Qué grupos están abiertos: así no se cierran al guardar un ajuste (la pantalla se vuelve a pintar)
+  const opened = new Map()
+</script>
+
 <script>
   // Grupo plegable de Ajustes: icono de color, título, resumen y contenido al abrir (details/summary nativo)
   import { ChevronDown } from '@lucide/svelte'
   let { id, title, icon: Icon, color = '--c-otros', summary = '', open = false, children } = $props()
+  let isOpen = $state(opened.get(id) ?? open)
+  $effect(() => {
+    opened.set(id, isOpen)
+  })
 </script>
 
-<details class="group" {open} style={`--gc: var(${color})`}>
+<details class="group" bind:open={isOpen} style={`--gc: var(${color})`}>
   <summary aria-describedby={summary ? `sum-${id}` : undefined}>
     <span class="g-ic" aria-hidden="true"><Icon size={20} /></span>
     <span class="g-tx">

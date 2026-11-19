@@ -125,3 +125,22 @@ test("'Otra' en una cena no repite siempre pescado", async () => {
   }
   assert.ok(fish <= 6, `pescado ${fish} de 15`)
 })
+
+test('raciones: las cantidades se recalculan y los envases se redondean hacia arriba', async () => {
+  const { scaleAmount, packQty } = await import('../src/lib/home.js')
+  const f5 = 5 / 3
+  assert.equal(scaleAmount('300 g', f5), '500 g')
+  assert.equal(scaleAmount('2 latas', f5), '4 latas')
+  assert.equal(scaleAmount('1/2', f5), '1')
+  assert.equal(scaleAmount('6', f5), '10')
+  assert.equal(scaleAmount('un chorro', f5), 'un chorro')
+  assert.equal(scaleAmount('1,5 l', f5), '2,5 l')
+  assert.equal(scaleAmount('700 ml', f5), '1,25 l')
+  assert.equal(scaleAmount('2', 2 / 3), '1')
+  assert.equal(scaleAmount('3', 2 / 3), '2')
+  assert.equal(scaleAmount('1', 5 / 3), '1 y ½')
+  assert.equal(scaleAmount('1 lata', 1 / 3), '1 lata')
+  assert.equal(scaleAmount('300 g', 1), '300 g')
+  assert.equal(packQty('2 latas', f5), 4)
+  assert.equal(packQty('300 g', f5), 1)
+})

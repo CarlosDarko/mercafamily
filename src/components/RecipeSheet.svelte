@@ -1,8 +1,8 @@
 <script>
   // Ficha de una receta: ingredientes para marcar, pasos, añadir a la lista y ponerla en el menú
-  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown, Clock3 } from '@lucide/svelte'
-  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, pantryHave, rateRecipe, snoozedUntil, SNOOZE_DAYS } from '../lib/data.svelte.js'
-  import { pantry, inSeason } from '../lib/home.js'
+  import { X, Clock, ShoppingBasket, CalendarPlus, Baby, Leaf, Zap, PartyPopper, Snowflake, ThumbsUp, ThumbsDown, Clock3, Minus, Plus } from '@lucide/svelte'
+  import { app, resolveKbIngredient, adoptKbRecipe, addMany, setMeal, settings, toast, pantryHave, rateRecipe, servings, snoozedUntil, SNOOZE_DAYS } from '../lib/data.svelte.js'
+  import { pantry, inSeason, BASE_SERVINGS } from '../lib/home.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur, isoDate } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
@@ -11,13 +11,15 @@
   let { recipe, onclose } = $props()
   const meta = recipe.meta || recipe
   const steps = recipe.steps || []
-  const ings = (recipe.ingredients || []).map((i) => (i.q ? resolveKbIngredient(i) : i))
+  // Raciones: las del hogar por defecto y se pueden cambiar solo para esta vez (invitados)
+  let people = $state(servings())
+  const ings = $derived((recipe.ingredients || []).map((i) => (i.q ? resolveKbIngredient(i, people / BASE_SERVINGS) : i)))
   const okAtHome = new Set(pantry(app.tripItems, settings().pantry || {}).filter((p) => p.state === 'ok' && p.merc_id).map((p) => p.merc_id))
   const onList = (i) => app.items.some((x) => (i.merc_id ? x.merc_id === i.merc_id : x.name.toLowerCase() === i.name.toLowerCase()))
   const why = (i) => (onList(i) ? 'Ya en la lista' : i.merc_id && okAtHome.has(i.merc_id) ? 'Hay en casa' : i.basic ? 'Básico' : null)
   // Marcados por defecto: lo que no está en la lista, ni en casa, ni es un básico
   let chosen = $state(new Set(ings.map((i, n) => (why(i) ? null : n)).filter((n) => n != null)))
-  const total = $derived([...chosen].reduce((s, n) => s + (app.catalog?.byId.get(ings[n].merc_id)?.p || 0), 0))
+  const total = $derived([...chosen].reduce((s, n) => s + (app.catalog?.byId.get(ings[n].merc_id)?.p || 0) * (ings[n].qty || 1), 0))
   const listName = app.lists.find((l) => l.id === app.listId)?.name || 'la lista'
   const month = new Date().getMonth() + 1
 
@@ -65,7 +67,11 @@
   </div>
   <p class="meta">
     {#if meta.time}<span><Clock size={16} aria-hidden="true" /> {meta.time} min</span>{/if}
-    <span>Para 3</span>
+    <span class="ppl" role="group" aria-label="Para cuántos">
+      <button class="pp" onclick={() => (people = Math.max(1, people - 1))} disabled={people <= 1} aria-label="Uno menos"><Minus size={16} aria-hidden="true" /></button>
+      <span class="num" aria-live="polite">Para {people}</span>
+      <button class="pp" onclick={() => (people = Math.min(20, people + 1))} aria-label="Uno más"><Plus size={16} aria-hidden="true" /></button>
+    </span>
     {#if meta.slot}<span>{({ ambas: 'Comida o cena', comida: 'Comida', cena: 'Cena', merienda: 'Merienda o postre' })[meta.slot]}</span>{/if}
     {#if recipe.express || meta.express}<span><Zap size={16} aria-hidden="true" /> Exprés</span>{/if}
     {#if recipe.fun || meta.fun}<span><PartyPopper size={16} aria-hidden="true" /> Divertida</span>{/if}
@@ -149,6 +155,27 @@
   }
   .season {
     color: var(--accent-text);
+  }
+  .ppl {
+    gap: 6px !important;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .pp {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .pp:disabled {
+    opacity: 0.4;
   }
   section {
     display: grid;

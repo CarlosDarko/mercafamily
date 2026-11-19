@@ -1,7 +1,7 @@
 // Estado de la app y acciones. La interfaz no sabe si los datos están en el móvil o en Supabase.
 import { createLocalBackend } from './local.js'
 import { loadCatalog, search, parsePrefs, loadHistory } from './catalog.js'
-import { dietConflicts, keyOf as pantryKey } from './home.js'
+import { dietConflicts, keyOf as pantryKey, scaleAmount, packQty, BASE_SERVINGS } from './home.js'
 import { loadDetails, detailsSync } from './nutrition.js'
 import { withQueue, saveSnapshot, loadSnapshot, isNetworkError, pendingCount } from './offline.js'
 import { uid, isoDate, tokens, norm } from './format.js'
@@ -784,7 +784,8 @@ export function mealNeeds(from, to, pantryList = []) {
       if (ing.basic) continue
       const k = ing.merc_id || `t:${ing.name.toLowerCase()}`
       if (onAnyList(ing) || fresh.has(ing.merc_id) || need.has(k)) continue
-      need.set(k, { ...ing, why: m.name })
+      // Las del recetario guardan la cantidad para 3: los envases se recalculan para los que sois
+      need.set(k, { ...ing, qty: ing.q && ing.amount ? packQty(ing.amount, servings() / BASE_SERVINGS) : ing.qty || 1, why: m.name })
     }
   }
   return [...need.values()]
@@ -1051,15 +1052,22 @@ export function loadIpc() {
 // ---------- Recetario ----------
 
 // Ingrediente del recetario ({ q, amount, basic }) o de una receta guardada -> producto del catálogo
-export function resolveKbIngredient(i) {
+// Cuántos coméis en casa (las recetas del recetario están escritas para 3)
+export const servings = () => Math.min(20, Math.max(1, Number(settings().servings) || BASE_SERVINGS))
+export async function setServings(n) {
+  await updateSettings({ servings: Math.min(20, Math.max(1, n)) })
+}
+
+// f: veces la receta (personas / 3). La cantidad se recalcula y los envases (latas, botes…) se redondean hacia arriba.
+export function resolveKbIngredient(i, f = servings() / BASE_SERVINGS) {
   if (i.merc_id !== undefined && !i.q) return i
   const r = resolveIngredient(i.q)
-  return { ...r, amount: i.amount || null, basic: !!i.basic, q: i.q }
+  return { ...r, amount: scaleAmount(i.amount, f) || null, qty: packQty(i.amount, f), basic: !!i.basic, q: i.q }
 }
 
 // Guarda una receta del recetario como receta de casa (si no estaba) y la devuelve
 export async function adoptKbRecipe(k) {
   const existing = app.recipes.find((r) => r.kb_id === k.id || r.name === k.name)
   if (existing) return existing
-  return saveRecipe({ name: k.name, kb_id: k.id, ingredients: k.ingredients.map(resolveKbIngredient), steps: k.steps, meta: { time: k.time, tags: k.tags, slot: k.slot, kids: k.kids, season: k.season || null, express: !!k.express, fun: !!k.fun, nocook: !!k.nocook } })
+  return saveRecipe({ name: k.name, kb_id: k.id, ingredients: k.ingredients.map((i) => resolveKbIngredient(i, 1)), steps: k.steps, meta: { time: k.time, tags: k.tags, slot: k.slot, kids: k.kids, season: k.season || null, express: !!k.express, fun: !!k.fun, nocook: !!k.nocook } })
 }

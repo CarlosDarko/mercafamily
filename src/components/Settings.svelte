@@ -1,7 +1,7 @@
 <script>
-  import { Copy, Share2, X, Plus, Download, Upload, Users, Palette, Heart, Wallet, RefreshCw, Tag, Archive, Smartphone, ShieldAlert, LifeBuoy, Info, Baby } from '@lucide/svelte'
+  import { Copy, Share2, X, Plus, Minus, Download, Upload, Users, Palette, Heart, Wallet, RefreshCw, Tag, Archive, Smartphone, ShieldAlert, LifeBuoy, Info, Baby } from '@lucide/svelte'
   import Group from './Group.svelte'
-  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS, people, setPeople } from '../lib/data.svelte.js'
+  import { app, setMe, updateHousehold, supabaseConfig, saveSupabaseConfig, signOut, exportBackup, importBackup, toast, setPrefs, setMyColor, colorOf, PERSON_COLORS, people, setPeople, servings, setServings } from '../lib/data.svelte.js'
   import { DIETS } from '../lib/home.js'
   import PushSettings from './PushSettings.svelte'
   import StatusPanel from './StatusPanel.svelte'
@@ -127,13 +127,22 @@
     <h1>Ajustes</h1>
   </div>
 
-  <Group id="fam" title="Familia" icon={Users} color="--c-dulce" summary={app.me ? `${app.me}${app.kind === 'supabase' && app.members.length > 1 ? ` y ${app.members.length - 1} más` : ''}` : ''}>
+  <Group id="fam" title="Familia" icon={Users} color="--c-dulce" summary={`${app.me || ''}${app.kind === 'supabase' && app.members.length > 1 ? ` y ${app.members.length - 1} más` : ''} · coméis ${servings()}`}>
     <div class="panel pad stack">
       <label class="field">
         <span>Tu nombre</span>
         <input class="input" bind:value={name} onblur={saveName} autocomplete="given-name" maxlength="30" />
         <span class="hint">Sale junto a lo que apuntas, para que los demás sepan quién lo ha pedido.</span>
       </label>
+      <div class="field">
+        <span class="label" id="ppl-label">Comemos en casa</span>
+        <div class="ppl" role="group" aria-labelledby="ppl-label">
+          <button class="icon-btn pp" onclick={() => setServings(servings() - 1)} disabled={servings() <= 1} aria-label="Uno menos"><Minus size={20} aria-hidden="true" /></button>
+          <output class="num" aria-live="polite">{servings()} {servings() === 1 ? 'persona' : 'personas'}</output>
+          <button class="icon-btn pp" onclick={() => setServings(servings() + 1)} disabled={servings() >= 20} aria-label="Uno más"><Plus size={20} aria-hidden="true" /></button>
+        </div>
+        <span class="hint">Las recetas recalculan las cantidades y lo que se apunta (latas, botes, paquetes…) para los que seáis. En cada receta se puede cambiar solo esa vez, por si hay invitados.</span>
+      </div>
       <fieldset class="pick">
         <legend class="label">Tu color</legend>
         <div class="swatches">
@@ -501,5 +510,18 @@
   label.btn:focus-within {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
+  }
+  .ppl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pp {
+    background: var(--surface-2);
+  }
+  .ppl output {
+    min-width: 6.5rem;
+    text-align: center;
+    font-weight: 750;
   }
 </style>

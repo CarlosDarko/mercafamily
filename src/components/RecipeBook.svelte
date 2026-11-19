@@ -1,7 +1,7 @@
 <script>
   // Recetario: buscar y filtrar recetas sencillas y saludables, y las guardadas de casa
   import { Search, Clock, Baby, Leaf, Zap, PartyPopper, Snowflake, Heart, Refrigerator, Clock3, ThumbsDown } from '@lucide/svelte'
-  import { app, settings, activeSnoozed } from '../lib/data.svelte.js'
+  import { app, settings, activeSnoozed, servings } from '../lib/data.svelte.js'
   import { KB, QUICK_MIN } from '../lib/recipes-kb.js'
   import { tagsOf, atHome, pantry } from '../lib/home.js'
   import { norm } from '../lib/format.js'
@@ -98,7 +98,7 @@
 
 <section class="section first-r" aria-labelledby="h-book">
   <h2 id="h-book" class="visually-hidden">Recetario</h2>
-  <p class="hint">{KB.length} recetas sanas para 3: exprés, divertidas, de temporada y de toda la vida.</p>
+  <p class="hint">{KB.length} recetas sanas para {servings()}: exprés, divertidas, de temporada y de toda la vida.</p>
   <div class="search">
     <Search size={18} aria-hidden="true" />
     <label class="visually-hidden" for="book-q">Buscar receta o ingrediente</label>

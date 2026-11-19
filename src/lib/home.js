@@ -296,3 +296,67 @@ export function cheaperFormat(p, products) {
   }
   return best ? { p: best, saving: 1 - best.r / p.r } : null
 }
+
+// ---------- Raciones: las recetas están escritas para 3 y se recalculan para los que seáis ----------
+
+export const BASE_SERVINGS = 3
+const PACK = new Set(['paquete', 'paquetes', 'lata', 'latas', 'bote', 'botes', 'brik', 'briks', 'bolsa', 'bolsas', 'tarrina', 'tarrinas', 'bola', 'bolas', 'manojo', 'manojos', 'vasito', 'vasitos', 'sobre', 'sobres', 'rulo', 'rulos', 'pieza', 'piezas', 'lomo', 'lomos'])
+const plural = (u, n) => {
+  if (!u || ['g', 'kg', 'ml', 'l'].includes(u)) return u
+  const sing = u.endsWith('s') ? u.slice(0, -1) : u
+  return n > 1 ? sing + 's' : sing
+}
+const HALVES = new Set(['', 'cucharada', 'cucharadas', 'cucharadita', 'cucharaditas'])
+
+/** '1/2', '1,5', '2', '1 1/2' + unidad. Devuelve null si no empieza por número ('un chorro', 'al gusto'). */
+export function parseAmount(a) {
+  const t = String(a || '').trim()
+  let m = t.match(/^(?:(\d+)\s+)?(\d+)\/(\d+)\s*(.*)$/)
+  if (m) return { n: (m[1] ? Number(m[1]) : 0) + Number(m[2]) / Number(m[3]), unit: m[4].trim() }
+  m = t.match(/^(\d+(?:[.,]\d+)?)\s*(.*)$/)
+  if (!m || !Number(m[1].replace(',', '.'))) return null
+  return { n: Number(m[1].replace(',', '.')), unit: m[2].trim() }
+}
+
+const fmtNum = (v) => String(Math.round(v * 100) / 100).replace('.', ',')
+const halves = (v) => {
+  const r = Math.max(0.5, Math.round(v * 2) / 2)
+  const whole = Math.floor(r)
+  return r % 1 ? (whole ? `${whole} y ½` : '½') : String(whole)
+}
+
+/** Cantidad para f veces la receta: '300 g' x 5/3 -> '500 g', '2 latas' -> '4 latas', 'un chorro' igual */
+export function scaleAmount(amount, f) {
+  if (!amount || f === 1) return amount
+  const a = parseAmount(amount)
+  if (!a) return amount
+  const v = a.n * f
+  const u = a.unit
+  const base = u.toLowerCase()
+  if (base === 'g' || base === 'ml') {
+    const step = v < 100 ? 5 : 25
+    const r = Math.max(step, Math.round(v / step) * step)
+    if (r >= 1000) return `${fmtNum(Math.round(r / 250) / 4)} ${base === 'g' ? 'kg' : 'l'}`
+    return `${r} ${u}`
+  }
+  if (base === 'kg' || base === 'l') return `${fmtNum(Math.max(0.25, Math.round(v * 4) / 4))} ${u}`
+  const first = base.split(' ')[0]
+  if (PACK.has(first)) {
+    const n = Math.max(1, Math.ceil(v - 0.05))
+    return `${n} ${[plural(first, n), ...u.split(' ').slice(1)].join(' ')}`
+  }
+  // Huevos, cebollas, dientes, rebanadas: enteros. Lo que se puede partir (media cebolla, cucharadas): medios.
+  // Lo que se cuenta por piezas enteras en la receta (3 huevos) no se parte: solo medias si ya lo eran o era 1
+  const byHalves = HALVES.has(first) && v < 3 && (first !== '' || !Number.isInteger(a.n) || a.n === 1)
+  const n = byHalves ? halves(v) : String(Math.max(1, Math.round(v)))
+  const num = byHalves ? Math.round(v * 2) / 2 : Math.max(1, Math.round(v))
+  return u ? `${n} ${[plural(first, num), ...u.split(' ').slice(1)].join(' ')}` : n
+}
+
+/** Cuántos envases apuntar en la lista: '2 latas' para 5 -> 4. Lo que no son envases, 1. */
+export function packQty(amount, f) {
+  const a = parseAmount(amount)
+  if (!a) return 1
+  const first = a.unit.toLowerCase().split(' ')[0]
+  return PACK.has(first) ? Math.min(99, Math.max(1, Math.ceil(a.n * f - 0.05))) : 1
+}
