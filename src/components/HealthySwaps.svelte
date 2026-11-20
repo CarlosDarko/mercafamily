@@ -2,7 +2,7 @@
   // Cambios más sanos: productos de la lista con Nutri-Score D o E que tienen en su familia uno A o B a precio parecido
   import { HeartPulse } from '@lucide/svelte'
   import { app, updateItem, toast, recordSaving } from '../lib/data.svelte.js'
-  import { productDetails, nutrition } from '../lib/nutrition.js'
+  import { productDetails, nutritionFor } from '../lib/nutrition.js'
   import { imgUrl } from '../lib/catalog.js'
   import { eur } from '../lib/format.js'
 
@@ -12,8 +12,7 @@
   let dismissed = $state(new Set())
 
   const gradeOf = async (id) => {
-    const d = await productDetails(id)
-    return d?.e ? (await nutrition(d.e))?.grade || null : null
+    return (await nutritionFor(app.catalog?.byId.get(id)))?.grade || null
   }
 
   // Solo se recalcula cuando cambian los productos, no con cada marca o cantidad

@@ -3,7 +3,7 @@
   import { Plus, Replace } from '@lucide/svelte'
   import { app, addProduct } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
-  import { productDetails, nutrition } from '../lib/nutrition.js'
+  import { productDetails, nutritionFor } from '../lib/nutrition.js'
   import { eur } from '../lib/format.js'
 
   let { p, grade, onuse } = $props()
@@ -49,8 +49,7 @@
     let alive = true
     Promise.all(
       candidates.map(async (x) => {
-        const d = await productDetails(x.id)
-        const n = d?.e ? await nutrition(d.e) : null
+        const n = await nutritionFor(x)
         return n?.grade ? { x, grade: n.grade } : null
       })
     ).then((list) => {

@@ -89,7 +89,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 | GitHub Actions | Cada lunes descarga el catálogo de Mercadona (unos 4.400 productos), completa fichas, guarda el historial de precios y publica. |
 | Supabase | Base de datos con tiempo real y acceso con email y contraseña. Guía: [docs/supabase.md](docs/supabase.md). |
 | Función de avisos | Función de Supabase que envía los avisos push, llamada por la base de datos (pg_net y pg_cron). [docs/avisos.md](docs/avisos.md). |
-| Open Food Facts | Nutri-Score y nutrición por código de barras, consultado desde la app. |
+| Open Food Facts | Nutri-Score y nutrición por código de barras, consultado desde la app. Si falta el Nutri-Score, la app lo calcula con el algoritmo oficial de 2023, y para frescos que no están (huevos, fruta, pescado…) usa valores típicos del alimento, siempre marcado como aproximado. |
 | INE | IPC de alimentos y bebidas no alcohólicas (serie IPC290755), descargado cada lunes a `public/data/ipc.json`. |
 
 ### Variables de GitHub (Settings, Secrets and variables, Actions, Variables)

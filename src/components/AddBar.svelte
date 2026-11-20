@@ -346,6 +346,7 @@
   }
   .r-name {
     font-weight: 600;
+    overflow-wrap: anywhere;
   }
   .r-meta {
     font-size: 0.85rem;

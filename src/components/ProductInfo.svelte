@@ -1,7 +1,7 @@
 <script>
   // 'Qué lleva' de un producto: Nutri-Score, nutrientes, alérgenos e ingredientes (Mercadona y Open Food Facts)
   import { Leaf } from '@lucide/svelte'
-  import { productDetails, nutrition } from '../lib/nutrition.js'
+  import { productDetails, nutritionFor } from '../lib/nutrition.js'
 
   let { p, grade = $bindable(null) } = $props()
   let info = $state(null)
@@ -18,7 +18,7 @@
     productDetails(pid).then(async (d) => {
       if (p?.id !== pid) return
       info = d
-      nutri = d?.e ? await nutrition(d.e) : null
+      nutri = await nutritionFor(p)
       grade = nutri?.grade ?? null
       loadingInfo = false
     })
@@ -38,7 +38,7 @@
           {#each ['a', 'b', 'c', 'd', 'e'] as g (g)}
             <span class="ns-l" class:on={g === nutri.grade} style={`--g:${NUTRI_COLORS[g]}`} aria-hidden="true">{g.toUpperCase()}</span>
           {/each}
-          <span class="ns-t">Nutri-Score</span>
+          <span class="ns-t">Nutri-Score{#if nutri.est || nutri.typical}&nbsp;<small>aprox.</small>{/if}</span>
         </div>
       {/if}
       {#if nutri.kcal != null}
@@ -47,7 +47,11 @@
             <li><strong class="num">{n1(v)}<small>&nbsp;{u}</small></strong><span>{label}</span></li>
           {/each}
         </ul>
-        <p class="source">Por 100 g o 100 ml. Datos de Open Food Facts.</p>
+        <p class="source">
+          {#if nutri.typical}Por 100 g. Valores típicos de este alimento (tablas de composición), no de este envase en concreto. Nutri-Score calculado por la app.
+          {:else if nutri.est}Por 100 g o 100 ml. Datos de Open Food Facts. Nutri-Score calculado por la app con esos datos.
+          {:else}Por 100 g o 100 ml. Datos de Open Food Facts.{/if}
+        </p>
       {/if}
     {/if}
     {#if info?.a}
@@ -111,6 +115,10 @@
     box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--g);
     margin: 0 4px;
   }
+  .ns-t small {
+    font-weight: 600;
+    color: var(--ink-2);
+  }
   .ns-t {
     margin-left: 8px;
     font-weight: 700;
@@ -121,7 +129,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
     gap: 6px;
   }
   .nut li {

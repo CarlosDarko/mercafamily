@@ -1,3 +1,4 @@
+import { computeNutriScore, typicalNutrition, canCompute } from './nutriscore.js'
 // Ficha del producto: ingredientes y alérgenos de Mercadona (details.json) y nutrición de Open Food Facts
 let details = null
 const OFF_KEY = 'mf:off:'
@@ -49,6 +50,28 @@ export async function nutrition(ean) {
   } catch {
     return null
   }
+}
+
+/**
+ * Nutrición de un producto del catálogo, completando lo que falte:
+ * 1) Open Food Facts por su código de barras
+ * 2) si trae nutrientes pero no Nutri-Score, se calcula (est: true)
+ * 3) si no hay nada y es un fresco (huevos, fruta, pescado…), valores típicos de ese alimento (typical: true)
+ */
+export async function nutritionFor(p) {
+  if (!p) return null
+  const d = await productDetails(p.id)
+  const off = d?.e ? await nutrition(d.e) : null
+  const typical = typicalNutrition(p)
+  if (off && off.kcal != null) {
+    if (!off.grade && canCompute(p)) {
+      const grade = computeNutriScore({ ...off, fv: typical?.fv ?? 0 })
+      return grade ? { ...off, grade, est: true } : off
+    }
+    return off
+  }
+  if (typical) return { ...typical, grade: off?.grade || typical.grade }
+  return off
 }
 
 // Código de barras -> id de producto de Mercadona

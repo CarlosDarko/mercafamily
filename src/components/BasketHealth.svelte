@@ -1,7 +1,7 @@
 <script>
   // Nota de salud de la cesta: Nutri-Score de lo comprado en los últimos 30 días (Open Food Facts)
   import { app } from '../lib/data.svelte.js'
-  import { productDetails, nutrition } from '../lib/nutrition.js'
+  import { productDetails, nutritionFor } from '../lib/nutrition.js'
   import { isoDate } from '../lib/format.js'
 
   const LETTERS = ['a', 'b', 'c', 'd', 'e']
@@ -20,8 +20,7 @@
     loading = true
     Promise.all(
       ids.map(async (id) => {
-        const d = await productDetails(id)
-        return d?.e ? (await nutrition(d.e))?.grade : null
+        return (await nutritionFor(app.catalog?.byId.get(id)))?.grade || null
       })
     ).then((grades) => {
       if (!alive) return

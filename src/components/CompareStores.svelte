@@ -14,7 +14,8 @@
     loading = true
     error = ''
     try {
-      results = await compareProducts(products)
+      // window.__mfCompare: respuesta simulada para las pruebas de pantalla (sin Supabase)
+      results = globalThis.__mfCompare ? globalThis.__mfCompare(products) : await compareProducts(products)
     } catch {
       error = 'No se ha podido comparar ahora. Inténtalo más tarde.'
     }
@@ -24,9 +25,26 @@
 
   const comparable = (p, x) => x && x.unit && (p.rf === 'L' || p.rf === 'kg') && x.rf === p.rf
   const diff = (p, x) => (comparable(p, x) && p.r ? (x.unit - p.r) / p.r : null)
-  // Para la ficha: por kilo o litro si se puede y, si no, por envase (avisándolo)
-  const diffAny = (p, x) => (!x ? null : comparable(p, x) && p.r ? { d: (x.unit - p.r) / p.r, by: '' } : p.p && x.price ? { d: (x.price - p.p) / p.p, by: ' por envase' } : null)
-  const pct = (o) => (o.d < -0.005 ? `${Math.round(-o.d * 100)} % más barato` : o.d > 0.005 ? `${Math.round(o.d * 100)} % más caro` : 'Igual')
+  // Unidades de un envase: '24 ud', '12 unidades', 'pack-6', 'x6', '6 x latas'
+  const countOf = (t) => {
+    const m = String(t || '').toLowerCase().match(/(\d+)\s*(?:ud|uds|unidades|u\b)|pack-?\s*(\d+)|\bx\s*(\d+)\b|(\d+)\s*x\s/)
+    const n = m ? Number(m[1] || m[2] || m[3] || m[4]) : null
+    return n && n > 1 && n < 500 ? n : null
+  }
+  // Para la ficha: por kilo o litro si se puede, si no por unidad si se sabe cuántas trae cada envase,
+  // y si no por envase (en gris, solo orientativo: pueden ser tamaños distintos)
+  const diffAny = (p, x) => {
+    if (!x) return null
+    if (comparable(p, x) && p.r) return { d: (x.unit - p.r) / p.r, by: 'kg' }
+    const a = countOf(p.z) || countOf(p.n)
+    const b = countOf(x.name)
+    if (a && b && p.p && x.price) return { d: x.price / b / (p.p / a) - 1, by: 'unit', a, b }
+    return p.p && x.price ? { d: (x.price - p.p) / p.p, by: 'pack' } : null
+  }
+  const pct = (o) => {
+    const t = o.d < -0.005 ? `${Math.round(-o.d * 100)} % más barato` : o.d > 0.005 ? `${Math.round(o.d * 100)} % más caro` : 'Igual'
+    return o.by === 'unit' ? `${t} por unidad` : o.by === 'pack' && t !== 'Igual' ? `${t} el envase` : t
+  }
   const rows = $derived(
     results
       ? products.map((p) => {
@@ -39,7 +57,7 @@
   const fmtUnit = (v, rf) => (v != null ? `${eur(v)}/${rf}` : '')
 </script>
 
-{#if compareUrl()}
+{#if compareUrl() || globalThis.__mfCompare}
   {#if compact}
     <section class="cmp" aria-labelledby="h-cmp">
       <h3 id="h-cmp">En otras tiendas</h3>
@@ -47,29 +65,35 @@
         <p class="muted">Mirando en Dia y Consum…</p>
       {:else if rows[0]}
         {@const r = rows[0]}
+        {@const anyPack = [r.dia, r.consum].some((x) => diffAny(r.p, x)?.by === 'pack')}
         <ul role="list" class="stores">
           <li class="here">
-            <StoreBadge store="mercadona" />
-            <span class="nm">Este producto</span>
-            <span class="pr num">{eur(r.p.p)}{#if r.p.rf === 'L' || r.p.rf === 'kg'}<small>{fmtUnit(r.p.r, r.p.rf)}</small>{/if}</span>
+            <StoreBadge store="mercadona" size="sm" />
+            <div class="info">
+              <span class="nm">Este producto</span>
+              <span class="pline num"><strong>{eur(r.p.p)}</strong>{#if r.p.rf === 'L' || r.p.rf === 'kg'}<small>{fmtUnit(r.p.r, r.p.rf)}</small>{/if}</span>
+            </div>
           </li>
-          {#each [['dia', r.dia, r.dDia], ['consum', r.consum, r.dConsum]] as [store, x, d] (store)}
+          {#each [['dia', r.dia], ['consum', r.consum]] as [store, x] (store)}
             <li>
-              <StoreBadge {store} />
-              {#if x}
-                <a class="nm" href={x.url} target="_blank" rel="noopener">{x.name}</a>
-                {@const o = diffAny(r.p, x)}
-                <span class="pr num">
-                  <span class="pline">{eur(x.price)}{#if o}<span class="d" class:cheap={o.d < -0.005} class:dear={o.d > 0.005}>{pct(o)}{o.by}</span>{/if}</span>
-                  {#if comparable(r.p, x)}<small>{fmtUnit(x.unit, x.rf)}</small>{/if}
-                </span>
-              {:else}
-                <span class="muted nm">No hay uno equivalente</span>
-              {/if}
+              <StoreBadge {store} size="sm" />
+              <div class="info">
+                {#if x}
+                  {@const o = diffAny(r.p, x)}
+                  <a class="nm" href={x.url} target="_blank" rel="noopener">{x.name}</a>
+                  <span class="pline num">
+                    <strong>{eur(x.price)}</strong>
+                    {#if comparable(r.p, x)}<small>{fmtUnit(x.unit, x.rf)}</small>{/if}
+                    {#if o}<span class="d" class:cheap={o.by !== 'pack' && o.d < -0.005} class:dear={o.by !== 'pack' && o.d > 0.005}>{pct(o)}</span>{/if}
+                  </span>
+                {:else}
+                  <span class="muted nm">No hay uno equivalente</span>
+                {/if}
+              </div>
             </li>
           {/each}
         </ul>
-        <p class="hint">Comparado por {r.p.rf === 'L' ? 'litro' : r.p.rf === 'kg' ? 'kilo' : 'unidad'}.</p>
+        <p class="hint">Comparado por {r.p.rf === 'L' ? 'litro' : r.p.rf === 'kg' ? 'kilo' : 'unidad'}.{anyPack ? ' En gris, por envase: pueden ser tamaños distintos.' : ''} Toca el nombre para verlo en su web.</p>
       {/if}
       {#if error}<p class="error-text">{error}</p>{/if}
     </section>
@@ -125,24 +149,28 @@
   }
   .stores li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     padding: 10px 0;
   }
   .stores li + li {
     border-top: 1px solid var(--line);
   }
-  .nm {
+  .stores li > :global(.badge) {
+    margin-top: 2px;
+    min-width: 5.6rem;
+  }
+  .info {
     flex: 1;
     min-width: 0;
+    display: grid;
+    gap: 3px;
+  }
+  .nm {
     font-size: 0.88rem;
     line-height: 1.3;
     color: var(--ink-2);
-    text-decoration: none;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    overflow-wrap: anywhere;
   }
   a.nm {
     color: var(--ink);
@@ -150,31 +178,27 @@
     text-decoration-color: var(--line);
     text-underline-offset: 3px;
   }
-  .pr {
-    flex: none;
-    display: grid;
-    justify-items: end;
-    font-weight: 750;
-    line-height: 1.2;
-  }
-  .pr small {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--ink-2);
-  }
   .pline {
-    display: inline-flex;
-    align-items: center;
+    display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
+    align-items: baseline;
+    gap: 2px 8px;
+  }
+  .pline strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+  .pline small {
+    font-size: 0.78rem;
+    color: var(--ink-2);
   }
   .d {
     padding: 1px 8px;
     border-radius: 999px;
     background: var(--surface-2);
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 700;
+    white-space: nowrap;
   }
   .cheap {
     background: color-mix(in srgb, var(--c-huerta) 16%, var(--surface));
