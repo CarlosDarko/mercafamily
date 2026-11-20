@@ -57,3 +57,22 @@ test('varias fotos que se solapan no repiten líneas', () => {
   assert.equal(t.lines.length, 4)
   assert.equal(t.total, 5.16)
 })
+
+test('columnas: cada importe con su línea aunque vaya medio renglón más abajo y la foto esté inclinada', async () => {
+  const { alignColumns, mergeReads } = await import('../src/lib/ticket.js')
+  const names = ['Descripció', '1 POMA GOLDEN', '1 LLET SENCERA', '5 BOSSA PLASTIC', '1 ARRÒS LLARG', '1 SUCRE', '1 PA DE MOTLLO']
+  const left = names.map((t, i) => ({ t, y: 100 + i * 60 }))
+  // Importes 30 px por debajo al principio y 40 al final (inclinación), sin el de 'SUCRE' en una de las lecturas
+  const vals = [null, '2,10', '0,96', '0,15 0,75', '1,20', '0,90', '1,15']
+  const right = vals.map((t, i) => (t ? { t, y: 100 + i * 60 + 30 + i * 2 } : null)).filter(Boolean)
+  const readA = right.filter((r) => r.t !== '0,90')
+  const readB = right.filter((r) => r.t === '0,90')
+  const text = alignColumns(left, mergeReads(readA, readB))
+  assert.deepEqual(text.split('\n'), ['Descripció', '1 POMA GOLDEN 2,10', '1 LLET SENCERA 0,96', '5 BOSSA PLASTIC 0,15 0,75', '1 ARRÒS LLARG 1,20', '1 SUCRE 0,90', '1 PA DE MOTLLO 1,15'])
+})
+
+test('el total es lo pagado, no la línea TOTAL de la tabla de IVA', () => {
+  const t = parseTicket('1 SUCRE 0,90\nTOTAL (€) 10,90\nTARGETA BANCÀRIA 10,90\nIVA BASE IMPOSABLE (€) QUOTA (€)\n4% 9,00 0,36\nTOTAL 9,90 1,00\nImport: 10,90 €')
+  assert.equal(t.total, 10.9)
+  assert.equal(t.lines.length, 1)
+})

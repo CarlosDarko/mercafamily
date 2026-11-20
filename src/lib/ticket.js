@@ -5,14 +5,14 @@ import { norm } from './format.js'
 const money = (s) => Number(String(s).replace(/\s/g, '').replace(',', '.'))
 
 // Lo que no son productos: cabecera, pie, impuestos y pago (castellano y catalán)
-const SKIP = /^(IVA|BASE|TARJ|TARG|CAMBIO|CANVI|ENTREGAD|LLIURAT|EFECTIV|EFECTIU|IMPORTE|IMPORT\b|SUBTOTAL|DESCRIPCI|FACTURA|OP\b|OP:|TEL|C\.?I\.?F|N\.?I\.?F|MERCADONA|S\.A|AVDA|AVINGUDA|CALLE|CARRER|C\/|SE ADMITEN|S'ADMETEN|DEVOLUC|GRACIES|GRÀCIES|GRACIAS|PARKING|APARCAMENT|VISA|MASTERCARD|AUT\b|N\.C|COMERC|TRANS|LEIDA|LLEGIDA|CONTACTLESS|COPIA|CUOTA|QUOTA|P\. ?UNIT)/i
+const SKIP = /^(IVA|BASE IMPO|TARJ|TARG|CAMBIO|CANVI|ENTREGAD|LLIURAT|EFECTIV|EFECTIU|IMPORTE|IMPORT\b|SUBTOTAL|DESCRIPCI|FACTURA|OP\b|OP:|TEL|C\.?I\.?F|N\.?I\.?F|MERCADONA|S\.A|AVDA|AVINGUDA|CALLE|CARRER|C\/|SE ADMITEN|S'ADMETEN|DEVOLUC|GRACIES|GRÀCIES|GRACIAS|PARKING|APARCAMENT|VISA|MASTERCARD|AUT\b|N\.C|COMERC|TRANS|LEIDA|LLEGIDA|CONTACTLESS|COPIA|CUOTA|QUOTA|P\. ?UNIT)/i
 
 /** Arregla lo que el lector suele confundir en los importes: '4, 18' -> '4,18', '2.80' -> '2,80' */
 function fixRow(r) {
   return r
     .replace(/[|€]/g, ' ')
     // Restos de la cabecera de columnas pegados a la primera línea ('P. Unit', 'Imp. (€)')
-    .replace(/\b(P\.?\s*)?Unit\b|\bImp\.?\s*\(?[e€]?\)?/gi, ' ')
+    .replace(/\b(P\.?\s*)?Unit\b|\bImp\.\s*\(?[e€]?\)?|\bImp\s*\([e€]\)/gi, ' ')
     .replace(/(\d)\s*[,.]\s*(\d{2})\b/g, '$1,$2')
     .replace(/\s+/g, ' ')
     .trim()
@@ -38,13 +38,25 @@ export function parseTicket(text) {
     .map(fixRow)
     .filter(Boolean)
   let total = null
+  let paid = null
+  let ended = false
   const lines = []
   for (const r of rows) {
-    const t = r.match(/^TOTAL\b.*?(\d+,\d{2})\s*\S?$/i)
-    if (t) {
-      total = money(t[1])
+    // Lo pagado (tarjeta o 'Import: 215,34 €') es el total más fiable: la tabla de IVA también tiene una línea TOTAL
+    const pay = r.match(/^(TARGETA|TARJETA|TARG\.?|IMPORT|IMPORTE|EFECTIU|EFECTIVO)\b[^\d]*?(\d{1,4},\d{2})/i)
+    if (pay) {
+      paid ??= money(pay[2])
       continue
     }
+    const t = r.match(/^T[O0]TAL\b(.*)$/i)
+    if (t) {
+      // El primer TOTAL es el de la compra: después viene el pie (IVA, pago…), que no son productos
+      const nums = t[1].match(/\d{1,4},\d{2}/g)
+      if (!ended && nums) total = money(nums[nums.length - 1])
+      ended = true
+      continue
+    }
+    if (ended) continue
     if (SKIP.test(r)) continue
     // Línea de peso: pertenece a la anterior
     const w = r.match(/^(\d+,\d{3})\s*kg\s+(\d+,\d{2})\s*\/?\s*kg\s+(\d+,\d{2})/i)
@@ -58,7 +70,10 @@ export function parseTicket(text) {
     }
     // Cantidad al principio: el lector a veces la confunde con I, l, |, i, t o una coma
     // A veces va pegada al nombre: '1LLET SEMI'
-    const q = r.match(/^(\d{1,2}|[Il|i!t\],.])(?:\s+|(?=[A-ZÀ-ÚÇ]{2}))(.+)$/)
+    let q = r.match(/^(\d{1,2}|[Il|i!t\],.])(?:\s+|(?=[A-ZÀ-ÚÇ]{2}))(.+)$/)
+    // Sin cantidad leída pero con importe al final, o en mayúsculas ya dentro de los productos: se da por 1
+    // (el lector se ha comido el número)
+    if (!q && (/\p{L}{3}.*\s\d{1,3},\d{2}$/u.test(r) || (lines.length && /^[^\p{Ll}]*\p{Lu}{3}[^\p{Ll}]*$/u.test(r) && !/\d{5,}/.test(r)))) q = [r, '1', r.replace(/^[^\p{L}]+/u, '')]
     if (!q) continue
     const qty = /\d/.test(q[1]) ? Number(q[1]) : 1
     let rest = q[2]
@@ -78,29 +93,65 @@ export function parseTicket(text) {
     lines.push({ qty, desc, unit: unit != null ? Math.round(unit * 100) / 100 : null, total: lineTotal })
   }
   const sum = Math.round(lines.reduce((s, l) => s + (l.total || 0), 0) * 100) / 100
-  return { total: total ?? (sum || null), ticketTotal: total, lines, sum, date: ticketDate(text) }
+  const ticketTotal = paid ?? total
+  return { total: ticketTotal ?? (sum || null), ticketTotal, lines, sum, date: ticketDate(text) }
 }
 
-const keyOf = (l) => norm(l.desc).replace(/[^a-z]/g, '').slice(0, 8)
+const letters = (l) => norm(l.desc).replace(/[^a-z]/g, '')
+// Dos líneas son la misma (leída en dos fotos) si coinciden el importe (cuando lo hay) y el principio del nombre
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...new Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+// Dos líneas son la misma (leída en dos fotos) si el nombre se parece mucho (el lector cambia alguna letra)
+// o se parece bastante y el importe coincide
+function same(a, b) {
+  const x = letters(a).slice(0, 16)
+  const y = letters(b).slice(0, 16)
+  if (x.length < 3 || y.length < 3) return false
+  const sim = 1 - lev(x, y) / Math.max(x.length, y.length)
+  const priceOk = a.total != null && b.total != null && Math.abs(a.total - b.total) < 0.005
+  return sim >= 0.75 || (priceOk && sim >= 0.5)
+}
 
 /**
- * Une el texto de varias fotos de un ticket largo. Si la foto siguiente empieza repitiendo las últimas líneas
- * de la anterior (las fotos se solapan), esas líneas no se cuentan dos veces.
+ * Une el texto de varias fotos de un ticket largo. La foto siguiente suele empezar repitiendo las últimas líneas
+ * de la anterior (las fotos se solapan): esas líneas se cuentan una vez y, si una de las dos lecturas no tiene
+ * importe o cantidad, se completa con la otra.
  */
 export function parsePages(texts) {
   const out = { lines: [], total: null, date: null }
   for (const text of texts) {
     const p = parseTicket(text)
-    // El total solo vale si se ha leído la línea TOTAL (si la foto no llega, se deja vacío)
     if (p.ticketTotal != null) out.total = p.ticketTotal
     out.date ??= p.date
-    let k = Math.min(out.lines.length, p.lines.length)
-    for (; k > 0; k--) {
-      const tail = out.lines.slice(-k).map(keyOf).join('|')
-      const head = p.lines.slice(0, k).map(keyOf).join('|')
-      if (tail === head) break
+    const next = p.lines
+    // El mejor solape: las últimas k líneas ya guardadas con las primeras de esta foto (saltando hasta 2 líneas cortadas arriba)
+    let bestK = 0
+    let bestSkip = 0
+    for (let skip = 0; skip <= Math.min(2, next.length); skip++) {
+      for (let k = Math.min(out.lines.length, next.length - skip); k > bestK; k--) {
+        const tail = out.lines.slice(-k)
+        const head = next.slice(skip, skip + k)
+        const ok = tail.filter((l, i) => same(l, head[i])).length
+        if (ok >= Math.max(2, Math.ceil(k * 0.6))) {
+          bestK = k
+          bestSkip = skip
+          break
+        }
+      }
     }
-    out.lines.push(...p.lines.slice(k))
+    if (bestK) {
+      const tail = out.lines.slice(-bestK)
+      next.slice(bestSkip, bestSkip + bestK).forEach((l, i) => {
+        const o = tail[i]
+        if (o.total == null && l.total != null) Object.assign(o, { total: l.total, unit: l.unit, qty: l.qty })
+      })
+    }
+    out.lines.push(...next.slice(bestK ? bestSkip + bestK : 0))
   }
   out.sum = Math.round(out.lines.reduce((s, l) => s + (l.total || 0), 0) * 100) / 100
   return out
@@ -137,6 +188,11 @@ const WORDS = {
   llarg: 'largo', llarga: 'larga', rodo: 'redondo', clara: 'claro', clar: 'claro', negre: 'negro', vermell: 'rojo', vermella: 'roja',
   verd: 'verde', verds: 'verdes', groc: 'amarillo', petit: 'pequeño', petita: 'pequeña', fresc: 'fresco', fresca: 'fresca',
   congelat: 'congelado', congelada: 'congelada', ratllat: 'rallado', ratllada: 'rallado', tendre: 'tierno', curat: 'curado',
+  alvocat: 'aguacate', maquinetes: 'maquinillas', form: 'queso', fondre: 'fundir', cong: 'congelada', maionesa: 'mayonesa',
+  bolet: 'setas', safata: 'bandeja', castanya: 'castaña', castanyes: 'castañas', condiment: 'condimento', mortadella: 'mortadela',
+  olives: 'aceitunas', molt: 'molida', tortilles: 'tortillas', mexicanes: 'mexicanas', nova: '', tendra: 'tierna', sec: 'seco',
+  extrafi: 'extrafino', carregada: 'rellena', os: 'hueso', salat: 'salado', carcasses: 'carcasa', espinade: 'espinazo', mans: 'manitas',
+  gira: 'girasol', sol: '', tendres: 'tiernos', triturat: 'triturado', clas: 'classic', fresh: 'fresh',
   escombraries: 'basura', tovalloletes: 'toallitas', compreses: 'compresas', bolquers: 'pañales', gos: 'perro', gat: 'gato'
 }
 // Abreviaturas de dos letras o con barra que van antes de partir en palabras
@@ -145,7 +201,8 @@ const PHRASES = [
   [/\bs\/\s*/g, ' sin '],
   [/\bc\/\s*/g, ' con '],
   [/\bm\.\s*cuit/g, ' cocido '],
-  [/\bf\.\s*/g, ' queso '],
+  [/\bf[.,]\s*semi\b/g, ' queso semicurado '],
+  [/\bf[.,]\s*/g, ' queso '],
   [/\bbo\s*\/\s*por/g, ' vacuno cerdo '],
   [/\b\d+\s*(l|g|kg|ml|cl|u|ud|uds)\b/g, ' ']
 ]
@@ -177,6 +234,22 @@ function overlap(name, q) {
   return qw.filter((w) => nw.some((x) => x.startsWith(w.slice(0, 4)))).length / qw.length
 }
 
+// ¿Dos precios iguales salvo una cifra? (mismo número de cifras)
+function oneDigitOff(a, b) {
+  const x = a.toFixed(2)
+  const y = b.toFixed(2)
+  if (x.length !== y.length || x === y) return false
+  const pairs = ['17', '56', '08', '38', '68', '09', '39', '14', '06']
+  let d = 0
+  let likely = false
+  for (let i = 0; i < x.length; i++)
+    if (x[i] !== y[i]) {
+      d++
+      likely = pairs.includes(x[i] + y[i]) || pairs.includes(y[i] + x[i])
+    }
+  return d === 1 && likely
+}
+
 export function matchToCatalog(lines, search) {
   const near = (i) => [i, i - 1, i + 1, i - 2, i + 2].filter((j) => j >= 0 && j < lines.length)
   const usedPrice = new Set()
@@ -191,10 +264,22 @@ export function matchToCatalog(lines, search) {
       // Al quitar palabras solo valen productos que sigan llevando casi todo lo buscado
       const found = (qq ? search(qq, 40) : []).filter((r) => qq === q || overlap(r.p.n, q) >= 0.6)
       pools.push(found)
-      const byPrice = l.unit != null ? found.find((r) => Math.abs(r.p.p - l.unit) < 0.006) : null
+      // Mismo precio y el nombre algo parecido (un precio redondo como 1,00 € lo comparten muchos productos)
+      const byPrice = l.unit != null ? found.find((r) => Math.abs(r.p.p - l.unit) < 0.006 && overlap(r.p.n, q) >= 0.5) : null
       if (byPrice) {
         usedPrice.add(i)
         return { ...l, q, p: byPrice.p, sure: true }
+      }
+      // '2 SPRITE 0,69': con cantidad y un solo número, ese número es el precio por unidad
+      if (l.qty > 1 && l.total != null) {
+        const u = found.find((r) => Math.abs(r.p.p - l.total) < 0.006 && overlap(r.p.n, q) >= 0.5)
+        if (u) return { ...l, q, p: u.p, unit: u.p.p, total: Math.round(u.p.p * l.qty * 100) / 100, sure: true }
+      }
+      // Una cifra mal leída ('2,16' por '2,76'): mismo producto con el precio a una cifra de distancia
+      const v = l.total != null && l.qty === 1 ? l.total : null
+      if (v != null && overlap(found[0]?.p.n || '', q) >= 0.8) {
+        const fix = found.slice(0, 8).find((r) => oneDigitOff(r.p.p, v))
+        if (fix) return { ...l, q, p: fix.p, unit: fix.p.p, total: fix.p.p, sure: true, fixedPrice: true }
       }
     }
     const found = pools[0] || []
@@ -210,6 +295,8 @@ export function matchToCatalog(lines, search) {
     const byName = top && overlap(top.n, q) === 1 && q.split(' ').filter((w) => w.length > 2).length >= 1
     const fixed = top && top.p <= 12 && !/granel|pieza|al corte/i.test(top.z || '')
     if (l.unit == null && byName && fixed) return { ...l, q, p: top, unit: top.p, total: Math.round(top.p * l.qty * 100) / 100, sure: true, priceFromCatalog: true }
+    // Con todas las palabras del ticket en el nombre (carne y pescado al peso, precios que cambian): es ese, con el precio del ticket
+    if (top && l.total != null && overlap(top.n, q) === 1 && q.split(' ').filter((w) => w.length > 2).length >= 2) return { ...l, q, p: top, sure: true }
     return { ...l, q, found: pools.flat(), p: top, sure: false }
   })
   // Los precios del ticket van medio renglón por debajo y a veces se leen pegados a la línea de al lado:
@@ -256,6 +343,105 @@ export function matchLines(lines, cart) {
   return out
 }
 
+// ---------- Columnas ----------
+
+const PRICE_RE = /\d+\s*[,.]\s*\d{2}/
+
+/**
+ * En los tickets de Mercadona el importe va en su columna, medio renglón por debajo del nombre.
+ * Se leen las dos columnas por separado ({ t, y } con la altura del centro de cada línea) y se une cada importe
+ * con su nombre: primero se calcula el desfase que mejor encaja en esa foto y luego cada importe va a la línea más cercana.
+ */
+export function alignColumns(left, right) {
+  const L = left.filter((l) => l.t && /\p{L}{2}/u.test(l.t)).sort((a, b) => a.y - b.y)
+  const R = right.filter((r) => PRICE_RE.test(r.t)).sort((a, b) => a.y - b.y)
+  if (!L.length) return ''
+  const gaps = L.slice(1).map((l, i) => l.y - L[i].y).filter((g) => g > 0).sort((a, b) => a - b)
+  const row = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 60
+  const nums = (r) => (r.t.match(/\d+\s*[,.]\s*\d{2}/g) || []).map((n) => n.replace(/\s/g, '').replace('.', ','))
+  const isHead = (l) => /^(descripci|mercadona|factura|tel|ct |c\/|\d{5} )/i.test(l.t)
+
+  // Emparejado en orden: cada importe a una línea distinta, de arriba abajo, con la posición del importe pasada a la
+  // de los nombres con y' = a·y + b (la foto suele estar algo inclinada y el desfase cambia de arriba abajo)
+  const run = (a, b) => {
+    const n = L.length
+    const m = R.length
+    const DROP = row * 0.6
+    const cost = (i, j) => {
+      const d = Math.abs(a * R[j].y + b - L[i].y)
+      return (d > row * 0.75 ? row * 3 : d) + (isHead(L[i]) ? row : 0)
+    }
+    const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1).fill(Infinity))
+    const back = Array.from({ length: n + 1 }, () => new Uint8Array(m + 1))
+    dp[0][0] = 0
+    for (let i = 0; i <= n; i++) {
+      for (let j = 0; j <= m; j++) {
+        if (i === 0 && j === 0) continue
+        let best = Infinity
+        let how = 0
+        if (i > 0 && dp[i - 1][j] < best) (best = dp[i - 1][j]), (how = 1) // línea sin importe
+        if (j > 0 && dp[i][j - 1] + DROP < best) (best = dp[i][j - 1] + DROP), (how = 2) // importe que no es de ninguna
+        if (i > 0 && j > 0 && dp[i - 1][j - 1] + cost(i - 1, j - 1) < best) (best = dp[i - 1][j - 1] + cost(i - 1, j - 1)), (how = 3)
+        dp[i][j] = best
+        back[i][j] = how
+      }
+    }
+    const pairs = []
+    let i = n
+    let j = m
+    while (i > 0 || j > 0) {
+      const h = back[i][j]
+      if (h === 3) pairs.push([i - 1, j - 1]), i--, j--
+      else if (h === 2) j--
+      else i--
+    }
+    pairs.reverse()
+    // Lo que cuadra: 'cantidad × unitario = importe'
+    let fit = 0
+    for (const [li, rj] of pairs) {
+      const q = L[li].t.match(/^(\d{1,2})\s/)
+      const v = nums(R[rj]).map((x) => Number(x.replace(',', '.')))
+      if (q && Number(q[1]) > 1 && v.length >= 2 && Math.abs(Number(q[1]) * v[v.length - 2] - v[v.length - 1]) < 0.03) fit++
+    }
+    return { total: dp[n][m] - fit * row * 0.5, pairs }
+  }
+  // 1) Desfase de partida: el que mejor encaja (con a = 1)
+  let best = null
+  for (let o = -row * 1.2; o <= row * 1.2; o += Math.max(1, row / 24)) {
+    const r = run(1, -o)
+    if (!best || r.total < best.total) best = { ...r, a: 1, b: -o }
+  }
+  // 2) Afinar con una recta ajustada a lo emparejado (dos vueltas)
+  for (let k = 0; k < 2 && best.pairs.length >= 4; k++) {
+    const xs = best.pairs.map(([, j]) => R[j].y)
+    const ys = best.pairs.map(([i]) => L[i].y)
+    const mx = xs.reduce((s, v) => s + v, 0) / xs.length
+    const my = ys.reduce((s, v) => s + v, 0) / ys.length
+    const sxx = xs.reduce((s, v) => s + (v - mx) ** 2, 0)
+    if (!sxx) break
+    const a = Math.min(1.1, Math.max(0.9, xs.reduce((s, v, t) => s + (v - mx) * (ys[t] - my), 0) / sxx))
+    const b = my - a * mx
+    const r = run(a, b)
+    if (r.total <= best.total) best = { ...r, a, b }
+    else break
+  }
+  const prices = new Map(best.pairs.map(([i, j]) => [i, nums(R[j])]))
+  return L.map((l, i) => [l.t.replace(/\s+\d+\s*[,.]\s*\d{2}\S*\s*$/, ''), ...(prices.get(i) || [])].join(' ')).join('\n')
+}
+
+/** Junta dos lecturas de la columna de importes: lo que está en las dos vale una vez y se añade lo que solo vio una */
+export function mergeReads(a, b) {
+  const has = (l) => PRICE_RE.test(l.t)
+  const A = a.filter(has)
+  const B = b.filter(has)
+  const ys = A.map((l) => l.y).sort((p, q) => p - q)
+  const gaps = ys.slice(1).map((y, i) => y - ys[i]).filter((g) => g > 5).sort((p, q) => p - q)
+  const row = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 60
+  const out = [...A]
+  for (const l of B) if (!A.some((x) => Math.abs(x.y - l.y) < row * 0.45)) out.push(l)
+  return out.sort((p, q) => p.y - q.y)
+}
+
 // ---------- Foto ----------
 
 /**
@@ -264,7 +450,8 @@ export function matchLines(lines, cart) {
  */
 export async function prepareImage(file) {
   const bmp = await createImageBitmap(file)
-  const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height))
+  // Por ancho: en un ticket largo la letra no puede quedar diminuta (hasta 7000 px de alto)
+  const scale = Math.min(1, 1800 / bmp.width, 7000 / bmp.height)
   const W = Math.round(bmp.width * scale)
   const H = Math.round(bmp.height * scale)
   const c = document.createElement('canvas')
@@ -309,29 +496,63 @@ export async function prepareImage(file) {
     d[i] = d[i + 1] = d[i + 2] = v
   }
   ctx.putImageData(img, 0, 0)
+  // Dónde está el texto a lo ancho (para partir nombres e importes aunque el ticket no ocupe toda la foto)
+  const cols = new Uint32Array(W)
+  for (let y = 0; y < H; y += 4) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4] < 110) cols[x]++
+  const total = cols.reduce((a, b) => a + b, 0)
+  let acc = 0
+  let x0 = 0
+  let x1 = W - 1
+  for (let x = 0; x < W; x++) if ((acc += cols[x]) > total * 0.02) { x0 = x; break }
+  acc = 0
+  for (let x = W - 1; x >= 0; x--) if ((acc += cols[x]) > total * 0.02) { x1 = x; break }
+  c.textX0 = x0
+  c.textX1 = x1
   return c
 }
 
-/** Lee el texto de una o varias fotos (catalán y castellano). onProgress(0..1) del conjunto. */
+/**
+ * Lee el texto de una o varias fotos (catalán y castellano). onProgress(0..1) del conjunto.
+ * Cada foto se lee en dos pasadas: la columna de nombres y la de importes, y luego se unen por altura.
+ */
 export async function readTicketPages(files, onProgress) {
   const { createWorker } = await import('tesseract.js')
   let done = 0
+  const steps = files.length * 2
   const worker = await createWorker(['cat', 'spa'], 1, {
-    logger: (m) => m.status === 'recognizing text' && onProgress?.((done + m.progress) / files.length)
+    logger: (m) => m.status === 'recognizing text' && onProgress?.((done + m.progress) / steps)
   })
+  const linesOf = (data) => (data.blocks || []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines)).map((l) => ({ t: l.text.trim(), y: (l.bbox.y0 + l.bbox.y1) / 2 }))
   try {
     const texts = []
     for (const f of files) {
-      let src = f
+      let c = null
       try {
-        src = await prepareImage(f)
+        c = await prepareImage(f)
       } catch {
-        /* sin canvas: la foto tal cual */
+        /* sin canvas: la foto tal cual, en una pasada */
       }
-      const { data } = await worker.recognize(src)
-      texts.push(data.text)
-      globalThis.__mfTicketText = texts
+      if (!c) {
+        const { data } = await worker.recognize(f)
+        texts.push(data.text)
+        done += 2
+        continue
+      }
+      const W = c.width
+      const H = c.height
+      const split = Math.round(c.textX0 + (c.textX1 - c.textX0) * 0.64)
+      await worker.setParameters({ tessedit_pageseg_mode: '4' })
+      const left = await worker.recognize(c, { rectangle: { left: 0, top: 0, width: split, height: H } }, { blocks: true })
       done++
+      // Importes: dos lecturas (texto disperso y bloque) que ven cifras distintas, combinadas por altura
+      const rect = { rectangle: { left: split, top: 0, width: W - split, height: H } }
+      await worker.setParameters({ tessedit_pageseg_mode: '11' })
+      const r11 = linesOf((await worker.recognize(c, rect, { blocks: true })).data)
+      await worker.setParameters({ tessedit_pageseg_mode: '6' })
+      const r6 = linesOf((await worker.recognize(c, rect, { blocks: true })).data)
+      done++
+      texts.push(alignColumns(linesOf(left.data), mergeReads(r11, r6)))
+      globalThis.__mfTicketText = texts
     }
     return texts
   } finally {

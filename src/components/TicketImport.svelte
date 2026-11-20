@@ -21,6 +21,16 @@
   let editing = $state(null) // índice de la línea que se está cambiando, o 'new'
   let q = $state('')
   let saving = $state(false)
+  let priceEdit = $state(null)
+  // Corregir a mano el importe de una línea (el lector a veces confunde una cifra)
+  function setPrice(r, v) {
+    const n = parseNum(v)
+    if (n != null) {
+      r.total = n
+      r.unit = Math.round((n / (r.qty || 1)) * 100) / 100
+    }
+    priceEdit = null
+  }
 
   function addFiles(e) {
     const list = [...(e.currentTarget.files || [])]
@@ -148,7 +158,7 @@
       {#if toCheck}<span class="chk"><AlertCircle size={16} aria-hidden="true" /> {toCheck} para revisar</span>{/if}
     </p>
     {#if ticketTotal != null && Math.abs(gap) > 0.5}
-      <p class="gap">{gap > 0 ? `Faltan ${eur(gap)} hasta el total: puede que alguna línea no se haya leído. Añadidla abajo o haced otra foto de esa parte.` : `Las líneas suman ${eur(-gap)} más que el total: revisad las marcadas.`}</p>
+      <p class="gap">{gap > 0 ? `Las líneas suman ${eur(gap)} menos que el total del ticket.` : `Las líneas suman ${eur(-gap)} más que el total del ticket.`} Suele ser una cifra mal leída: tocad un importe para corregirlo{gap > 0 ? ', o añadid abajo una línea que falte' : ''}. Se guarda igualmente con el total del ticket.</p>
     {/if}
 
     {#each [['check', 'Para revisar', rows.map((r, i) => i).filter((i) => rows[i].on && !rows[i].sure)], ['ok', 'Bien', rows.map((r, i) => i).filter((i) => !rows[i].on || rows[i].sure)]] as [k, label, idx] (k)}
@@ -171,8 +181,13 @@
                     <strong>{#if r.qty > 1}<span class="q num">{r.qty} ×</span> {/if}{r.bag ? 'Bolsas' : r.p ? r.p.n : r.desc}</strong>
                     <small>{r.desc}</small>
                   </span>
-                  <span class="pr num">{priceOf(r) != null ? eur(priceOf(r)) : '¿?'}</span>
                 </button>
+                {#if priceEdit === i}
+                  <!-- svelte-ignore a11y_autofocus -->
+                  <input class="input num pr-in" inputmode="decimal" value={priceOf(r) != null ? String(priceOf(r)).replace('.', ',') : ''} autofocus aria-label={`Importe de '${r.desc}'`} onblur={(e) => setPrice(r, e.currentTarget.value)} onkeydown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+                {:else}
+                  <button class="pr num" onclick={() => (priceEdit = i)} aria-label={`Importe ${priceOf(r) != null ? eur(priceOf(r)) : 'sin leer'}, tocar para corregir`}>{priceOf(r) != null ? eur(priceOf(r)) : '¿?'}</button>
+                {/if}
                 <button class="x" onclick={() => (r.on = !r.on)} aria-label={r.on ? `Quitar '${r.desc}'` : `Volver a poner '${r.desc}'`}>{#if r.on}<X size={18} aria-hidden="true" />{:else}<Plus size={18} aria-hidden="true" />{/if}</button>
               </div>
               {#if r.on && !r.sure}
@@ -426,7 +441,23 @@
   }
   .pr {
     flex: none;
+    min-height: 40px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
     font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline dotted var(--line);
+    text-underline-offset: 4px;
+  }
+  .pr-in {
+    flex: none;
+    width: 6rem;
+    min-height: 40px;
+    text-align: right;
   }
   .acts {
     display: flex;
