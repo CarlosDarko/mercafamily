@@ -645,6 +645,40 @@ export async function closeTrip({ store, date, total, prices = {} }) {
   return trip
 }
 
+/**
+ * Compra subida desde la foto del ticket (sin pasar por la lista). lines: [{ merc_id, name, category, qty, price }].
+ * Si clearList, lo comprado que estaba apuntado en la lista se quita.
+ */
+export async function saveTicketTrip({ store = 'Mercadona', date, total, lines, clearList = true }) {
+  if (!lines.length) return null
+  const est = Math.round(lines.reduce((s, l) => s + (l.price || 0) * (l.qty || 1), 0) * 100) / 100
+  const trip = {
+    id: uid(),
+    store,
+    date: date || isoDate(),
+    total: total ?? est,
+    est_total: est,
+    total_is_estimate: total == null,
+    items_count: lines.length,
+    created_by: app.me || null,
+    created_at: new Date().toISOString()
+  }
+  const rows = lines.map((l) => ({ id: uid(), trip_id: trip.id, merc_id: l.merc_id || null, name: l.name, category: l.category ?? null, qty: l.qty || 1, price: l.price ?? null, bought_on: trip.date }))
+  app.trips = [trip, ...app.trips].sort((a, b) => (a.date < b.date ? 1 : -1))
+  app.tripItems = [...app.tripItems, ...rows]
+  const ids = new Set(rows.map((r) => r.merc_id).filter(Boolean))
+  const done = clearList ? app.items.filter((i) => i.merc_id && ids.has(i.merc_id) && !i.requested) : []
+  if (done.length) app.items = app.items.filter((i) => !done.includes(i))
+  try {
+    await be.upsert('trips', trip)
+    await be.upsert('trip_items', rows)
+    if (done.length) await be.remove('items', done.map((i) => i.id))
+  } catch (e) {
+    fail(e)
+  }
+  return { trip, removed: done.length }
+}
+
 export async function deleteTrip(id) {
   app.trips = app.trips.filter((t) => t.id !== id)
   app.tripItems = app.tripItems.filter((t) => t.trip_id !== id)

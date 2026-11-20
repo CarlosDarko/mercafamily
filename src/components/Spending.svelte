@@ -1,5 +1,6 @@
 <script>
-  import { TrendingUp, TrendingDown, Trash2, ReceiptText, FileText, PiggyBank, ChartPie, Store } from '@lucide/svelte'
+  import TicketImport from './TicketImport.svelte'
+  import { Camera, TrendingUp, TrendingDown, Trash2, ReceiptText, FileText, PiggyBank, ChartPie, Store } from '@lucide/svelte'
   import { app, deleteTrip, updateTrip } from '../lib/data.svelte.js'
   import { spendByWeek, monthTotal, byCategory, priceChanges } from '../lib/insights.js'
   import { loadHistory, imgUrl } from '../lib/catalog.js'
@@ -39,6 +40,7 @@
 
   let editing = $state(null)
   let report = $state(location.hash.includes('informe'))
+  let ticket = $state(location.hash.includes('ticket'))
   let opened = $state(new Set())
   let editValue = $state('')
   function startEdit(t) {
@@ -79,8 +81,12 @@
   <div class="page-head">
     <div class="row">
       <h1 class="spacer">Gastos</h1>
-      {#if app.trips.length}<button class="btn" onclick={() => (report = true)}><FileText size={18} aria-hidden="true" /> Informe del mes</button>{/if}
+      {#if app.trips.length}<button class="btn" onclick={() => (report = true)}><FileText size={18} aria-hidden="true" /> Informe</button>{/if}
     </div>
+    <button class="upload" onclick={() => (ticket = true)}>
+      <span class="u-ic" aria-hidden="true"><Camera size={22} /></span>
+      <span class="u-tx"><strong>Subir un ticket</strong><small>Foto del ticket de papel, aunque sea largo o en catalán</small></span>
+    </button>
     {#if app.trips.length}
       <p class="lead">
         En {fmtMonth(now)} lleváis <strong class="num">{eur(thisMonth)}</strong> en {tripsMonth}
@@ -210,6 +216,10 @@
 
 {#if report}
   <MonthReport onclose={() => (report = false)} />
+{/if}
+
+{#if ticket}
+  <TicketImport onclose={() => (ticket = false)} />
 {/if}
 
 <style>
@@ -440,5 +450,38 @@
     border-radius: 14px;
     background: color-mix(in srgb, var(--fc) 15%, var(--surface));
     color: var(--fc);
+  }
+  .upload {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 14px;
+    border: 0;
+    border-radius: 18px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .u-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--c-mar) 15%, var(--surface));
+    color: var(--c-mar);
+  }
+  .u-tx {
+    display: grid;
+    line-height: 1.25;
+  }
+  .u-tx small {
+    color: var(--ink-2);
   }
 </style>

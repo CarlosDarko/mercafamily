@@ -1,5 +1,5 @@
 <script>
-  import { Plus, Store, Star, Sparkles, Check, X, Footprints, PartyPopper, Apple, Milk, Croissant, Egg, Fish, Carrot } from '@lucide/svelte'
+  import { Camera, Plus, Store, Star, Sparkles, Check, X, Footprints, PartyPopper, Apple, Milk, Croissant, Egg, Fish, Carrot } from '@lucide/svelte'
   import { catLook } from '../lib/look.js'
   import { confetti } from '../lib/fx.js'
   import { Tween } from 'svelte/motion'
@@ -121,6 +121,9 @@
           <Store size={18} aria-hidden="true" /> Modo tienda
         </button>
       {/if}
+      <a class="tile" style="--tc: var(--c-mar)" href="#gastos-ticket">
+        <Camera size={18} aria-hidden="true" /> Subir ticket
+      </a>
       {#if going()?.name === app.me}
         <button class="tile" style="--tc: var(--c-mar)" onclick={() => setGoing(false)} aria-pressed="true">
           <Footprints size={18} aria-hidden="true" /> Ya no voy
@@ -318,6 +321,7 @@
     display: none;
   }
   .tile {
+    text-decoration: none;
     flex: none;
     display: inline-flex;
     align-items: center;
