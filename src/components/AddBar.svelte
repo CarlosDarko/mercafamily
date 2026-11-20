@@ -1,8 +1,9 @@
 <script>
-  import { Search, Plus, Heart, ScanBarcode, Mic, MicOff } from '@lucide/svelte'
+  import { Search, Plus, Heart, ScanBarcode, Mic, MicOff, X } from '@lucide/svelte'
   import { voiceSupported, listen, parseSpoken } from '../lib/voice.js'
   import Scanner from './Scanner.svelte'
   import VoiceReview from './VoiceReview.svelte'
+  import ProductSheet from './ProductSheet.svelte'
   import { app, searchCatalog, addProduct, addText, rememberAlias, toast } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
   import { inSeason } from '../lib/home.js'
@@ -70,12 +71,15 @@
     active = -1
   })
 
-  async function pick(r) {
+  // Tocar un resultado abre su ficha (precio, otras tiendas, qué lleva) y desde ahí se apunta
+  let viewing = $state(null)
+  function pick(r) {
+    viewing = { p: r.p, qty: parsed.qty, first: results[0]?.p.id, q: parsed.q }
+  }
+  function added(p) {
     // Si no era el primero de la lista, se aprende: la próxima vez esta búsqueda pone primero este producto
-    if (results[0]?.p.id !== r.p.id) rememberAlias(parsed.q, r.p.id)
-    await addProduct(r.p, parsed.qty)
+    if (viewing && viewing.first !== p.id) rememberAlias(viewing.q, p.id)
     text = ''
-    input?.focus()
   }
 
   async function submit(e) {
@@ -103,7 +107,7 @@
 
 <form class="add" role="search" aria-label="Añadir a la lista" onsubmit={submit}>
   <label for="add-input" class="visually-hidden">Producto que hace falta</label>
-  <div class="add-field" style={`--btns:${text.trim() ? 1 : (canVoice ? 1 : 0) + (canScan ? 1 : 0)}`}>
+  <div class="add-field" style={`--btns:${text.trim() ? 2 : (canVoice ? 1 : 0) + (canScan ? 1 : 0)}`}>
     <Search size={20} aria-hidden="true" class="add-icon" />
     <input
       bind:this={input}
@@ -127,7 +131,8 @@
     />
     <div class="in-btns">
       {#if text.trim()}
-        <button class="go" type="submit" aria-label="Añadir a la lista"><Plus size={24} strokeWidth={2.6} aria-hidden="true" /></button>
+        <button class="ib" type="button" onclick={() => ((text = ''), input?.blur())} aria-label="Borrar y volver a la lista"><X size={22} aria-hidden="true" /></button>
+        <button class="go" type="submit" aria-label="Añadir el más probable a la lista"><Plus size={24} strokeWidth={2.6} aria-hidden="true" /></button>
       {:else}
         {#if canVoice}
           <button class="ib" class:live={listening} type="button" onclick={toggleVoice} aria-pressed={listening} aria-label={listening ? 'Dejar de escuchar' : 'Apuntar hablando'}>
@@ -184,6 +189,9 @@
 
 {#if scanning}
   <Scanner onclose={() => (scanning = false)} />
+{/if}
+{#if viewing}
+  <ProductSheet product={viewing.p} qty={viewing.qty} onadded={added} onclose={() => (viewing = null)} />
 {/if}
 {#if review}
   <VoiceReview phrases={review.phrases} heard={review.heard} onclose={() => (review = null)} />

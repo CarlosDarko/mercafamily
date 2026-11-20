@@ -8,6 +8,7 @@
   import { pantry, STARTER_RECIPES } from '../lib/home.js'
   import { recipeLook } from '../lib/look.js'
   import ProposalSheet from './ProposalSheet.svelte'
+  import PantryCheck from './PantryCheck.svelte'
   import SeasonAndBalance from './SeasonAndBalance.svelte'
   import { imgUrl } from '../lib/catalog.js'
   import { isoDate, weekStart } from '../lib/format.js'
@@ -172,6 +173,7 @@
 
   {#if view === 'despensa'}
   <div role="tabpanel" id="panel-despensa" aria-labelledby="tab-despensa" class="rise">
+  <PantryCheck />
   <section class="section first" aria-labelledby="h-pantry">
     <h2 id="h-pantry">Lo que hay en casa</h2>
     {#if !stock.length}

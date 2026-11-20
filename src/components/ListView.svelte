@@ -17,7 +17,6 @@
   import PrepareSheet from './PrepareSheet.svelte'
   import HealthySwaps from './HealthySwaps.svelte'
   import TodayCard from './TodayCard.svelte'
-  import PantryCheck from './PantryCheck.svelte'
 
   let editing = $state(null)
   let closing = $state(false)
@@ -136,10 +135,6 @@
     </div>
   {/if}
 
-  <TodayCard />
-
-  {#if !app.prefs.kid}<PantryCheck />{/if}
-
   {#if requests.length}
     <section class="section reqs" aria-labelledby="h-reqs">
       <h2 id="h-reqs" class="cat">{app.prefs.kid ? 'Tus peticiones' : 'Peticiones'}</h2>
@@ -152,48 +147,6 @@
               <button class="icon-btn ok" onclick={() => approveRequest(it)} aria-label={`Aceptar ${it.name}`}><Check size={22} aria-hidden="true" /></button>
               <button class="icon-btn no" onclick={() => rejectRequest(it)} aria-label={`Rechazar ${it.name}`}><X size={22} aria-hidden="true" /></button>
             {/if}
-          </li>
-        {/each}
-      </ul>
-    </section>
-  {/if}
-
-  {#if favorites.length}
-    <section class="favs" aria-labelledby="h-favs">
-      <h2 id="h-favs" class="cat"><Star size={16} aria-hidden="true" /> Favoritos</h2>
-      <ul class="fav-row" role="list">
-        {#each favorites as p (p.id)}
-          <li>
-            <button class="fav" onclick={() => addProduct(p)} aria-label={`Añadir ${p.n}`}>
-              {#if imgUrl(p)}<img src={imgUrl(p, 96)} alt="" width="48" height="48" loading="lazy" />{/if}
-              <span>{p.n.replace(/ Hacendado$/, '')}</span>
-            </button>
-          </li>
-        {/each}
-      </ul>
-    </section>
-  {/if}
-
-  {#if !app.prefs.kid}
-    <HealthySwaps items={current} />
-  {/if}
-
-  {#if sugg.due.length && !app.prefs.kid}
-    <section class="section due" aria-labelledby="h-due">
-      <div class="row">
-        <h2 id="h-due" class="spacer">Toca comprar</h2>
-        <button class="btn" onclick={addAllDue}>Añadir {sugg.due.length === 1 ? 'a la lista' : `las ${sugg.due.length}`}</button>
-      </div>
-      <ul class="chips" role="list">
-        {#each sugg.due.slice(0, 8) as s (s.key)}
-          <li>
-            <button class="chip" onclick={() => addSuggestion(s)} aria-label={`Añadir ${s.name}. Lo compráis cada ${Math.round(s.every)} días y hace ${s.since}.`}>
-              <Plus size={18} aria-hidden="true" />
-              <span class="chip-text">
-                <strong>{s.name}</strong>
-                <small>cada {Math.round(s.every)} días · hace {s.since}</small>
-              </span>
-            </button>
           </li>
         {/each}
       </ul>
@@ -262,6 +215,58 @@
         {/each}
       </ul>
     </section>
+  {/if}
+
+  {#if !app.prefs.kid}
+    <div class="extras">
+      <h2 class="ex-h">Para pensar menos</h2>
+      <TodayCard />
+
+
+
+      {#if favorites.length}
+        <section class="favs" aria-labelledby="h-favs">
+          <h2 id="h-favs" class="cat"><Star size={16} aria-hidden="true" /> Favoritos</h2>
+          <ul class="fav-row" role="list">
+            {#each favorites as p (p.id)}
+              <li>
+                <button class="fav" onclick={() => addProduct(p)} aria-label={`Añadir ${p.n}`}>
+                  {#if imgUrl(p)}<img src={imgUrl(p, 96)} alt="" width="48" height="48" loading="lazy" />{/if}
+                  <span>{p.n.replace(/ Hacendado$/, '')}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {/if}
+
+      {#if !app.prefs.kid}
+        <HealthySwaps items={current} />
+      {/if}
+
+      {#if sugg.due.length && !app.prefs.kid}
+        <section class="section due" aria-labelledby="h-due">
+          <div class="row">
+            <h2 id="h-due" class="spacer">Toca comprar</h2>
+            <button class="btn" onclick={addAllDue}>Añadir {sugg.due.length === 1 ? 'a la lista' : `las ${sugg.due.length}`}</button>
+          </div>
+          <ul class="chips" role="list">
+            {#each sugg.due.slice(0, 8) as s (s.key)}
+              <li>
+                <button class="chip" onclick={() => addSuggestion(s)} aria-label={`Añadir ${s.name}. Lo compráis cada ${Math.round(s.every)} días y hace ${s.since}.`}>
+                  <Plus size={18} aria-hidden="true" />
+                  <span class="chip-text">
+                    <strong>{s.name}</strong>
+                    <small>cada {Math.round(s.every)} días · hace {s.since}</small>
+                  </span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        </section>
+      {/if}
+
+    </div>
   {/if}
 </div>
 
@@ -666,5 +671,14 @@
     .ticket {
       bottom: 96px;
     }
+  }
+  .extras {
+    margin-top: 34px;
+    padding-top: 18px;
+    border-top: 1.5px dashed var(--line);
+  }
+  .ex-h {
+    font-size: 0.95rem;
+    color: var(--ink-2);
   }
 </style>

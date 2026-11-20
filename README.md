@@ -34,6 +34,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 
 ## Qué hace
 
+- **La lista, lo primero.** Al abrir la app se ve la lista y el buscador. Tocar un resultado abre su ficha (precio, otras tiendas, qué lleva) para apuntarlo con la cantidad. Lo que ayuda a decidir (qué coméis hoy, lo que toca comprar, favoritos) va debajo de la lista.
 - **Apuntar sin pensar.** Escribes 'leche' o '2 tomates' y aparecen los productos de Mercadona con foto, formato y precio según escribes: todos los que encajan en una lista que se desliza (64 galletas, 62 aguas…), aunque escribáis las palabras juntas ('cocacola'). Al pulsar '+' elige solo el que encaja con vuestras preferencias y con lo que soléis comprar.
 - **Varias listas compartidas** ('Compra semanal', 'Al volver del trabajo', 'Cumpleaños'), cada una con icono, color, sus pendientes, su total y su carro. Lo que apunta uno aparece al momento en el móvil de los demás.
 - **Modo tienda**: pantalla que no se apaga, letra grande, productos en el orden de los pasillos de vuestro Mercadona (se aprende del orden en que vais marcando), 'No había' con un toque y barra de progreso.
@@ -59,6 +60,7 @@ Lista de la compra familiar compartida en tiempo real, con el catálogo y los pr
 - **Historial de cada producto** en su ficha: cuántas veces lo compráis y cómo ha ido su precio.
 - **Ticket al terminar la compra**, que se imprime con el total y un sello si la semana va por debajo del presupuesto.
 - **Guía de bienvenida** de cuatro pasos (y en Ajustes, Ayuda, para verla otra vez).
+- **Subir un ticket con foto**: en Gastos o desde la lista. Funciona con tickets largos (varias fotos de arriba abajo, sin repetir líneas) y en catalán. Cada línea se une con su producto de Mercadona, por el precio exacto si se lee y si no por el nombre. Lo dudoso sale arriba para revisarlo con un toque y la compra queda en Gastos. Las fotos se leen en el propio móvil y no se guardan.
 - **Apuntar hablando**: el micrófono entiende 'añade leche, dos de tomate y pan de molde' y abre una revisión con cada cosa, su cantidad, el producto propuesto y los demás formatos y tamaños para elegir. No se apunta nada hasta confirmar.
 - **Ticket con foto**: al terminar la compra, una foto del ticket de papel rellena el total y guarda los precios reales de cada producto (el lector se descarga solo la primera vez).
 - **Avisos en el móvil** ([docs/avisos.md](docs/avisos.md)): cuando alguien apunta algo o termina la compra, si os pasáis del presupuesto, el resumen del domingo y un aviso al salir del trabajo si la lista tiene algo. Cada persona elige los suyos.

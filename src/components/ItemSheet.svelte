@@ -1,8 +1,8 @@
 <script>
-  import { X, Minus, Plus, Trash2, Replace, Star, PackageX, ShoppingBasket, Tag, Leaf } from '@lucide/svelte'
+  import { X, Minus, Plus, Trash2, Replace, Star, PackageX, ShoppingBasket, Tag } from '@lucide/svelte'
   import { app, product, unitPrice, updateItem, removeItem, searchCatalog, rememberAlias, listOf, moveItem, toast, isFavorite, toggleFavorite, toggleMissing, recordSaving } from '../lib/data.svelte.js'
   import { imgUrl, unitLabel } from '../lib/catalog.js'
-  import { productDetails, nutrition } from '../lib/nutrition.js'
+  import ProductInfo from './ProductInfo.svelte'
   import { eur, parseNum } from '../lib/format.js'
   import Sheet from './Sheet.svelte'
   import Alternatives from './Alternatives.svelte'
@@ -21,22 +21,7 @@
   // Otros productos: sin el que ya está puesto
   const alternatives = $derived(changing && q.trim().length >= 2 ? searchCatalog(q, 13).filter((r) => r.p.id !== p?.id).slice(0, 12) : [])
 
-  let info = $state(null)
-  let nutri = $state(null)
-  let loadingInfo = $state(false)
-
-  $effect(() => {
-    const pid = p?.id
-    info = null
-    nutri = null
-    if (!pid) return
-    loadingInfo = true
-    productDetails(pid).then(async (d) => {
-      info = d
-      nutri = d?.e ? await nutrition(d.e) : null
-      loadingInfo = false
-    })
-  })
+  let grade = $state(null)
 
   $effect(() => {
     if (!item) onclose()
@@ -73,8 +58,6 @@
   }
 
   const fmt = $derived(p && app.catalog ? cheaperFormat(p, app.catalog.products) : null)
-  const NUTRI_COLORS = { a: '#1e7a3c', b: '#5aa636', c: '#c99a06', d: '#d8661c', e: '#c2361f' }
-  const n1 = (v) => (v == null ? '—' : String(Math.round(v * 10) / 10).replace('.', ','))
 </script>
 
 {#if item}
@@ -171,46 +154,10 @@
       </section>
 
       <div class="blk-alt">
-        <Alternatives {p} grade={nutri?.grade ?? null} onuse={useProduct} />
+        <Alternatives {p} {grade} onuse={useProduct} />
       </div>
 
-      <section class="blk" aria-labelledby="h-info">
-        <h3 id="h-info" class="bh"><Leaf size={18} aria-hidden="true" /> Qué lleva</h3>
-        {#if loadingInfo}
-          <p class="muted">Cargando la ficha…</p>
-        {:else}
-          {#if nutri && (nutri.grade || nutri.kcal != null)}
-            {#if nutri.grade}
-              <div class="ns" aria-label={`Nutri-Score ${nutri.grade.toUpperCase()}`}>
-                {#each ['a', 'b', 'c', 'd', 'e'] as g (g)}
-                  <span class="ns-l" class:on={g === nutri.grade} style={`--g:${NUTRI_COLORS[g]}`} aria-hidden="true">{g.toUpperCase()}</span>
-                {/each}
-                <span class="ns-t">Nutri-Score</span>
-              </div>
-            {/if}
-            {#if nutri.kcal != null}
-              <ul class="nut" role="list" aria-label="Por 100 g o 100 ml">
-                {#each [['Energía', nutri.kcal, 'kcal'], ['Grasas', nutri.fat, 'g'], ['Saturadas', nutri.sat, 'g'], ['Azúcares', nutri.sugars, 'g'], ['Proteínas', nutri.protein, 'g'], ['Sal', nutri.salt, 'g']] as [label, v, u] (label)}
-                  <li><strong class="num">{n1(v)}<small>&nbsp;{u}</small></strong><span>{label}</span></li>
-                {/each}
-              </ul>
-              <p class="source">Por 100 g o 100 ml. Datos de Open Food Facts.</p>
-            {/if}
-          {/if}
-          {#if info?.a}
-            <p class="alg"><strong>Alérgenos:</strong> {info.a}</p>
-          {/if}
-          {#if info?.g}
-            <details class="ingr">
-              <summary>Ingredientes</summary>
-              <p>{info.g}</p>
-            </details>
-          {/if}
-          {#if !info?.g && !info?.a && !nutri}
-            <p class="muted">Todavía no hay ficha de este producto. Se completa sola en las próximas actualizaciones semanales.</p>
-          {/if}
-        {/if}
-      </section>
+      <ProductInfo {p} bind:grade />
     {/if}
   </Sheet>
 {/if}
@@ -330,10 +277,6 @@
   .alt-text small {
     color: var(--ink-2);
   }
-  .source {
-    font-size: 0.85rem;
-    color: var(--ink-2);
-  }
   .blk {
     display: grid;
     gap: 12px;
@@ -421,82 +364,5 @@
   }
   .move select {
     background: var(--surface);
-  }
-  .ns {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-  .ns-l {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 30px;
-    border-radius: 6px;
-    background: var(--g);
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.85rem;
-    opacity: 0.35;
-  }
-  .ns-l.on {
-    width: 38px;
-    height: 42px;
-    font-size: 1.15rem;
-    opacity: 1;
-    box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--g);
-    margin: 0 4px;
-  }
-  .ns-t {
-    margin-left: 8px;
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-  .nut {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-  .nut li {
-    display: grid;
-    gap: 2px;
-    padding: 10px 8px;
-    border-radius: 12px;
-    background: var(--surface);
-    text-align: center;
-  }
-  .nut strong {
-    font-size: 1.1rem;
-    font-weight: 800;
-  }
-  .nut small {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--ink-2);
-  }
-  .nut span {
-    font-size: 0.78rem;
-    color: var(--ink-2);
-    font-weight: 600;
-  }
-  .alg {
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--c-tomate) 10%, var(--surface));
-    font-size: 0.92rem;
-  }
-  .ingr summary {
-    cursor: pointer;
-    font-weight: 700;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-  }
-  .ingr p {
-    font-size: 0.9rem;
-    color: var(--ink-2);
   }
 </style>
